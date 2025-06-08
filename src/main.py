@@ -137,7 +137,7 @@ except FileNotFoundError:
         if response.status_code == 200:
             print(f"HTTP status code: {response.status_code} (pass)")
             data = json.loads(response.text)
-            with open("elementdata.json", "w") as f:
+            with open("./elementdata.json", "w") as f:
                 f.write(response.text)
         else:
             print(f"Failed to download data! HTTP status code: {response.status_code}")
