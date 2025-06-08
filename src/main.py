@@ -1,3 +1,16 @@
+import logging
+
+with open('.execution.log', 'w'):
+    pass
+
+logging.basicConfig(
+    filename='./execution.log',
+    filemode='w',
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(message)s'
+)
+
+logging.info("Program initiallized.")
 # Color Configs
 
 PROTONS_COL = (255, 56, 56)
@@ -122,18 +135,21 @@ import json, re, sys, time
 try:
     with open("./elementdata.json", 'r') as f:
         text = f.read()
+        logging.info("elementdata.json file was successfully found.")
     text = re.sub(r'//.*', '', text)
     data = json.loads(text)
 except FileNotFoundError:
+    logging.warn("elementdata.json file was not found.")
     print("Hmm, the elementdata.json file was not found. Is it okay for me to get the file for you on GitHub? (y/n)")
     confirmation = input("> ").strip().lower()
     try:
         import requests
     except ImportError:
         print("Whoopsies, the requests module was not found in your environment! Please read the README.md file for more information.")
+        logging.error("Couldn't proceed; the requests library was not found in the environment.")
         time.sleep(5)
+        logging.fatal("Program terminated.")
         sys.exit(1)
-
     if confirmation == "y":
         print("Getting content from https://raw.githubusercontent.com/Lanzoor/periodictable/main/src/elementdata.json, this should not take a while...")
         url = "https://raw.githubusercontent.com/Lanzoor/periodictable/main/src/elementdata.json"
@@ -141,45 +157,55 @@ except FileNotFoundError:
             response = requests.get(url)
         except requests.exceptions.ConnectionError:
             print("Whoops! There was a network connection error. Please check your network connection, and try again later.")
+            logging.error("Couldn't proceed; failed to connect to page.")
             time.sleep(2)
+            logging.fatal("Program terminated.")
             sys.exit(1)
-
         if response.status_code == 200:
             print(f"HTTP status code: {response.status_code} (pass)")
             data = json.loads(response.text)
             with open("./elementdata.json", "w") as f:
                 f.write(response.text)
             print("Let's get back to the program, as the elementdata.json file has been added into the directory.")
+            logging.info("Successfully got the elementdata.json file from https://raw.githubusercontent.com/Lanzoor/periodictable/main/src/elementdata.json.")
         else:
             print(f"Failed to download data! HTTP status code: {response.status_code}")
+            logging.error(f"Failed to fetch data with status code {response.status_code}.")
             time.sleep(2)
+            logging.fatal("Program terminated.")
             sys.exit(1)
-
     elif confirmation == "n":
         print("Okay, exiting...")
+        logging.error("User denied confirmation for fetching the elementdata.json file.")
         time.sleep(2)
+        logging.fatal("Program terminated.")
         sys.exit(0)
-
     else:
-        print("Invalid input, exiting...")
+        print("Invalid input, please try again later. Exiting...")
+        logging.error("User gave invalid input.")
         time.sleep(2)
-        sys.exit(1)
+        logging.fatal("Program terminated.")
+
 import os
 
 width = os.get_terminal_size().columns
 
 if width <= 80:
     print(fore(f"You are running this program in a terminal that has a width of {bold(width)},\nwhich may be too compact to display and provide the information.\nPlease try resizing your terminal.", RED))
+    logging.warn("Not enough width for terminal.")
 
 element = None
 if len(sys.argv) > 1:
+    logging.info(f"User gave argv: {sys.argv}")
     query = sys.argv[1].strip()
 
     try:
         idx = int(query) - 1
         key = list(data.keys())[idx]
         element = data[key]
+        logging.info(f"User gave an atomic number {idx}, proceeding...")
     except (ValueError, IndexError):
+        logging.info("User gave either the element's full name or the symbol.")
         for val in data.values():
             if query.lower() in (
                 val["general"]["fullname"].lower(),
@@ -189,20 +215,22 @@ if len(sys.argv) > 1:
                 break
         if element is None:
             print(fore("Invalid argv; falling back to interactive input.", RED))
+            logging.warn("Argv was invalid, failed back to interactive input.")
             element = None
 
 if element is None:
     print(f"Search for an element by name, symbol, or atomic number. {dim(tip)}")
     while True:
         choice = input("> ").strip()
-        # Try atomic number
+        logging.info(f"User gave input: {choice}")
         try:
             idx = int(choice) - 1
             key = list(data.keys())[idx]
             element = data[key]
+            logging.info(f"User gave an atomic number {idx}, proceeding...")
             break
         except (ValueError, IndexError):
-            # Try name or symbol
+            logging.info("User gave either the element's full name or the symbol.")
             for val in data.values():
                 if choice.lower() in (
                     val["general"]["fullname"].lower(),
@@ -213,6 +241,7 @@ if element is None:
             if element:
                 break
         print("Not a valid element. Try again.")
+        logging.info(f"Input \"{choice}\" was invalid, trying again.")
 
 # General info
 fullname = element["general"]["fullname"]
@@ -346,6 +375,8 @@ radius = element["measurements"]["radius"]
 hardness = element["measurements"]["hardness"]
 atomic_volume = element["measurements"]["atomic_volume"]
 sound_transmission_speed = element["measurements"]["sound_transmission_speed"]
+
+logging.info("Starting output.")
 
 print()
 print_header("General")
