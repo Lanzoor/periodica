@@ -30,9 +30,9 @@ types = {
 	"Alkali metal": (176, 176, 176)
 }
 
-# Other important functions
+# Other important functions / variables
 
-import colorsys
+import colorsys, random
 
 def celcius_to_kelvin(celsius):
 	return (celsius * 1e16 + 273.15 * 1e16) / 1e16
@@ -113,6 +113,10 @@ def inverse_color(string) -> str:
 def dim(string) -> str:
     return f"\033[2m{string}\033[22m"
 
+tip = "(Tip: You can give this program argv to directly search an element from there. You can even give argv to the ./run.sh file too!)" if random.randint(0, 1) else ""
+
+# Reading json file, and trying to get from GitHub if fails
+
 import json, re, sys, time
 
 try:
@@ -170,6 +174,7 @@ if width <= 80:
 element = None
 if len(sys.argv) > 1:
     query = sys.argv[1].strip()
+
     try:
         idx = int(query) - 1
         key = list(data.keys())[idx]
@@ -183,11 +188,11 @@ if len(sys.argv) > 1:
                 element = val
                 break
         if element is None:
-            print(fore("Invalid argument; falling back to interactive input.", RED))
+            print(fore("Invalid argv; falling back to interactive input.", RED))
             element = None
 
 if element is None:
-    print(f"Search for an element by name, symbol, or atomic number. {dim('(Tip: You can give this program argv to search for elements without having to enter this every time.)')}")
+    print(f"Search for an element by name, symbol, or atomic number. {dim(tip)}")
     while True:
         choice = input("> ").strip()
         # Try atomic number
