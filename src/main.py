@@ -113,20 +113,45 @@ def inverse_color(string) -> str:
 def dim(string) -> str:
     return f"\033[2m{string}\033[22m"
 
-import json, re
+import json, re, sys, time
 
 try:
-	with open("./elementdata.json", 'r') as f:
-		text = f.read()
-	text = re.sub(r'//.*', '', text)
-	data = json.loads(text)
-
+    with open("./elementdata.json", 'r') as f:
+        text = f.read()
+    text = re.sub(r'//.*', '', text)
+    data = json.loads(text)
 except FileNotFoundError:
-	print("The elements.json file was not found. OK if I get the file from GitHub?")
-	data = {}
-	...
+    print("The elementdata.json file was not found. Is it okay for me to get the file for you on GitHub? (y/n)")
+    confirmation = input("> ").strip().lower()
+    try:
+        import requests
+    except ImportError:
+        print(f"Whoopsies, the requests module was not found in your environment! Perhaps you should try running {bold('pip install requests')} in your environment!")
+        time.sleep(5)
+        sys.exit(1)
 
-import sys
+    if confirmation == "y":
+        print("Getting content from https://raw.githubusercontent.com/Lanzoor/periodictable/main/src/elementdata.json, this should not take a while...")
+        url = "https://raw.githubusercontent.com/Lanzoor/periodictable/main/src/elementdata.json"
+        response = requests.get(url)
+        if response.status_code == 200:
+            print(f"HTTP status code: {response.status_code} (pass)")
+            data = json.loads(response.text)
+            with open("elementdata.json", "w") as f:
+                f.write(response.text)
+        else:
+            print(f"Failed to download data! HTTP status code: {response.status_code}")
+            sys.exit(1)
+
+    elif confirmation == "n":
+        print("Okay, exiting...")
+        time.sleep(2)
+        sys.exit(0)
+
+    else:
+        print("Invalid input, exiting...")
+        time.sleep(2)
+        sys.exit(1)
 import os
 
 width = os.get_terminal_size().columns
