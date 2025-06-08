@@ -1,3 +1,2 @@
-# run.ps1
-Set-Location -Path "src"
+Set-Location -Path "$PSScriptRoot/../src"
 python main.py $args
