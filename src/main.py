@@ -133,7 +133,13 @@ except FileNotFoundError:
     if confirmation == "y":
         print("Getting content from https://raw.githubusercontent.com/Lanzoor/periodictable/main/src/elementdata.json, this should not take a while...")
         url = "https://raw.githubusercontent.com/Lanzoor/periodictable/main/src/elementdata.json"
-        response = requests.get(url)
+        try:
+            response = requests.get(url)
+        except requests.exceptions.ConnectionError:
+            print("Whoops! There was a network connection error. Please check your network connection!")
+            time.sleep(2)
+            sys.exit(1)
+
         if response.status_code == 200:
             print(f"HTTP status code: {response.status_code} (pass)")
             data = json.loads(response.text)
@@ -142,6 +148,7 @@ except FileNotFoundError:
             print("Let's get back to the program, as the elementdata.json file has been added into the directory.")
         else:
             print(f"Failed to download data! HTTP status code: {response.status_code}")
+            time.sleep(2)
             sys.exit(1)
 
     elif confirmation == "n":
