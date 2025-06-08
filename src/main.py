@@ -139,7 +139,7 @@ try:
     text = re.sub(r'//.*', '', text)
     data = json.loads(text)
 except FileNotFoundError:
-    logging.warn("elementdata.json file was not found.")
+    logging.warning("elementdata.json file was not found.")
     print("Hmm, the elementdata.json file was not found. Is it okay for me to get the file for you on GitHub? (y/n)")
     confirmation = input("> ").strip().lower()
     try:
@@ -192,7 +192,7 @@ width = os.get_terminal_size().columns
 
 if width <= 80:
     print(fore(f"You are running this program in a terminal that has a width of {bold(width)},\nwhich may be too compact to display and provide the information.\nPlease try resizing your terminal.", RED))
-    logging.warn("Not enough width for terminal.")
+    logging.warning("Not enough width for terminal.")
 
 element = None
 if len(sys.argv) > 1:
@@ -215,10 +215,10 @@ if len(sys.argv) > 1:
                 break
         if element is None:
             print(fore("Invalid argv; falling back to interactive input.", RED))
-            logging.warn("Argv was invalid, failed back to interactive input.")
+            logging.warning("Argv was invalid, failed back to interactive input.")
             element = None
 else:
-    logging.warn("Argv was not given, failed back to interactive input.")
+    logging.warning("Argv was not given, failed back to interactive input.")
 if element is None:
     print(f"Search for an element by name, symbol, or atomic number. {dim(tip)}")
     while True:
