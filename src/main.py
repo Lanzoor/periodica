@@ -217,7 +217,8 @@ if len(sys.argv) > 1:
             print(fore("Invalid argv; falling back to interactive input.", RED))
             logging.warn("Argv was invalid, failed back to interactive input.")
             element = None
-
+else:
+    logging.warn("Argv was not given, failed back to interactive input.")
 if element is None:
     print(f"Search for an element by name, symbol, or atomic number. {dim(tip)}")
     while True:
