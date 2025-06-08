@@ -1,6 +1,6 @@
 import logging
 
-with open('.execution.log', 'w'):
+with open('./execution.log', 'w'):
     pass
 
 logging.basicConfig(
