@@ -8,7 +8,7 @@ However, for most cases, I recommend you run the following command;
 **First, go inside the periodictable directory.** This step is important. And then, **run the following command:**
 
 ```bash
-./build.sh
+./scripts/build.sh
 ```
 
 This will install all required packages. No bloat, only the needed ones.
@@ -19,13 +19,13 @@ This is the same as doing `pip install -r ./requirements.txt`, but the shell scr
 This also means that you can **run** the file too with the following;
 
 ```bash
-./run.sh
+./scripts/run.sh
 ```
 
 And if you need to give argv;
 
 ```bash
-./run.sh YOUR_ARGUMENTS_GO_HERE
+./scripts/run.sh YOUR_ARGUMENTS_GO_HERE
 ```
 
 Instead of having to step into the src directory, running python, stuff like that.
@@ -35,15 +35,16 @@ Instead of having to step into the src directory, running python, stuff like tha
 Just like the Linux build method, first, **go inside the periodictable directory,** and run this script for building;
 
 ```ps1
-./build.ps1
+.\scripts\build.ps1
 ```
 
 And, run this script for running the program itself;
 
 ```ps1
-./run.ps1
+.\scripts\run.ps1
 ```
 
+You can also give argv.
 Anyways, that's about it! Have fun messing around, and do note, **you may use the `elementdata.json` file without any credits or permission,** but giving credit will help clarify stuff!
 
 *(Unless you try to say that you made the `elementdata.json` file, you will be fine.)*
