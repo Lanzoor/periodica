@@ -126,7 +126,7 @@ except FileNotFoundError:
     try:
         import requests
     except ImportError:
-        print(f"Whoopsies, the requests module was not found in your environment! Perhaps you should try running {bold('pip install requests')} in your environment!")
+        print("Whoopsies, the requests module was not found in your environment! Please read the README.md file for more information.")
         time.sleep(5)
         sys.exit(1)
 
@@ -136,7 +136,7 @@ except FileNotFoundError:
         try:
             response = requests.get(url)
         except requests.exceptions.ConnectionError:
-            print("Whoops! There was a network connection error. Please check your network connection!")
+            print("Whoops! There was a network connection error. Please check your network connection, and try again later.")
             time.sleep(2)
             sys.exit(1)
 
