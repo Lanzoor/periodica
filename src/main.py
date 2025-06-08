@@ -121,7 +121,7 @@ try:
     text = re.sub(r'//.*', '', text)
     data = json.loads(text)
 except FileNotFoundError:
-    print("The elementdata.json file was not found. Is it okay for me to get the file for you on GitHub? (y/n)")
+    print("Hmm, the elementdata.json file was not found. Is it okay for me to get the file for you on GitHub? (y/n)")
     confirmation = input("> ").strip().lower()
     try:
         import requests
@@ -139,6 +139,7 @@ except FileNotFoundError:
             data = json.loads(response.text)
             with open("./elementdata.json", "w") as f:
                 f.write(response.text)
+            print("Let's get back to the program, as the elementdata.json file has been added into the directory.")
         else:
             print(f"Failed to download data! HTTP status code: {response.status_code}")
             sys.exit(1)
