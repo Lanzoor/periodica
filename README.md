@@ -3,6 +3,8 @@
 Of course, this is a Python script, which means you will need to run it with a Python interpreter.
 However, for most cases, I recommend you run the following command;
 
+## For Linux
+
 **First, go inside the periodictable directory.** This step is important. And then, **run the following command:**
 
 ```bash
@@ -27,6 +29,21 @@ And if you need to give argv;
 ```
 
 Instead of having to step into the src directory, running python, stuff like that.
+
+## Windows
+
+Just like the Linux build method, first, **go inside the periodictable directory,** and run this script for building;
+
+```ps1
+./build.ps1
+```
+
+And, run this script for running the program itself;
+
+```ps1
+./run.ps1
+```
+
 Anyways, that's about it! Have fun messing around, and do note, **you may use the `elementdata.json` file without any credits or permission,** but giving credit will help clarify stuff!
 
 *(Unless you try to say that you made the `elementdata.json` file, you will be fine.)*
