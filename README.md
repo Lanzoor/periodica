@@ -14,18 +14,18 @@ However, for most cases, I recommend you run the following command;
 This will install all required packages. No bloat, only the needed ones.
 This is the same as doing `pip install -r ./requirements.txt`, but the shell script in the directory will make it way cleaner.
 
-> If you are unsure about the `./build.sh` and the `./run.sh` files in the directory, just read them yourself!
+> If you are unsure about the `./build.sh` and the `./periodictable.sh` files in the directory, just read them yourself!
 
 This also means that you can **run** the file too with the following;
 
 ```bash
-./run.sh
+./periodictable.sh
 ```
 
 And if you need to give argv;
 
 ```bash
-./run.sh YOUR_ARGUMENTS_GO_HERE
+./periodictable.sh YOUR_ARGUMENTS_GO_HERE
 ```
 
 Instead of having to step into the src directory, running python, stuff like that.
@@ -41,7 +41,7 @@ Just like the Linux build method, first, **go inside the periodictable directory
 And, run this script for running the program itself;
 
 ```ps1
-.\run.ps1
+.\periodictable.ps1
 ```
 
 You can also give argv.

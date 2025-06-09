@@ -196,34 +196,35 @@ if width <= 80:
 
 element = None
 if len(sys.argv) > 1:
-    logging.info(f"User gave argv: {sys.argv}")
-    query = sys.argv[1].strip()
+    search_query = sys.argv[1].strip()
+    logging.info(f"User gave argv: \"{search_query}\"")
 
     try:
-        idx = int(query) - 1
+        idx = int(search_query) - 1
         key = list(data.keys())[idx]
         element = data[key]
         logging.info(f"User gave an atomic number {idx}, proceeding...")
     except (ValueError, IndexError):
-        logging.info("User gave either the element's full name or the symbol.")
         for val in data.values():
-            if query.lower() in (
-                val["general"]["fullname"].lower(),
-                val["general"]["symbol"].lower(),
-            ):
+            if search_query.lower() == val["general"]["fullname"].lower():
                 element = val
+                logging.info(f"User gave either the element's full name, {search_query.capitalize()}.")
+                break
+            elif search_query.lower() == val["general"]["symbol"].lower():
+                element = val
+                logging.info(f"User gave either the element's symbol, {search_query.capitalize()} for {element["general"]["fullname"]}.")
                 break
         if element is None:
             print(fore("Invalid argv; falling back to interactive input.", RED))
             logging.warning("Argv was invalid, failed back to interactive input.")
             element = None
 else:
-    logging.warning("Argv was not given, failed back to interactive input.")
+    logging.warning("Argument not given, failing back to interactive input.")
 if element is None:
     print(f"Search for an element by name, symbol, or atomic number. {dim(tip)}")
     while True:
         choice = input("> ").strip()
-        logging.info(f"User gave input: {choice}")
+        logging.info(f"User gave input: \"{choice}\"")
         try:
             idx = int(choice) - 1
             key = list(data.keys())[idx]
@@ -231,18 +232,19 @@ if element is None:
             logging.info(f"User gave an atomic number {idx}, proceeding...")
             break
         except (ValueError, IndexError):
-            logging.info("User gave either the element's full name or the symbol.")
             for val in data.values():
-                if choice.lower() in (
-                    val["general"]["fullname"].lower(),
-                    val["general"]["symbol"].lower(),
-                ):
+                if choice.lower() == val["general"]["fullname"].lower():
                     element = val
+                    logging.info(f"User gave either the element's full name, {choice.capitalize()} for {element["general"]["fullname"]}.")
+                    break
+                elif choice.lower() == val["general"]["symbol"].lower():
+                    element = val
+                    logging.info(f"User gave either the element's symbol, {choice.capitalize()}.")
                     break
             if element:
                 break
         print("Not a valid element. Try again.")
-        logging.info(f"Input \"{choice}\" was invalid, trying again.")
+        logging.info(f"User input \"{choice}\" was invalid, trying again.")
 
 # General info
 fullname = element["general"]["fullname"]
