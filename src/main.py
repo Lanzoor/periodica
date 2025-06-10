@@ -60,6 +60,10 @@ def print_header(title):
     dashes = "-" * (width - len(title) - 2)
     print(f"--{bold(title)}{dashes}")
 
+def remove_superscript_number(superscript: str) -> str:
+    res = superscript.replace("¹", "1").replace("²", "2").replace("³", "3").replace("⁴", "4").replace("⁵", "5").replace("⁶", "6").replace("⁷", "7").replace("⁸", "8").replace("⁹", "9").replace("⁰", "0")
+    return res
+
 def fore(string, color: int, *, bright: bool = False) -> str:
     processed = str(string)
     if color > 7 and color != 9: raise Exception("Unsupported default terminal color.")
@@ -186,7 +190,7 @@ except FileNotFoundError:
         time.sleep(2)
         logging.fatal("Program terminated.")
 
-import os
+import os, re
 
 width = os.get_terminal_size().columns
 
@@ -195,56 +199,106 @@ if width <= 80:
     logging.warning("Not enough width for terminal.")
 
 element = None
-if len(sys.argv) > 1:
-    search_query = sys.argv[1].strip()
-    logging.info(f"User gave argv: \"{search_query}\"")
 
+if len(sys.argv) > 1:
+    search_query = sys.argv[1].strip().lower()
+    logging.info(f"User gave argv: \"{search_query}\"")
     try:
         idx = int(search_query) - 1
         key = list(data.keys())[idx]
         element = data[key]
         logging.info(f"User gave an atomic number {idx}, proceeding...")
     except (ValueError, IndexError):
-        for val in data.values():
-            if search_query.lower() == val["general"]["fullname"].lower():
-                element = val
-                logging.info(f"User gave either the element's full name, {search_query.capitalize()}.")
-                break
-            elif search_query.lower() == val["general"]["symbol"].lower():
-                element = val
-                logging.info(f"User gave either the element's symbol, {search_query.capitalize()} for {element["general"]["fullname"]}.")
-                break
-        if element is None:
+        isotope_match = re.match(r"(\d+)([A-Za-z]+)", search_query)
+        if isotope_match:
+            number, symbol = isotope_match.groups()
+            found_isotope = False
+            for val in data.values():
+                if val["general"]["symbol"].lower() == symbol.lower():
+                    for isotope, info in val["nuclear"]["isotopes"].items():
+                        norm_iso_match = re.match(r"^(.*?)(?:\s*-\s*.*)?$", isotope)
+                        norm_isotope = norm_iso_match.group(1) if norm_iso_match else isotope
+                        if norm_isotope.lower() == search_query or remove_superscript_number(norm_isotope.lower()) == search_query:
+                            logging.info(f"User gave isotope {search_query.capitalize()} with number {number} and symbol {symbol}.")
+                            print()
+                            print(bold(norm_isotope) + ":")
+                            print(f"   t1/2 - Half Life: {bold(info['half_life']) if info['half_life'] is not None else custom_fore('None', NULL_COL)}")
+                            print(f"   u - Isotope Weight: {bold(info['isotope_weight'])}g/mol")
+                            if 'daughter_isotope' in info:
+                                print(f"   🪞 - Daughter Isotope: {bold(info['daughter_isotope'])}")
+                            if 'decay' in info:
+                                print(f"   ⛓️‍💥 - Decay Mode: {bold(info['decay'])}")
+                            print()
+                            sys.exit(0)
             print(fore("Invalid argv; falling back to interactive input.", RED))
-            logging.warning("Argv was invalid, failed back to interactive input.")
+            logging.warning(f"User gave invalid isotope {search_query.capitalize()}, fallback to interactive.")
             element = None
+        else:
+            for val in data.values():
+                if search_query == val["general"]["fullname"].lower():
+                    element = val
+                    logging.info(f"User gave element full name: {search_query.capitalize()}.")
+                    break
+                elif search_query == val["general"]["symbol"].lower():
+                    element = val
+                    logging.info(f"User gave element symbol: {search_query.capitalize()} for {element['general']['fullname']}.")
+                    break
+            if element is None:
+                print(fore("Invalid argv; falling back to interactive input.", RED))
+                logging.warning("Argv invalid, falling back to interactive input.")
 else:
-    logging.warning("Argument not given, failing back to interactive input.")
+    logging.warning("Argument not given, falling back to interactive input.")
+
 if element is None:
     print(f"Search for an element by name, symbol, or atomic number. {dim(tip)}")
     while True:
-        choice = input("> ").strip()
-        logging.info(f"User gave input: \"{choice}\"")
+        user_input = input("> ").strip().lower()
+        logging.info(f"User gave input: \"{user_input}\"")
         try:
-            idx = int(choice) - 1
+            idx = int(user_input) - 1
             key = list(data.keys())[idx]
             element = data[key]
-            logging.info(f"User gave an atomic number {idx}, proceeding...")
+            logging.info(f"User gave atomic number {idx}, proceeding...")
             break
         except (ValueError, IndexError):
+            isotope_match = re.match(r"(\d+)([A-Za-z]+)", user_input)
+            if isotope_match:
+                number, symbol = isotope_match.groups()
+                found_isotope = False
+                for val in data.values():
+                    if val["general"]["symbol"].lower() == symbol.lower():
+                        for isotope, info in val["nuclear"]["isotopes"].items():
+                            norm_iso_match = re.match(r"^(.*?)(?:\s*-\s*.*)?$", isotope)
+                            norm_isotope = norm_iso_match.group(1) if norm_iso_match else isotope
+                            if norm_isotope.lower() == user_input or remove_superscript_number(norm_isotope.lower()) == user_input:
+                                logging.info(f"User gave isotope {user_input.capitalize()} with number {number} and symbol {symbol}.")
+                                print()
+                                print(bold(norm_isotope) + ":")
+                                print(f"   t1/2 - Half Life: {bold(info['half_life']) if info['half_life'] is not None else custom_fore('None', NULL_COL)}")
+                                print(f"   u - Isotope Weight: {bold(info['isotope_weight'])}g/mol")
+                                if 'daughter_isotope' in info:
+                                    print(f"   🪞 - Daughter Isotope: {bold(info['daughter_isotope'])}")
+                                if 'decay' in info:
+                                    print(f"   ⛓️‍💥 - Decay Mode: {bold(info['decay'])}")
+                                print()
+                                sys.exit(0)
+                logging.warning(f"User gave invalid isotope {number}{symbol.capitalize()}, trying again.")
+                continue
+
             for val in data.values():
-                if choice.lower() == val["general"]["fullname"].lower():
+                if user_input == val["general"]["fullname"].lower():
                     element = val
-                    logging.info(f"User gave either the element's full name, {choice.capitalize()} for {element["general"]["fullname"]}.")
+                    logging.info(f"User gave element full name: {user_input.capitalize()} for {element['general']['fullname']}.")
                     break
-                elif choice.lower() == val["general"]["symbol"].lower():
+                elif user_input == val["general"]["symbol"].lower():
                     element = val
-                    logging.info(f"User gave either the element's symbol, {choice.capitalize()}.")
+                    logging.info(f"User gave element symbol: {user_input.capitalize()}.")
                     break
             if element:
                 break
+
         print("Not a valid element. Try again.")
-        logging.info(f"User input \"{choice}\" was invalid, trying again.")
+        logging.info(f"User input \"{user_input}\" was invalid, trying again.")
 
 # General info
 fullname = element["general"]["fullname"]
