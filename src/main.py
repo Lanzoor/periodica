@@ -37,20 +37,6 @@ for key, value in default_options.items():
 
 # Color Configs
 
-PROTONS_COL = (255, 56, 56)
-NEUTRONS_COL = (38, 72, 209)
-ELECTRONS_COL = (255, 237, 122)
-VALENCE_ELECTRONS_COL = (255, 241, 163)
-UP_QUARKS_COL = (122, 255, 129)
-DOWN_QUARKS_COL = (230, 156, 60)
-MALE = (109, 214, 237)
-FEMALE = (255, 133, 245)
-NULL_COL = (90, 232, 227)
-MELT_COL = (52, 110, 235)
-BOIL_COL = (189, 165, 117)
-OXIDATION_STATES_COL = (66, 50, 168)
-IONIZATION_ENERGY_COL = (119, 50, 168)
-
 BLACK = 0
 RED = 1
 GREEN = 2
@@ -61,10 +47,24 @@ CYAN = 6
 WHITE = 7
 DEFAULT_COLOR = 9
 
+PROTONS_COL = (255, 56, 56) if config["truecolor"] else RED
+NEUTRONS_COL = (38, 72, 209) if config["truecolor"] else BLUE
+ELECTRONS_COL = (255, 237, 122) if config["truecolor"] else YELLOW
+VALENCE_ELECTRONS_COL = (255, 241, 163) if config["truecolor"] else YELLOW
+UP_QUARKS_COL = (122, 255, 129) if config["truecolor"] else GREEN
+DOWN_QUARKS_COL = (230, 156, 60) if config["truecolor"] else CYAN
+MALE = (109, 214, 237) if config["truecolor"] else CYAN
+FEMALE = (255, 133, 245) if config["truecolor"] else MAGENTA
+NULL_COL = (90, 232, 227) if config["truecolor"] else CYAN
+MELT_COL = (52, 110, 235) if config["truecolor"] else BLUE
+BOIL_COL = (189, 165, 117) if config["truecolor"] else YELLOW
+OXIDATION_STATES_COL = (66, 50, 168) if config["truecolor"] else BLUE
+IONIZATION_ENERGY_COL = (119, 50, 168) if config["truecolor"] else MAGENTA
+
 types = {
-	"Reactive nonmetal": (27, 156, 20),
-	"Noble gas": (114, 54, 209),
-	"Alkali metal": (176, 176, 176)
+	"Reactive nonmetal": (27, 156, 20) if config["truecolor"] else GREEN,
+	"Noble gas": (252, 233, 61) if config["truecolor"] else YELLOW,
+	"Alkali metal": (176, 176, 176) if config["truecolor"] else BLACK
 }
 
 # Other important functions / variables
@@ -93,31 +93,18 @@ def remove_superscript_number(superscript: str) -> str:
     res = superscript.replace("¹", "1").replace("²", "2").replace("³", "3").replace("⁴", "4").replace("⁵", "5").replace("⁶", "6").replace("⁷", "7").replace("⁸", "8").replace("⁹", "9").replace("⁰", "0")
     return res
 
-def fore(string, color: int, *, bright: bool = False) -> str:
-    processed = str(string)
-    if color > 7 and color != 9: raise Exception("Unsupported default terminal color.")
-    try:
-        return f"\033[{(30 + color) if not bright else (90 + color)}m{processed}\033[39m"
-    except ValueError:
-        raise Exception("Unsupported default terminal color.")
-
-def back(string, color: int, *, bright: bool = False) -> str:
-    processed = str(string)
-    if color > 7 and color != 9: raise Exception("Unsupported default terminal color.")
-    try:
-        return f"\033[{(40 + color) if not bright else (100 + color)}m{processed}\033[49m"
-    except ValueError:
-        raise Exception("Unsupported default terminal color.")
-
-def custom_fore(string, rgb: list[int] | tuple[int, int, int]) -> str:
-    processed = str(string)
-    r, g, b = rgb
-    return f"\033[38;2;{r};{g};{b}m{processed}\033[39m"
-
-def custom_back(string, rgb: list[int] | tuple[int, int, int]) -> str:
-    processed = str(string)
-    r, g, b = rgb
-    return f"\033[48;2;{r};{g};{b}m{processed}\033[49m"
+def fore(string, color: int | list[int] | tuple[int, int, int], *, bright: bool = False) -> str:
+    if isinstance(color, int):
+        processed = str(string)
+        if color > 7 and color != 9: raise Exception("Unsupported default terminal color.")
+        try:
+            return f"\033[{(30 + color) if not bright else (90 + color)}m{processed}\033[39m"
+        except ValueError:
+            raise Exception("Unsupported default terminal color.")
+    else:
+        processed = str(string)
+        r, g, b = color
+        return f"\033[38;2;{r};{g};{b}m{processed}\033[39m"
 
 def gradient(string, start_rgb: list[int] | tuple[int, int, int], end_rgb: list[int] | tuple[int, int, int]):
     processed = str(string)
@@ -134,7 +121,7 @@ def gradient(string, start_rgb: list[int] | tuple[int, int, int], end_rgb: list[
         interpolated_l = start_l + (end_l - start_l) * (processed_index / length)
         interpolated_s = start_s + (end_s - start_s) * (processed_index / length)
         new_r, new_g, new_b = [int(element * 255) for element in colorsys.hls_to_rgb(interpolated_h, interpolated_l, interpolated_s)]
-        res[index] = custom_fore(char, (new_r, new_g, new_b))
+        res[index] = fore(char, (new_r, new_g, new_b))
         processed_index += 1
     return "".join(res)
 
@@ -168,7 +155,7 @@ import re, sys, time
 elementdata_malformed = False
 try:
     with open("./elementdata.json", 'r') as file:
-        data = json.loads(file)
+        data = json.load(file)
         logging.info("elementdata.json file was successfully found.")
 except json.JSONDecodeError:
     logging.error("elementdata.json file was modified, please do not do so no matter what.")
@@ -259,7 +246,7 @@ if len(sys.argv) > 1:
                             logging.info(f"User gave isotope {number}{symbol.capitalize()} with number {number} and symbol {symbol.capitalize()}.")
                             print()
                             print(bold(norm_isotope) if config["use_superscript"] else bold(remove_superscript_number(norm_isotope)) + ":")
-                            print(f"   t1/2 - Half Life: {bold(info['half_life']) if info['half_life'] is not None else custom_fore('None', NULL_COL)}")
+                            print(f"   t1/2 - Half Life: {bold(info['half_life']) if info['half_life'] is not None else fore('None', NULL_COL)}")
                             print(f"   u - Isotope Weight: {bold(info['isotope_weight'])}g/mol")
                             if 'daughter_isotope' in info:
                                 print(f"   🪞 - Daughter Isotope: {bold(info['daughter_isotope'])}")
@@ -310,13 +297,17 @@ if element is None:
                             if norm_isotope.lower() == user_input or remove_superscript_number(norm_isotope.lower()) == user_input:
                                 logging.info(f"User gave isotope {number}{symbol.capitalize()} with number {number} and symbol {symbol.capitalize()}.")
                                 print()
+                                print("-" * width)
+                                print()
                                 print(bold(norm_isotope) if config["use_superscript"] else bold(remove_superscript_number(norm_isotope)) + ":")
-                                print(f"   t1/2 - Half Life: {bold(info['half_life']) if info['half_life'] is not None else custom_fore('None', NULL_COL)}")
+                                print(f"   t1/2 - Half Life: {bold(info['half_life']) if info['half_life'] is not None else fore('None', NULL_COL)}")
                                 print(f"   u - Isotope Weight: {bold(info['isotope_weight'])}g/mol")
                                 if 'daughter_isotope' in info:
                                     print(f"   🪞 - Daughter Isotope: {bold(info['daughter_isotope'])}")
                                 if 'decay' in info:
                                     print(f"   ⛓️‍💥 - Decay Mode: {bold(info['decay'])}")
+                                print()
+                                print("-" * width)
                                 print()
                                 sys.exit(0)
                 logging.warning(f"User gave invalid isotope {number}{symbol.capitalize()}, trying again.")
@@ -383,9 +374,9 @@ era = "AD" if discovery_year > 0 else "BC"
 
 for name, gender in discoverers.items():
     if list(discoverers.keys()).index(name) != len(list(discoverers.keys())) -1:
-        discoverers_result += f"{custom_fore(name, MALE if gender == "male" else FEMALE)}, "
+        discoverers_result += f"{fore(name, MALE if gender == "male" else FEMALE)}, "
     else:
-        discoverers_result += f"{custom_fore(name, MALE if gender == "male" else FEMALE)}"
+        discoverers_result += f"{fore(name, MALE if gender == "male" else FEMALE)}"
 
 # Nuclear properties
 protons = element["nuclear"]["protons"]
@@ -405,7 +396,7 @@ for index, electron in enumerate(shells):
     if index != len(shells) - 1:
         shell_result += f"{bold(str(electron) + str(possible_shells[index]))} ({electron}/{max_capacity}), "
     else:
-        shell_result += f"{bold(custom_fore(electron, VALENCE_ELECTRONS_COL) + custom_fore(possible_shells[index], VALENCE_ELECTRONS_COL))} ({electron}/{max_capacity})"
+        shell_result += f"{bold(fore(electron, VALENCE_ELECTRONS_COL) + fore(possible_shells[index], VALENCE_ELECTRONS_COL))} ({electron}/{max_capacity})"
 
 subshell_capacities = {'s': 2, 'p': 6, 'd': 10, 'f': 14}
 subshell_result = ""
@@ -482,7 +473,7 @@ print(f" 🔍 - Discoverer(s): {discoverers_result}")
 print(f" 🔍 - Discovery Date: {abs(discovery_year)} {era}")
 print(f" ↔️ - Period (Row): {bold(period)}")
 print(f" ↕️ - Group (Column): {bold(group)}")
-print(f" 🎨 - Type: {custom_fore(element_type, types[element_type])}")
+print(f" 🎨 - Type: {fore(element_type, types[element_type])}")
 print(f" 🧱 - Block: {bold(block)}")
 print(f" 📇 - CAS Number: {bold(cas_number)}")
 
@@ -508,20 +499,21 @@ print()
 
 print()
 print_header("Nuclear Properties")
+print()
 
-print(f" p⁺ - {custom_fore("Protons", PROTONS_COL)}: {bold(protons)}")
-print(f" n⁰ - {custom_fore("Neutrons", NEUTRONS_COL)}: {bold(neutrons)}")
-print(f" e⁻ - {custom_fore("Electrons", ELECTRONS_COL)}: {bold(electrons)}")
-print(f" nv - {custom_fore("Valence Electrons", VALENCE_ELECTRONS_COL)}: {bold(valence_electrons)}")
-print(f" u - {custom_fore("Up Quarks", UP_QUARKS_COL)}: {bold(up_quarks)} (({custom_fore(protons, PROTONS_COL)} * 2) + {custom_fore(neutrons, NEUTRONS_COL)} = {bold(up_quarks)})")
-print(f" d - {custom_fore("Down Quarks", DOWN_QUARKS_COL)}: {bold(down_quarks)} ({custom_fore(protons, PROTONS_COL)} + ({custom_fore(neutrons, NEUTRONS_COL)} * 2) = {bold(down_quarks)})")
-print(f" ⚛️ - Shells {dim(f"(The electron in {custom_fore("yellow", VALENCE_ELECTRONS_COL)} is the valence electron)")}:\n    {shell_result}")
+print(f" p⁺ - {fore("Protons", PROTONS_COL)}: {bold(protons)}")
+print(f" n⁰ - {fore("Neutrons", NEUTRONS_COL)}: {bold(neutrons)}")
+print(f" e⁻ - {fore("Electrons", ELECTRONS_COL)}: {bold(electrons)}")
+print(f" nv - {fore("Valence Electrons", VALENCE_ELECTRONS_COL)}: {bold(valence_electrons)}")
+print(f" u - {fore("Up Quarks", UP_QUARKS_COL)}: {bold(up_quarks)} (({fore(protons, PROTONS_COL)} * 2) + {fore(neutrons, NEUTRONS_COL)} = {bold(up_quarks)})")
+print(f" d - {fore("Down Quarks", DOWN_QUARKS_COL)}: {bold(down_quarks)} ({fore(protons, PROTONS_COL)} + ({fore(neutrons, NEUTRONS_COL)} * 2) = {bold(down_quarks)})")
+print(f" ⚛️ - Shells {dim(f"(The electron in {fore("yellow", VALENCE_ELECTRONS_COL)} is the valence electron)")}:\n    {shell_result}")
 print(f" 🌀 - Subshells: {subshell_result}")
 print(" 🪞 - Isotopes:\n")
 
 for isotope, information in isotopes.items():
     print(" - " + bold(isotope) if config["use_superscript"] else bold(remove_superscript_number(isotope)) + ":")
-    print(f"   t1/2 - Half Life: {bold(information["half_life"]) if not (information["half_life"] is None) else custom_fore("None", NULL_COL)}")
+    print(f"   t1/2 - Half Life: {bold(information["half_life"]) if not (information["half_life"] is None) else fore("None", NULL_COL)}")
     print(f"   u - Isotope Weight: {bold(information["isotope_weight"])}g/mol")
     try:
         print(f"   🪞 - Daughter Isotope: {bold(information["daughter_isotope"])}")
@@ -535,36 +527,42 @@ for isotope, information in isotopes.items():
     print()
 
 print_header("Physical Properties")
+print()
 
-print(f" 💧 - {custom_fore("Melting Point", MELT_COL)}: {bold(melting_point)}°C = {bold(celcius_to_fahrenheit(melting_point))}°F = {bold(celcius_to_kelvin(melting_point))}K")
-print(f" 💨 - {custom_fore("Boiling Point", BOIL_COL)}: {bold(boiling_point)}°C = {bold(celcius_to_fahrenheit(boiling_point))}°F = {bold(celcius_to_kelvin(boiling_point))}K")
-print(f" A - Mass Number: {custom_fore(protons, PROTONS_COL)} + {custom_fore(neutrons, NEUTRONS_COL)} = {bold(protons + neutrons)}")
+print(f" 💧 - {fore("Melting Point", MELT_COL)}: {bold(melting_point)}°C = {bold(celcius_to_fahrenheit(melting_point))}°F = {bold(celcius_to_kelvin(melting_point))}K")
+print(f" 💨 - {fore("Boiling Point", BOIL_COL)}: {bold(boiling_point)}°C = {bold(celcius_to_fahrenheit(boiling_point))}°F = {bold(celcius_to_kelvin(boiling_point))}K")
+print(f" A - Mass Number: {fore(protons, PROTONS_COL)} + {fore(neutrons, NEUTRONS_COL)} = {bold(protons + neutrons)}")
 print(f" u - Atomic Mass: {bold(atomic_mass)}g/mol")
 print(f" ☢️ - Radioactive: {fore("Yes", GREEN) if radioactive else fore("No", RED)}")
-print(f" t1/2 - Half Life: {bold(half_life) if not (half_life is None) else custom_fore("None", NULL_COL)}")
+print(f" t1/2 - Half Life: {bold(half_life) if not (half_life is None) else fore("None", NULL_COL)}")
 print(f" ρ - Density: {bold(density)}g/cm³")
 
 print()
 print_header("Electronic Properties")
+print()
 
 print(f" χ - Electronegativity: {bold(electronegativity)}")
 print(f" EA - Electron Affinity: {bold(electron_affinity)}eV = {bold(eV_to_kJpermol(electron_affinity))}kJ/mol")
-print(f" IE - {custom_fore("Ionization Energy", IONIZATION_ENERGY_COL)}: {bold(ionization_energy)}eV = {bold(eV_to_kJpermol(ionization_energy))}kJ/mol")
-print(f" ⚡️ - {custom_fore("Oxidation States", OXIDATION_STATES_COL)} {dim(f"(Only the ones that have {gradient("color", (50, 151, 168), (59, 38, 191))} are activated)")}:\n{"   " + negatives}\n{"   " + positives}\n")
+print(f" IE - {fore("Ionization Energy", IONIZATION_ENERGY_COL)}: {bold(ionization_energy)}eV = {bold(eV_to_kJpermol(ionization_energy))}kJ/mol")
+print(f" ⚡️ - {fore("Oxidation States", OXIDATION_STATES_COL)} {dim(f"(Only the ones that have {gradient("color", (50, 151, 168), (59, 38, 191)) if config["truecolor"] else fore("color", BLUE)} are activated)")}:\n{"   " + negatives}\n{"   " + positives}\n")
 print(f" ⚡️ - Conductivity Type: {bold(conductivity_type)}")
 
 print()
 print_header("Measurements")
+print()
 
 print(" 📏 - Radius: ")
-print(f"   r_calc - Calculated: {bold(str(radius["calculated"]) + "pm" if not (radius["calculated"] is None) else custom_fore("N/A", NULL_COL))}")
-print(f"   r_emp - Empirical: {bold(str(radius["empirical"]) + "pm" if not (radius["empirical"] is None) else custom_fore("N/A", NULL_COL))}")
-print(f"   r_cov - Covalent: {bold(str(radius["covalent"]) + "pm" if not (radius["covalent"] is None) else custom_fore("N/A", NULL_COL))}")
-print(f"   rvdW - Van der Waals: {bold(str(radius["van_der_waals"]) + "pm" if not (radius["van_der_waals"] is None) else custom_fore("N/A", NULL_COL))}\n")
+print(f"   r_calc - Calculated: {bold(str(radius["calculated"]) + "pm" if not (radius["calculated"] is None) else fore("N/A", NULL_COL))}")
+print(f"   r_emp - Empirical: {bold(str(radius["empirical"]) + "pm" if not (radius["empirical"] is None) else fore("N/A", NULL_COL))}")
+print(f"   r_cov - Covalent: {bold(str(radius["covalent"]) + "pm" if not (radius["covalent"] is None) else fore("N/A", NULL_COL))}")
+print(f"   rvdW - Van der Waals: {bold(str(radius["van_der_waals"]) + "pm" if not (radius["van_der_waals"] is None) else fore("N/A", NULL_COL))}\n")
 print(" 🪨 - Hardness: ")
-print(f"   HB - Brinell: {bold(str(hardness["brinell"]) + " kgf/mm²" if not (hardness["brinell"] is None) else custom_fore("None", NULL_COL))}")
-print(f"   H - Mohs: {bold(str(hardness["mohs"]) if not (hardness["mohs"] is None) else custom_fore("None", NULL_COL))}")
-print(f"   HV - Vickers: {bold(str(hardness["vickers"]) + " kgf/mm²" if not (hardness["vickers"] is None) else custom_fore("None", NULL_COL))}\n")
+print(f"   HB - Brinell: {bold(str(hardness["brinell"]) + " kgf/mm²" if not (hardness["brinell"] is None) else fore("None", NULL_COL))}")
+print(f"   H - Mohs: {bold(str(hardness["mohs"]) if not (hardness["mohs"] is None) else fore("None", NULL_COL))}")
+print(f"   HV - Vickers: {bold(str(hardness["vickers"]) + " kgf/mm²" if not (hardness["vickers"] is None) else fore("None", NULL_COL))}\n")
 print(f" Va - Atomic Volume: ≈ {bold(atomic_volume)}cm³/mol")
 print(f" 📢 - Speed of Sound Transmission: {bold(sound_transmission_speed)}m/s = {bold(sound_transmission_speed / 1000)}km/s")
+
+print()
+print("-" * width)
 print()
