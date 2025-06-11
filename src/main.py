@@ -159,7 +159,7 @@ def inverse_color(string) -> str:
 def dim(string) -> str:
     return f"\033[2m{string}\033[22m"
 
-tip = "(Tip: You can give this program argv to directly search an element from there. You can even give argv to the ./run.sh file too!)" if random.randint(0, 1) else ""
+tip = "(Tip: You can give this program argv to directly search an element from there. You can even give argv to the ./periodica.sh file too!)" if random.randint(0, 1) else ""
 
 # Reading json file, and trying to get from GitHub if fails
 
