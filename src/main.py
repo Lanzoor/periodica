@@ -1,4 +1,4 @@
-import logging
+import logging, json
 
 with open('./execution.log', 'w'):
     pass
@@ -11,6 +11,30 @@ logging.basicConfig(
 )
 
 logging.info("Program initiallized.")
+
+default_options = {
+    "use_superscript": True,
+    "truecolor": True
+}
+
+try:
+    with open('./config.json', 'r') as file:
+        config = json.load(file)
+        logging.info("The configuration file was found.")
+except json.JSONDecodeError:
+    with open('./config.json', 'w') as file:
+        config = default_options
+        file.write(json.dumps(default_options))
+        logging.info("Overwrited configuration file since it was malformed.")
+except FileNotFoundError:
+    with open('./config.json', 'w') as file:
+        config = default_options
+        file.write(json.dumps(default_options))
+        logging.info("Created a new configuration file, since it didn't exist.")
+
+for key, value in default_options.items():
+    config.setdefault(key, value)
+
 # Color Configs
 
 PROTONS_COL = (255, 56, 56)
@@ -46,6 +70,11 @@ types = {
 # Other important functions / variables
 
 import colorsys, random
+
+def save_config():
+    global config_file, config
+    with open(config_file, 'w') as file:
+        json.dump(config, file, indent=4)
 
 def celcius_to_kelvin(celsius):
 	return (celsius * 1e16 + 273.15 * 1e16) / 1e16
@@ -134,17 +163,23 @@ tip = "(Tip: You can give this program argv to directly search an element from t
 
 # Reading json file, and trying to get from GitHub if fails
 
-import json, re, sys, time
+import re, sys, time
 
+elementdata_malformed = False
 try:
-    with open("./elementdata.json", 'r') as f:
-        text = f.read()
+    with open("./elementdata.json", 'r') as file:
+        data = json.loads(file)
         logging.info("elementdata.json file was successfully found.")
-    text = re.sub(r'//.*', '', text)
-    data = json.loads(text)
+except json.JSONDecodeError:
+    logging.error("elementdata.json file was modified, please do not do so no matter what.")
+    print("The elementdata.json file was modified and malformed. Please do not do so, no matter what.\nThis means you need a fresh new elementdata.json file, is it okay for me to get the file for you on GitHub? (y/n)")
+    elementdata_malformed = True
 except FileNotFoundError:
     logging.warning("elementdata.json file was not found.")
-    print("Hmm, the elementdata.json file was not found. Is it okay for me to get the file for you on GitHub? (y/n)")
+    print("The elementdata.json file was not found. Is it okay for me to get the file for you on GitHub? (y/n)")
+    elementdata_malformed = True
+
+if elementdata_malformed:
     confirmation = input("> ").strip().lower()
     try:
         import requests
@@ -170,11 +205,11 @@ except FileNotFoundError:
             data = json.loads(response.text)
             with open("./elementdata.json", "w") as f:
                 f.write(response.text)
-            print("Let's get back to the program, as the elementdata.json file has been added into the directory.")
+            print("Going back to the program, since all issues were resolved.")
             logging.info("Successfully got the elementdata.json file from https://raw.githubusercontent.com/Lanzoor/periodictable/main/src/elementdata.json.")
         else:
             print(f"Failed to download data! HTTP status code: {response.status_code}")
-            logging.error(f"Failed to fetch data with status code {response.status_code}.")
+            logging.error(f"Failed to fetch data. Status code: {response.status_code}.")
             time.sleep(2)
             logging.fatal("Program terminated.")
             sys.exit(1)
@@ -183,12 +218,14 @@ except FileNotFoundError:
         logging.error("User denied confirmation for fetching the elementdata.json file.")
         time.sleep(2)
         logging.fatal("Program terminated.")
-        sys.exit(0)
+        sys.exit(1)
     else:
         print("Invalid input, please try again later. Exiting...")
-        logging.error("User gave invalid input.")
+        logging.error("User gave invalid confirmation.")
         time.sleep(2)
         logging.fatal("Program terminated.")
+        sys.exit(1)
+
 
 import os, re
 
@@ -219,9 +256,9 @@ if len(sys.argv) > 1:
                         norm_iso_match = re.match(r"^(.*?)(?:\s*-\s*.*)?$", isotope)
                         norm_isotope = norm_iso_match.group(1) if norm_iso_match else isotope
                         if norm_isotope.lower() == search_query or remove_superscript_number(norm_isotope.lower()) == search_query:
-                            logging.info(f"User gave isotope {search_query.capitalize()} with number {number} and symbol {symbol}.")
+                            logging.info(f"User gave isotope {number}{symbol.capitalize()} with number {number} and symbol {symbol.capitalize()}.")
                             print()
-                            print(bold(norm_isotope) + ":")
+                            print(bold(norm_isotope) if config["use_superscript"] else bold(remove_superscript_number(norm_isotope)) + ":")
                             print(f"   t1/2 - Half Life: {bold(info['half_life']) if info['half_life'] is not None else custom_fore('None', NULL_COL)}")
                             print(f"   u - Isotope Weight: {bold(info['isotope_weight'])}g/mol")
                             if 'daughter_isotope' in info:
@@ -271,9 +308,9 @@ if element is None:
                             norm_iso_match = re.match(r"^(.*?)(?:\s*-\s*.*)?$", isotope)
                             norm_isotope = norm_iso_match.group(1) if norm_iso_match else isotope
                             if norm_isotope.lower() == user_input or remove_superscript_number(norm_isotope.lower()) == user_input:
-                                logging.info(f"User gave isotope {user_input.capitalize()} with number {number} and symbol {symbol}.")
+                                logging.info(f"User gave isotope {number}{symbol.capitalize()} with number {number} and symbol {symbol.capitalize()}.")
                                 print()
-                                print(bold(norm_isotope) + ":")
+                                print(bold(norm_isotope) if config["use_superscript"] else bold(remove_superscript_number(norm_isotope)) + ":")
                                 print(f"   t1/2 - Half Life: {bold(info['half_life']) if info['half_life'] is not None else custom_fore('None', NULL_COL)}")
                                 print(f"   u - Isotope Weight: {bold(info['isotope_weight'])}g/mol")
                                 if 'daughter_isotope' in info:
@@ -483,7 +520,7 @@ print(f" 🌀 - Subshells: {subshell_result}")
 print(" 🪞 - Isotopes:\n")
 
 for isotope, information in isotopes.items():
-    print(" - " + bold(isotope) + ":")
+    print(" - " + bold(isotope) if config["use_superscript"] else bold(remove_superscript_number(isotope)) + ":")
     print(f"   t1/2 - Half Life: {bold(information["half_life"]) if not (information["half_life"] is None) else custom_fore("None", NULL_COL)}")
     print(f"   u - Isotope Weight: {bold(information["isotope_weight"])}g/mol")
     try:
@@ -515,6 +552,7 @@ print(f" EA - Electron Affinity: {bold(electron_affinity)}eV = {bold(eV_to_kJper
 print(f" IE - {custom_fore("Ionization Energy", IONIZATION_ENERGY_COL)}: {bold(ionization_energy)}eV = {bold(eV_to_kJpermol(ionization_energy))}kJ/mol")
 print(f" ⚡️ - {custom_fore("Oxidation States", OXIDATION_STATES_COL)} {dim(f"(Only the ones that have {gradient("color", (50, 151, 168), (59, 38, 191))} are activated)")}:\n{"   " + negatives}\n{"   " + positives}\n")
 print(f" ⚡️ - Conductivity Type: {bold(conductivity_type)}")
+
 print()
 print_header("Measurements")
 

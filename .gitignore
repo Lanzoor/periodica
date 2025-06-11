@@ -1,2 +1,3 @@
 venv/
 src/execution.log
+src/config.json
