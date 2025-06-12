@@ -1,6 +1,6 @@
 import logging, json
 
-with open('./execution.log', 'w'):
+with open('./execution.log', 'w', encoding="utf-8"):
     pass
 
 logging.basicConfig(
@@ -14,20 +14,29 @@ logging.info("Program initiallized.")
 
 default_options = {
     "use_superscript": True,
-    "truecolor": True
+    "truecolor": True,
+    "isotope_format": "fullname-number",
 }
 
+valid_formats = [
+    "fullname-number",
+    "symbol-number",
+    "numbersymbol"
+]
+
+# TODO: ADD THIS LOGIC PLEASE.
+
 try:
-    with open('./config.json', 'r') as file:
+    with open('./config.json', 'r', encoding="utf-8") as file:
         config = json.load(file)
         logging.info("The configuration file was found.")
 except json.JSONDecodeError:
-    with open('./config.json', 'w') as file:
+    with open('./config.json', 'w', encoding="utf-8") as file:
         config = default_options
         file.write(json.dumps(default_options))
         logging.info("Overwrited configuration file since it was malformed.")
 except FileNotFoundError:
-    with open('./config.json', 'w') as file:
+    with open('./config.json', 'w', encoding="utf-8") as file:
         config = default_options
         file.write(json.dumps(default_options))
         logging.info("Created a new configuration file, since it didn't exist.")
@@ -73,7 +82,7 @@ import colorsys, random
 
 def save_config():
     global config_file, config
-    with open(config_file, 'w') as file:
+    with open(config_file, 'w', encoding="utf-8") as file:
         json.dump(config, file, indent=4)
 
 def celcius_to_kelvin(celsius):
@@ -89,9 +98,40 @@ def print_header(title):
     dashes = "-" * (width - len(title) - 2)
     print(f"--{bold(title)}{dashes}")
 
+def print_separator():
+    print()
+    print("-" * width)
+    print()
+
+def convert_superscript_number(string: str) -> str:
+    superscript_map = {
+        "0": "⁰",
+        "1": "¹",
+        "2": "²",
+        "3": "³",
+        "4": "⁴",
+        "5": "⁵",
+        "6": "⁶",
+        "7": "⁷",
+        "8": "⁸",
+        "9": "⁹",
+    }
+    return "".join(superscript_map.get(ch, ch) for ch in string)
+
 def remove_superscript_number(superscript: str) -> str:
-    res = superscript.replace("¹", "1").replace("²", "2").replace("³", "3").replace("⁴", "4").replace("⁵", "5").replace("⁶", "6").replace("⁷", "7").replace("⁸", "8").replace("⁹", "9").replace("⁰", "0")
-    return res
+    normal_map = {
+        "⁰": "0",
+        "¹": "1",
+        "²": "2",
+        "³": "3",
+        "⁴": "4",
+        "⁵": "5",
+        "⁶": "6",
+        "⁷": "7",
+        "⁸": "8",
+        "⁹": "9",
+    }
+    return "".join(normal_map.get(ch, ch) for ch in superscript)
 
 def fore(string, color: int | list[int] | tuple[int, int, int], *, bright: bool = False) -> str:
     if isinstance(color, int):
@@ -154,7 +194,7 @@ import re, sys, time
 
 elementdata_malformed = False
 try:
-    with open("./elementdata.json", 'r') as file:
+    with open("./elementdata.json", 'r', encoding="utf-8") as file:
         data = json.load(file)
         logging.info("elementdata.json file was successfully found.")
 except json.JSONDecodeError:
@@ -190,7 +230,7 @@ if elementdata_malformed:
         if response.status_code == 200:
             print(f"HTTP status code: {response.status_code} (pass)")
             data = json.loads(response.text)
-            with open("./elementdata.json", "w") as f:
+            with open("./elementdata.json", "w", encoding="utf-8") as f:
                 f.write(response.text)
             print("Going back to the program, since all issues were resolved.")
             logging.info("Successfully got the elementdata.json file from https://raw.githubusercontent.com/Lanzoor/periodictable/main/src/elementdata.json.")
@@ -214,7 +254,7 @@ if elementdata_malformed:
         sys.exit(1)
 
 
-import os, re
+import os, re, sys, re, logging
 
 width = os.get_terminal_size().columns
 
@@ -224,109 +264,101 @@ if width <= 80:
 
 element = None
 
-if len(sys.argv) > 1:
-    search_query = sys.argv[1].strip().lower()
-    logging.info(f"User gave argv: \"{search_query}\"")
-    try:
-        idx = int(search_query) - 1
-        key = list(data.keys())[idx]
-        element = data[key]
-        logging.info(f"User gave an atomic number {idx}, proceeding...")
-    except (ValueError, IndexError):
-        isotope_match = re.match(r"(\d+)([A-Za-z]+)", search_query)
-        if isotope_match:
-            number, symbol = isotope_match.groups()
-            found_isotope = False
-            for val in data.values():
-                if val["general"]["symbol"].lower() == symbol.lower():
-                    for isotope, info in val["nuclear"]["isotopes"].items():
-                        norm_iso_match = re.match(r"^(.*?)(?:\s*-\s*.*)?$", isotope)
-                        norm_isotope = norm_iso_match.group(1) if norm_iso_match else isotope
-                        if norm_isotope.lower() == search_query or remove_superscript_number(norm_isotope.lower()) == search_query:
-                            logging.info(f"User gave isotope {number}{symbol.capitalize()} with number {number} and symbol {symbol.capitalize()}.")
-                            print()
-                            print(bold(norm_isotope) if config["use_superscript"] else bold(remove_superscript_number(norm_isotope)) + ":")
-                            print(f"   t1/2 - Half Life: {bold(info['half_life']) if info['half_life'] is not None else fore('None', NULL_COL)}")
-                            print(f"   u - Isotope Weight: {bold(info['isotope_weight'])}g/mol")
-                            if 'daughter_isotope' in info:
-                                print(f"   🪞 - Daughter Isotope: {bold(info['daughter_isotope'])}")
-                            if 'decay' in info:
-                                print(f"   ⛓️‍💥 - Decay Mode: {bold(info['decay'])}")
-                            print()
-                            sys.exit(0)
-            print(fore("Invalid argv; falling back to interactive input.", RED))
-            logging.warning(f"User gave invalid isotope {search_query.capitalize()}, fallback to interactive.")
-            element = None
+def match_isotope_input(input_str):
+    if isotope_match := re.match(r"^(\d+)([A-Za-z]+)$", input_str):  # 1H
+        return isotope_match.group(2), isotope_match.group(1)
+    if isotope_match := re.match(r"^([A-Za-z]+)[\s\-]*(\d+)$", input_str):  # H-1 or Hydrogen-1
+        return isotope_match.group(1), isotope_match.group(2)
+    return None, None
+
+def print_isotope(norm_iso, info, fullname):
+    format_style = config.get("isotope_format", "symbol-number").lower()
+
+    match = re.match(r"^(\d+)\s*([A-Za-z]+)$", remove_superscript_number(norm_iso))
+    if not match:
+        display_name = norm_iso
+    else:
+        number, symbol = match.groups()
+        symbol = symbol.capitalize()
+
+        if format_style == "fullname-number":
+            display_name = f"{fullname.capitalize()}-{number}"
+        elif format_style == "numbersymbol":
+            display_name = f"{convert_superscript_number(str(number)) if config["use_superscript"] else number}{symbol}"
         else:
-            for val in data.values():
-                if search_query == val["general"]["fullname"].lower():
-                    element = val
-                    logging.info(f"User gave element full name: {search_query.capitalize()}.")
-                    break
-                elif search_query == val["general"]["symbol"].lower():
-                    element = val
-                    logging.info(f"User gave element symbol: {search_query.capitalize()} for {element['general']['fullname']}.")
-                    break
-            if element is None:
-                print(fore("Invalid argv; falling back to interactive input.", RED))
-                logging.warning("Argv invalid, falling back to interactive input.")
+            display_name = f"{symbol}-{number}"
+
+    print_separator()
+    print(bold(display_name) + ":")
+    print(f"   t1/2 - Half Life: {bold(info['half_life']) if info['half_life'] is not None else fore('None', NULL_COL)}")
+    print(f"   u - Isotope Weight: {bold(info['isotope_weight'])}g/mol")
+    if 'daughter_isotope' in info:
+        print(f"   🪞 - Daughter Isotope: {bold(info['daughter_isotope'])}")
+    if 'decay' in info:
+        print(f"   ⛓️ - Decay Mode: {bold(info['decay'])}")
+    print_separator()
+
+
+def find_isotope(symbol_or_name, mass_number, search_query):
+    for val in data.values():
+        sym = val["general"]["symbol"].lower()
+        name = val["general"]["fullname"].lower()
+        if symbol_or_name.lower() in (sym, name):
+            for isotope, info in val["nuclear"]["isotopes"].items():
+                norm_iso_match = re.match(r"^(.*?)(?:\s*-\s*.*)?$", isotope)
+                norm_iso = norm_iso_match.group(1) if norm_iso_match else isotope
+                if (remove_superscript_number(norm_iso).lower() == f"{mass_number}{sym}" or
+                    remove_superscript_number(norm_iso).lower() == f"{sym}{mass_number}" or
+                    norm_iso.lower() == search_query):
+                    logging.info(f"Found isotope match: {mass_number}{sym.upper()} / {name.capitalize()}")
+                    print_isotope(norm_iso, info, name)
+                    return True
+    return False
+
+def try_element_lookup(input_str):
+    global element
+    input_str = input_str.strip().lower()
+    try:
+        index = int(input_str) - 1
+        key = list(data.keys())[index]
+        element = data[key]
+        logging.info(f"User gave atomic number {index + 1}, proceeding...")
+        return True
+    except (ValueError, IndexError):
+        symbol_or_name, mass_number = match_isotope_input(input_str)
+        if symbol_or_name and mass_number:
+            if find_isotope(symbol_or_name, mass_number, input_str):
+                sys.exit(0)
+            logging.warning(f"Invalid isotope input: {input_str}")
+            return False
+        for val in data.values():
+            if input_str == val["general"]["fullname"].lower():
+                element = val
+                logging.info(f"Matched element full name: {input_str.capitalize()}")
+                return True
+            elif input_str == val["general"]["symbol"].lower():
+                element = val
+                logging.info(f"Matched element symbol: {input_str.upper()} ({val['general']['fullname']})")
+                return True
+    return False
+
+if len(sys.argv) > 1:
+    search_query = sys.argv[1]
+    logging.info(f"User gave argv: \"{search_query}\"")
+    if not try_element_lookup(search_query):
+        print(fore("Invalid argv; falling back to interactive input.", RED))
+        logging.warning("Argv invalid, fallback to interactive.")
 else:
     logging.warning("Argument not given, falling back to interactive input.")
 
 if element is None:
     print(f"Search for an element by name, symbol, or atomic number. {dim(tip)}")
     while True:
-        user_input = input("> ").strip().lower()
+        user_input = input("> ")
         logging.info(f"User gave input: \"{user_input}\"")
-        try:
-            idx = int(user_input) - 1
-            key = list(data.keys())[idx]
-            element = data[key]
-            logging.info(f"User gave atomic number {idx}, proceeding...")
+        if try_element_lookup(user_input):
             break
-        except (ValueError, IndexError):
-            isotope_match = re.match(r"(\d+)([A-Za-z]+)", user_input)
-            if isotope_match:
-                number, symbol = isotope_match.groups()
-                found_isotope = False
-                for val in data.values():
-                    if val["general"]["symbol"].lower() == symbol.lower():
-                        for isotope, info in val["nuclear"]["isotopes"].items():
-                            norm_iso_match = re.match(r"^(.*?)(?:\s*-\s*.*)?$", isotope)
-                            norm_isotope = norm_iso_match.group(1) if norm_iso_match else isotope
-                            if norm_isotope.lower() == user_input or remove_superscript_number(norm_isotope.lower()) == user_input:
-                                logging.info(f"User gave isotope {number}{symbol.capitalize()} with number {number} and symbol {symbol.capitalize()}.")
-                                print()
-                                print("-" * width)
-                                print()
-                                print(bold(norm_isotope) if config["use_superscript"] else bold(remove_superscript_number(norm_isotope)) + ":")
-                                print(f"   t1/2 - Half Life: {bold(info['half_life']) if info['half_life'] is not None else fore('None', NULL_COL)}")
-                                print(f"   u - Isotope Weight: {bold(info['isotope_weight'])}g/mol")
-                                if 'daughter_isotope' in info:
-                                    print(f"   🪞 - Daughter Isotope: {bold(info['daughter_isotope'])}")
-                                if 'decay' in info:
-                                    print(f"   ⛓️‍💥 - Decay Mode: {bold(info['decay'])}")
-                                print()
-                                print("-" * width)
-                                print()
-                                sys.exit(0)
-                logging.warning(f"User gave invalid isotope {number}{symbol.capitalize()}, trying again.")
-                continue
-
-            for val in data.values():
-                if user_input == val["general"]["fullname"].lower():
-                    element = val
-                    logging.info(f"User gave element full name: {user_input.capitalize()} for {element['general']['fullname']}.")
-                    break
-                elif user_input == val["general"]["symbol"].lower():
-                    element = val
-                    logging.info(f"User gave element symbol: {user_input.capitalize()}.")
-                    break
-            if element:
-                break
-
-        print("Not a valid element. Try again.")
-        logging.info(f"User input \"{user_input}\" was invalid, trying again.")
+        print("Not a valid element or isotope, please try again.")
 
 # General info
 fullname = element["general"]["fullname"]
@@ -512,19 +544,7 @@ print(f" 🌀 - Subshells: {subshell_result}")
 print(" 🪞 - Isotopes:\n")
 
 for isotope, information in isotopes.items():
-    print(" - " + bold(isotope) if config["use_superscript"] else bold(remove_superscript_number(isotope)) + ":")
-    print(f"   t1/2 - Half Life: {bold(information["half_life"]) if not (information["half_life"] is None) else fore("None", NULL_COL)}")
-    print(f"   u - Isotope Weight: {bold(information["isotope_weight"])}g/mol")
-    try:
-        print(f"   🪞 - Daughter Isotope: {bold(information["daughter_isotope"])}")
-    except KeyError:
-        pass
-
-    try:
-        print(f"   ⛓️‍💥 - Decay Mode: {bold(information["decay"])}")
-    except KeyError:
-        pass
-    print()
+    print_isotope(isotope, information, fullname)
 
 print_header("Physical Properties")
 print()
@@ -563,6 +583,4 @@ print(f"   HV - Vickers: {bold(str(hardness["vickers"]) + " kgf/mm²" if not (ha
 print(f" Va - Atomic Volume: ≈ {bold(atomic_volume)}cm³/mol")
 print(f" 📢 - Speed of Sound Transmission: {bold(sound_transmission_speed)}m/s = {bold(sound_transmission_speed / 1000)}km/s")
 
-print()
-print("-" * width)
-print()
+print_separator()
