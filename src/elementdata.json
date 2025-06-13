@@ -28,15 +28,18 @@
                 "down": 1
             },
             "isotopes": {
-                "¹H - Protium": {
+                "¹H": {
+                    "name": "Protium",
                     "half_life": null,
                     "isotope_weight": 1.007825031
                 },
-                "²H - Deuterium": {
+                "²H": {
+                    "name": "Deuterium",
                     "half_life": null,
                     "isotope_weight": 2.014101777
                 },
-                "³H - Tritium": {
+                "³H": {
+                    "name": "Tritium",
                     "half_life": "12.32 years",
                     "isotope_weight": 3.016049281,
                     "daughter_isotope": "³He",

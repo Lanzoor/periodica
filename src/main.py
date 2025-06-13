@@ -1,4 +1,4 @@
-import logging, json
+import logging, json, os, re, sys, logging, difflib, colorsys, random, re, sys, time
 
 with open('./execution.log', 'w', encoding="utf-8"):
     pass
@@ -42,7 +42,11 @@ except FileNotFoundError:
         logging.info("Created a new configuration file, since it didn't exist.")
 
 for key, value in default_options.items():
-    config.setdefault(key, value)
+    if key == "isotope_format":
+        if config[key] not in valid_formats:
+            config[key] = value
+    else:
+        config.setdefault(key, value)
 
 # Color Configs
 
@@ -67,7 +71,7 @@ FEMALE = (255, 133, 245) if config["truecolor"] else MAGENTA
 NULL_COL = (90, 232, 227) if config["truecolor"] else CYAN
 MELT_COL = (52, 110, 235) if config["truecolor"] else BLUE
 BOIL_COL = (189, 165, 117) if config["truecolor"] else YELLOW
-OXIDATION_STATES_COL = (66, 50, 168) if config["truecolor"] else BLUE
+OXIDATION_STATES_COL = YELLOW
 IONIZATION_ENERGY_COL = (119, 50, 168) if config["truecolor"] else MAGENTA
 
 types = {
@@ -77,8 +81,6 @@ types = {
 }
 
 # Other important functions / variables
-
-import colorsys, random
 
 def save_config():
     global config_file, config
@@ -190,8 +192,6 @@ tip = "(Tip: You can give this program argv to directly search an element from t
 
 # Reading json file, and trying to get from GitHub if fails
 
-import re, sys, time
-
 elementdata_malformed = False
 try:
     with open("./elementdata.json", 'r', encoding="utf-8") as file:
@@ -253,8 +253,7 @@ if elementdata_malformed:
         logging.fatal("Program terminated.")
         sys.exit(1)
 
-
-import os, re, sys, re, logging
+# Getting element / isotope
 
 width = os.get_terminal_size().columns
 
@@ -271,6 +270,23 @@ def match_isotope_input(input_str):
         return isotope_match.group(1), isotope_match.group(2)
     return None, None
 
+def format_isotope(norm_iso, fullname):
+    format_style = config.get("isotope_format", "symbol-number").lower()
+
+    match = re.match(r"^(\d+)\s*([A-Za-z]+)$", remove_superscript_number(norm_iso))
+    if not match:
+        return norm_iso
+    else:
+        number, symbol = match.groups()
+        symbol = symbol.capitalize()
+
+        if format_style == "fullname-number":
+            return f"{fullname.capitalize()}-{number}"
+        elif format_style == "numbersymbol":
+            return f"{convert_superscript_number(str(number)) if config['use_superscript'] else number}{symbol}"
+        else:
+            return f"{symbol}-{number}"
+
 def print_isotope(norm_iso, info, fullname):
     format_style = config.get("isotope_format", "symbol-number").lower()
 
@@ -278,26 +294,19 @@ def print_isotope(norm_iso, info, fullname):
     if not match:
         display_name = norm_iso
     else:
-        number, symbol = match.groups()
-        symbol = symbol.capitalize()
-
-        if format_style == "fullname-number":
-            display_name = f"{fullname.capitalize()}-{number}"
-        elif format_style == "numbersymbol":
-            display_name = f"{convert_superscript_number(str(number)) if config["use_superscript"] else number}{symbol}"
-        else:
-            display_name = f"{symbol}-{number}"
+        display_name = format_isotope(norm_iso, fullname)
 
     print_separator()
-    print(bold(display_name) + ":")
+    if 'name' in info:
+        print(bold(display_name) + " - " + bold(info['name']) + ":")
+    else:
+        print(bold(display_name) + ":")
     print(f"   t1/2 - Half Life: {bold(info['half_life']) if info['half_life'] is not None else fore('None', NULL_COL)}")
     print(f"   u - Isotope Weight: {bold(info['isotope_weight'])}g/mol")
     if 'daughter_isotope' in info:
-        print(f"   🪞 - Daughter Isotope: {bold(info['daughter_isotope'])}")
+        print(f"   🪞 - Daughter Isotope: {bold(format_isotope(info['daughter_isotope'], fullname))}")
     if 'decay' in info:
         print(f"   ⛓️ - Decay Mode: {bold(info['decay'])}")
-    print_separator()
-
 
 def find_isotope(symbol_or_name, mass_number, search_query):
     for val in data.values():
@@ -312,53 +321,87 @@ def find_isotope(symbol_or_name, mass_number, search_query):
                     norm_iso.lower() == search_query):
                     logging.info(f"Found isotope match: {mass_number}{sym.upper()} / {name.capitalize()}")
                     print_isotope(norm_iso, info, name)
+                    print_separator()
                     return True
     return False
 
-def try_element_lookup(input_str):
-    global element
-    input_str = input_str.strip().lower()
+def find_element(input_str):
+    input_str = input_str.lower()
+    possible_names = []
+    for val in data.values():
+        name = val["general"]["fullname"].lower()
+        symbol = val["general"]["symbol"].lower()
+        possible_names.extend([name, symbol])
+
+        if input_str == name:
+            logging.info(f"Matched element full name: {input_str.capitalize()}")
+            return val, None
+        elif input_str == symbol:
+            logging.info(f"Matched element symbol: {input_str.upper()} ({val['general']['fullname']})")
+            return val, None
+
+    suggestion = difflib.get_close_matches(input_str, possible_names, n=1, cutoff=0.6)
+    return None, suggestion
+
+if len(sys.argv) > 1:
+    input_str = sys.argv[1].strip().lower()
+    logging.info(f"User gave argv: \"{input_str}\"")
+
+    element = None
+
     try:
         index = int(input_str) - 1
         key = list(data.keys())[index]
         element = data[key]
         logging.info(f"User gave atomic number {index + 1}, proceeding...")
-        return True
     except (ValueError, IndexError):
         symbol_or_name, mass_number = match_isotope_input(input_str)
-        if symbol_or_name and mass_number:
-            if find_isotope(symbol_or_name, mass_number, input_str):
-                sys.exit(0)
-            logging.warning(f"Invalid isotope input: {input_str}")
-            return False
-        for val in data.values():
-            if input_str == val["general"]["fullname"].lower():
-                element = val
-                logging.info(f"Matched element full name: {input_str.capitalize()}")
-                return True
-            elif input_str == val["general"]["symbol"].lower():
-                element = val
-                logging.info(f"Matched element symbol: {input_str.upper()} ({val['general']['fullname']})")
-                return True
-    return False
 
-if len(sys.argv) > 1:
-    search_query = sys.argv[1]
-    logging.info(f"User gave argv: \"{search_query}\"")
-    if not try_element_lookup(search_query):
+        if symbol_or_name and mass_number:
+            found = find_isotope(symbol_or_name, mass_number, input_str)
+            if not found:
+                logging.warning(f"Invalid isotope input: {input_str}")
+        else:
+            element, suggestion = find_element(input_str)
+            if suggestion:
+                print(fore(f"Did you mean \"{bold(suggestion[0])}\"?", YELLOW))
+
+    if element is None:
         print(fore("Invalid argv; falling back to interactive input.", RED))
         logging.warning("Argv invalid, fallback to interactive.")
+
 else:
     logging.warning("Argument not given, falling back to interactive input.")
 
 if element is None:
     print(f"Search for an element by name, symbol, or atomic number. {dim(tip)}")
     while True:
-        user_input = input("> ")
-        logging.info(f"User gave input: \"{user_input}\"")
-        if try_element_lookup(user_input):
+        input_str = input("> ").strip().lower()
+        logging.info(f"User gave input: \"{input_str}\"")
+
+        element = None
+        try:
+            index = int(input_str) - 1
+            key = list(data.keys())[index]
+            element = data[key]
+            logging.info(f"User gave atomic number {index + 1}, proceeding...")
+        except (ValueError, IndexError):
+            symbol_or_name, mass_number = match_isotope_input(input_str)
+
+            if symbol_or_name and mass_number:
+                found = find_isotope(symbol_or_name, mass_number, input_str)
+                if not found:
+                    logging.warning(f"Invalid isotope input: {input_str}")
+            else:
+                element, suggestion = find_element(input_str)
+
+        if element is not None:
             break
-        print("Not a valid element or isotope, please try again.")
+
+        if not suggestion:
+            print("Not a valid element or isotope, please try again.")
+        else:
+            print(fore(f"Not a valid element or isotope. Did you mean \"{bold(suggestion[0])}\"?", YELLOW))
 
 # General info
 fullname = element["general"]["fullname"]
@@ -546,6 +589,7 @@ print(" 🪞 - Isotopes:\n")
 for isotope, information in isotopes.items():
     print_isotope(isotope, information, fullname)
 
+print()
 print_header("Physical Properties")
 print()
 
