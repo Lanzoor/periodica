@@ -28,41 +28,62 @@
                 "down": 1
             },
             "isotopes": {
-                "¹H": {
+                "1H": {
                     "name": "Protium",
+                    "protons": 1,
+                    "neutrons": 0,
+                    "electrons": 1,
                     "half_life": null,
                     "isotope_weight": 1.007825031
                 },
-                "²H": {
+                "2H": {
                     "name": "Deuterium",
+                    "protons": 1,
+                    "neutrons": 1,
+                    "electrons": 1,
                     "half_life": null,
                     "isotope_weight": 2.014101777
                 },
-                "³H": {
+                "3H": {
                     "name": "Tritium",
+                    "protons": 1,
+                    "neutrons": 2,
+                    "electrons": 1,
                     "half_life": "12.32 years",
                     "isotope_weight": 3.016049281,
-                    "daughter_isotope": "³He",
+                    "daughter_isotope": "3He",
                     "decay": "β⁻"
                 },
-                "⁴H": {
+                "4H": {
                     "half_life": "139 yoctoseconds",
+                    "protons": 1,
+                    "neutrons": 3,
+                    "electrons": 1,
                     "isotope_weight": 4.02643,
-                    "daughter_isotope": "³H",
+                    "daughter_isotope": "3H",
                     "decay": "n"
                 },
-                "⁵H": {
+                "5H": {
                     "half_life": "86 yoctoseconds",
+                    "protons": 1,
+                    "neutrons": 4,
+                    "electrons": 1,
                     "isotope_weight": 5.03531,
-                    "daughter_isotope": "³H",
+                    "daughter_isotope": "3H",
                     "decay": "2n"
                 },
-                "⁶H": {
+                "6H": {
                     "half_life": "294 yoctoseconds",
+                    "protons": 1,
+                    "neutrons": 5,
+                    "electrons": 1,
                     "isotope_weight": 6.04496
                 },
-                "⁷H": {
+                "7H": {
                     "half_life": "652 yoctoseconds",
+                    "protons": 1,
+                    "neutrons": 6,
+                    "electrons": 1,
                     "isotope_weight": 7.05275
                 }
             }
@@ -102,6 +123,107 @@
                 "Henry Cavendish": "male"
             },
             "year": 1766
+        }
+    },
+    "helium": {
+        "general": {
+            "fullname": "Helium",
+            "symbol": "He",
+            "atomic_number": 2,
+            "description": "Helium is a colorless, odorless, tasteless, non-toxic, inert monatomic gas. It is the second lightest and second most abundant element in the observable universe. Helium is used in cryogenics, deep-sea breathing systems, and as a protective gas in industrial processes. It has the lowest boiling and melting points of all elements and does not solidify at standard pressure.",
+            "appearance": {
+                "color": null,
+                "phase": "gas"
+            },
+            "period": 1,
+            "group": 18,
+            "block": "s",
+            "type": "Noble gas",
+            "radioactive": false,
+            "half_life": null,
+            "lifetime": null,
+            "cas_number": "CAS7440-59-7"
+        },
+        "nuclear": {
+            "protons": 2,
+            "neutrons": 2,
+            "electrons": 2,
+            "valence_electrons": 2,
+            "quarks": {
+                "up": 4,
+                "down": 2
+            },
+            "isotopes": {
+                "2He": {
+                    "half_life": "less than 1e9 seconds",
+                    "protons": 2,
+                    "neutrons": 0,
+                    "electrons": 2,
+                    "isotope_weight": 2.015894,
+                    "decay": "p (> 99.99%), β⁺ (< 0.01%)",
+                    "daughter_isotope": "1H (> 99.99%), 2H (< 0.01%)"
+                },
+                "3He": {
+                    "half_life": null,
+                    "protons": 2,
+                    "neutrons": 1,
+                    "electrons": 2,
+                    "isotope_weight": 3.0160293
+                },
+                "4He": {
+                    "half_life": null,
+                    "protons": 2,
+                    "neutrons": 2,
+                    "electrons": 2,
+                    "isotope_weight": 4.00260325415
+                },
+                "5He": {
+                    "half_life": "6.02e22 seconds",
+                    "protons": 2,
+                    "neutrons": 2,
+                    "electrons": 2,
+                    "isotope_weight": 5.012057,
+                    "decay": "n",
+                    "daughter_isotope": "4He"
+                }
+            }
+        },
+        "physical": {
+            "atomic_mass": 4.002602,
+            "density": 0.0001786,
+            "melt": -272.2,
+            "boil": -268.93
+        },
+        "electronic": {
+            "electronegativity": null,
+            "electron_affinity": 0,
+            "ionization_energy": 24.587,
+            "shells": [2],
+            "subshells": ["1s²"],
+            "oxidation_states": [0],
+            "conductivity_type": "Insulator"
+        },
+        "measurements": {
+            "radius": {
+                "calculated": 31,
+                "empirical": 28,
+                "covalent": 32,
+                "van_der_waals": 140
+            },
+            "hardness": {
+                "brinell": null,
+                "mohs": null,
+                "vickers": null
+            },
+            "atomic_volume": 31.8,
+            "sound_transmission_speed": 972
+        },
+        "historical": {
+            "discoverers": {
+                "Pierre Janssen": "male",
+                "Joseph Norman Lockyer": "male"
+            },
+            "year": 1868
         }
     }
 }

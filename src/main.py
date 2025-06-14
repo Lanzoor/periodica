@@ -60,8 +60,8 @@ CYAN = 6
 WHITE = 7
 DEFAULT_COLOR = 9
 
-PROTONS_COL = (255, 56, 56) if config["truecolor"] else RED
-NEUTRONS_COL = (38, 72, 209) if config["truecolor"] else BLUE
+PROTONS_COL = RED
+NEUTRONS_COL = BLUE
 ELECTRONS_COL = (255, 237, 122) if config["truecolor"] else YELLOW
 VALENCE_ELECTRONS_COL = (255, 241, 163) if config["truecolor"] else YELLOW
 UP_QUARKS_COL = (122, 255, 129) if config["truecolor"] else GREEN
@@ -301,7 +301,11 @@ def print_isotope(norm_iso, info, fullname):
         print(bold(display_name) + " - " + bold(info['name']) + ":")
     else:
         print(bold(display_name) + ":")
-    print(f"   t1/2 - Half Life: {bold(info['half_life']) if info['half_life'] is not None else fore('None', NULL_COL)}")
+
+    print(f"   p⁺ - {fore("Protons", PROTONS_COL)}: {bold(info['protons'])}")
+    print(f"   n⁰ - {fore("Neutrons", NEUTRONS_COL)}: {bold(info['neutrons'])}")
+    print(f"   e⁻ - {fore("Electrons", ELECTRONS_COL)}: {bold(info['electrons'])}")
+    print(f"   t1/2 - Half Life: {bold(info['half_life']) if info['half_life'] is not None else fore('Stable', NULL_COL)}")
     print(f"   u - Isotope Weight: {bold(info['isotope_weight'])}g/mol")
     if 'daughter_isotope' in info:
         print(f"   🪞 - Daughter Isotope: {bold(format_isotope(info['daughter_isotope'], fullname))}")
@@ -343,31 +347,33 @@ def find_element(input_str):
     suggestion = difflib.get_close_matches(input_str, possible_names, n=1, cutoff=0.6)
     return None, suggestion
 
+element = None
+suggestion = None
+
 if len(sys.argv) > 1:
     input_str = sys.argv[1].strip().lower()
     logging.info(f"User gave argv: \"{input_str}\"")
-
-    element = None
 
     try:
         index = int(input_str) - 1
         key = list(data.keys())[index]
         element = data[key]
-        logging.info(f"User gave atomic number {index + 1}, proceeding...")
     except (ValueError, IndexError):
         symbol_or_name, mass_number = match_isotope_input(input_str)
 
         if symbol_or_name and mass_number:
             found = find_isotope(symbol_or_name, mass_number, input_str)
-            if not found:
-                logging.warning(f"Invalid isotope input: {input_str}")
+            if found:
+                sys.exit(0)
+            logging.warning(f"Invalid isotope input: {input_str}")
         else:
             element, suggestion = find_element(input_str)
-            if suggestion:
-                print(fore(f"Did you mean \"{bold(suggestion[0])}\"?", YELLOW))
 
     if element is None:
-        print(fore("Invalid argv; falling back to interactive input.", RED))
+        if not suggestion:
+            print(fore("Invalid argv; falling back to interactive input.", RED))
+        else:
+            print(fore(f"Invalid argv. Did you mean \"{bold(suggestion[0])}\"?", YELLOW))
         logging.warning("Argv invalid, fallback to interactive.")
 
 else:
@@ -379,19 +385,20 @@ if element is None:
         input_str = input("> ").strip().lower()
         logging.info(f"User gave input: \"{input_str}\"")
 
-        element = None
+        suggestion = None
+
         try:
             index = int(input_str) - 1
             key = list(data.keys())[index]
             element = data[key]
-            logging.info(f"User gave atomic number {index + 1}, proceeding...")
         except (ValueError, IndexError):
             symbol_or_name, mass_number = match_isotope_input(input_str)
 
             if symbol_or_name and mass_number:
                 found = find_isotope(symbol_or_name, mass_number, input_str)
-                if not found:
-                    logging.warning(f"Invalid isotope input: {input_str}")
+                if found:
+                    sys.exit(0)
+                logging.warning(f"Invalid isotope input: {input_str}")
             else:
                 element, suggestion = find_element(input_str)
 
@@ -492,6 +499,7 @@ boiling_point = element["physical"]["boil"]
 atomic_mass = element["physical"]["atomic_mass"]
 radioactive = element["general"]["radioactive"]
 half_life = element["general"]["half_life"]
+lifetime = element["general"]["lifetime"]
 density = element["physical"]["density"]
 
 # Electronic properties
@@ -584,7 +592,7 @@ print(f" u - {fore("Up Quarks", UP_QUARKS_COL)}: {bold(up_quarks)} (({fore(proto
 print(f" d - {fore("Down Quarks", DOWN_QUARKS_COL)}: {bold(down_quarks)} ({fore(protons, PROTONS_COL)} + ({fore(neutrons, NEUTRONS_COL)} * 2) = {bold(down_quarks)})")
 print(f" ⚛️ - Shells {dim(f"(The electron in {fore("yellow", VALENCE_ELECTRONS_COL)} is the valence electron)")}:\n    {shell_result}")
 print(f" 🌀 - Subshells: {subshell_result}")
-print(" 🪞 - Isotopes:\n")
+print(" 🪞 - Isotopes:")
 
 for isotope, information in isotopes.items():
     print_isotope(isotope, information, fullname)
@@ -598,7 +606,8 @@ print(f" 💨 - {fore("Boiling Point", BOIL_COL)}: {bold(boiling_point)}°C = {b
 print(f" A - Mass Number: {fore(protons, PROTONS_COL)} + {fore(neutrons, NEUTRONS_COL)} = {bold(protons + neutrons)}")
 print(f" u - Atomic Mass: {bold(atomic_mass)}g/mol")
 print(f" ☢️ - Radioactive: {fore("Yes", GREEN) if radioactive else fore("No", RED)}")
-print(f" t1/2 - Half Life: {bold(half_life) if not (half_life is None) else fore("None", NULL_COL)}")
+print(f" t1/2 - Half Life: {bold(half_life if not (half_life is None) else fore("Stable", NULL_COL))}")
+print(f" t - Lifetime: {bold(lifetime if not (lifetime is None) else fore("Stable", NULL_COL))}")
 print(f" ρ - Density: {bold(density)}g/cm³")
 
 print()
@@ -608,7 +617,7 @@ print()
 print(f" χ - Electronegativity: {bold(electronegativity)}")
 print(f" EA - Electron Affinity: {bold(electron_affinity)}eV = {bold(eV_to_kJpermol(electron_affinity))}kJ/mol")
 print(f" IE - {fore("Ionization Energy", IONIZATION_ENERGY_COL)}: {bold(ionization_energy)}eV = {bold(eV_to_kJpermol(ionization_energy))}kJ/mol")
-print(f" ⚡️ - {fore("Oxidation States", OXIDATION_STATES_COL)} {dim(f"(Only the ones that have {gradient("color", (50, 151, 168), (59, 38, 191)) if config["truecolor"] else fore("color", BLUE)} are activated)")}:\n{"   " + negatives}\n{"   " + positives}\n")
+print(f" ⚡️ - {fore("Oxidation States", OXIDATION_STATES_COL)} {dim(f"(Only the ones that have {fore("color", BLUE)} are activated)")}:\n{"   " + negatives}\n{"   " + positives}\n")
 print(f" ⚡️ - Conductivity Type: {bold(conductivity_type)}")
 
 print()
