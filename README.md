@@ -17,8 +17,10 @@ cd /opt/periodica
 # This will create a venv, and install required packages. READ THE SCRIPT FIRST! DO NOT TRUST SOURCES FROM ONLINE. It will create a venv folder. You will need to use sudo here, because /opt is protected by root.
 sudo ./build.sh
 
-# Make it executable, so that you don't run into awful problems. You may or may not need sudo here.
+# Make it executable, so that you don't run into awful problems. This step is required for you to run periodica without using super-user.
 sudo chmod +x /opt/periodica/periodica.sh
+sudo chown -R $USER:$USER /opt/periodica
+chmod -R u+rwX /opt/periodica
 
 # Optional: move it into your /usr/local/bin/ so that you can access it anywhere by running periodica. SUDO IS REQUIRED, /usr/local/bin/ is protected by root.
 sudo ln -s /opt/periodica/periodica.sh /usr/local/bin/periodica
