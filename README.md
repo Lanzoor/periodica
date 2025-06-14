@@ -14,8 +14,8 @@ sudo git clone https://github.com/Lanzoor/periodica.git /opt/periodica
 # Get inside the folder already!
 cd /opt/periodica
 
-# This will create a venv, and install required packages. READ THE SCRIPT FIRST! DO NOT TRUST SOURCES FROM ONLINE. It will create a venv folder.
-./build.sh
+# This will create a venv, and install required packages. READ THE SCRIPT FIRST! DO NOT TRUST SOURCES FROM ONLINE. It will create a venv folder. You will need to use sudo here, because /opt is protected by root.
+sudo ./build.sh
 
 # Make it executable, so that you don't run into awful problems. You may or may not need sudo here.
 sudo chmod +x /opt/periodica/periodica.sh
