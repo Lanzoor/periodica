@@ -1,57 +1,36 @@
 # Installation
 
 Of course, this is a Python script, which means you will need to run it with a Python interpreter.
-However, for most cases, I recommend you run the following command;
+However, for most cases, I recommend you run the following methods;
 
 ## For Linux
 
-**First, go inside the periodictable directory.** This step is important. And then, **run the following command:**
+**Run these commands, one-by-one.** The method below is heavily recommended, instead of downloading the zipped source code.
 
 ```bash
+# This gets the GitHub repository
+git clone https://github.com/Lanzoor/periodica.git
+
+# Get inside the folder already!
+cd periodica
+
+# Create a venv, and install required packages. READ THE SCRIPT FIRST! DO NOT TRUST SOURCES FROM ONLINE. It will create a venv folder.
 ./build.sh
+
+# Make it executable.
+chmod +x periodica.sh
+
+# Optional: move it into your /usr/local/bin/ so that you can access it anywhere by running periodica
+sudo mv periodica.sh /usr/local/bin/periodica
+
+# Now let's test it!
+periodica
 ```
-
-This will install all required packages. No bloat, only the needed ones.
-This is the same as doing `pip install -r ./requirements.txt`, but the shell script in the directory will make it way cleaner.
-
-> If you are unsure about the `./build.sh` and the `./periodictable.sh` files in the directory, just read them yourself!
-
-This also means that you can **run** the file too with the following;
-
-```bash
-./periodictable.sh
-```
-
-And if you need to give argv;
-
-```bash
-./periodictable.sh YOUR_ARGUMENTS_GO_HERE
-```
-
-Instead of having to step into the src directory, running python, stuff like that.
 
 ## Windows
 
-Just like the Linux build method, first, **go inside the periodictable directory,** and run this script for building;
+Unfortunately, at least for now, **this program is not supported by Windows.** So unless you know the manual venv creation, please wait until a Windows version or a workaround is released.
 
-```ps1
-.\build.ps1
-```
-
-> Again, **read the file first if you do not trust it.**
-
-And, run this script for running the program itself;
-
-```ps1
-.\periodictable.ps1
-```
-
-You can also give argv.
-
-```ps1
-.\periodictable.ps1 YOUR_ARGUMENTS_GO_HERE
-```
-
-Anyways, that's about it! Have fun messing around, and do note, **you may use the `elementdata.json` file without any credits or permission,** but giving credit will help clarify stuff!
+Anyways, that's about it! Have fun messing around, catching bugs, and do note, **you may use the `elementdata.json` file without any credits or permission,** but giving credit will help both clarify stuff and support the creator's hard work!
 
 > *(Unless you try to say that you made the `elementdata.json` file, you will be fine.)*
