@@ -15,7 +15,6 @@
             "type": "Reactive nonmetal",
             "radioactive": false,
             "half_life": null,
-            "lifetime": null,
             "cas_number": "CAS1333-74-0"
         },
         "nuclear": {
@@ -23,10 +22,6 @@
             "neutrons": 0,
             "electrons": 1,
             "valence_electrons": 1,
-            "quarks": {
-                "up": 2,
-                "down": 1
-            },
             "isotopes": {
                 "1H": {
                     "name": "Protium",
@@ -122,7 +117,7 @@
             "discoverers": {
                 "Henry Cavendish": "male"
             },
-            "year": 1766
+            "date": "1766 AD"
         }
     },
     "helium": {
@@ -141,7 +136,6 @@
             "type": "Noble gas",
             "radioactive": false,
             "half_life": null,
-            "lifetime": null,
             "cas_number": "CAS7440-59-7"
         },
         "nuclear": {
@@ -149,13 +143,9 @@
             "neutrons": 2,
             "electrons": 2,
             "valence_electrons": 2,
-            "quarks": {
-                "up": 4,
-                "down": 2
-            },
             "isotopes": {
                 "2He": {
-                    "half_life": "less than 1e9 seconds",
+                    "half_life": "less than 1e-9 seconds",
                     "protons": 2,
                     "neutrons": 0,
                     "electrons": 2,
@@ -180,11 +170,29 @@
                 "5He": {
                     "half_life": "6.02e22 seconds",
                     "protons": 2,
-                    "neutrons": 2,
+                    "neutrons": 3,
                     "electrons": 2,
                     "isotope_weight": 5.012057,
                     "decay": "n",
                     "daughter_isotope": "4He"
+                },
+                "6He": {
+                    "half_life": "806.92 ms",
+                    "protons": 2,
+                    "neutrons": 4,
+                    "electrons": 2,
+                    "isotope_weight": 6.018885889,
+                    "decay": "β⁻ (99.999722%), β⁻d (0.000278%)",
+                    "daughter_isotope": "6Li (99.999722%), 4He (0.000278%)"
+                },
+                "7He": {
+                    "half_life": "2.51e-21 s",
+                    "protons": 2,
+                    "neutrons": 5,
+                    "electrons": 2,
+                    "isotope_weight": 7.027991,
+                    "decay": "n",
+                    "daughter_isotope": "6He"
                 }
             }
         },
@@ -196,7 +204,7 @@
         },
         "electronic": {
             "electronegativity": null,
-            "electron_affinity": 0,
+            "electron_affinity": 0.0,
             "ionization_energy": 24.587,
             "shells": [2],
             "subshells": ["1s²"],
@@ -223,7 +231,7 @@
                 "Pierre Janssen": "male",
                 "Joseph Norman Lockyer": "male"
             },
-            "year": 1868
+            "date": "1868 AD"
         }
     }
 }

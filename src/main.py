@@ -60,10 +60,7 @@ CYAN = 6
 WHITE = 7
 DEFAULT_COLOR = 9
 
-PROTONS_COL = RED
-NEUTRONS_COL = BLUE
-ELECTRONS_COL = (255, 237, 122) if config["truecolor"] else YELLOW
-VALENCE_ELECTRONS_COL = (255, 241, 163) if config["truecolor"] else YELLOW
+VALENCE_ELECTRONS_COL = (248, 255, 166) if config["truecolor"] else YELLOW
 UP_QUARKS_COL = (122, 255, 129) if config["truecolor"] else GREEN
 DOWN_QUARKS_COL = (230, 156, 60) if config["truecolor"] else CYAN
 MALE = (109, 214, 237) if config["truecolor"] else CYAN
@@ -71,13 +68,13 @@ FEMALE = (255, 133, 245) if config["truecolor"] else MAGENTA
 NULL_COL = (90, 232, 227) if config["truecolor"] else CYAN
 MELT_COL = (52, 110, 235) if config["truecolor"] else BLUE
 BOIL_COL = (189, 165, 117) if config["truecolor"] else YELLOW
-OXIDATION_STATES_COL = YELLOW
+ORANGE = (245, 164, 66) if config["truecolor"] else YELLOW
 IONIZATION_ENERGY_COL = (119, 50, 168) if config["truecolor"] else MAGENTA
 
 types = {
 	"Reactive nonmetal": (27, 156, 20) if config["truecolor"] else GREEN,
 	"Noble gas": (252, 233, 61) if config["truecolor"] else YELLOW,
-	"Alkali metal": (176, 176, 176) if config["truecolor"] else BLACK
+	"Alkali metal": (176, 176, 176) if config["truecolor"] else DEFAULT_COLOR
 }
 
 # Other important functions / variables
@@ -134,6 +131,15 @@ def remove_superscript_number(superscript: str) -> str:
         "⁹": "9",
     }
     return "".join(normal_map.get(ch, ch) for ch in superscript)
+
+def conjunction_join(entries: list) -> str:
+    if not entries:
+        return ""
+    if len(entries) == 1:
+        return entries[0]
+    if len(entries) == 2:
+        return f"{entries[0]} and {entries[1]}"
+    return f"{', '.join(entries[:-1])}, and {entries[-1]}"
 
 def fore(string, color: int | list[int] | tuple[int, int, int], *, bright: bool = False) -> str:
     if isinstance(color, int):
@@ -288,25 +294,37 @@ def format_isotope(norm_iso, fullname):
             return f"{symbol}-{number}"
 
 def print_isotope(norm_iso, info, fullname):
+    print()
     format_style = config.get("isotope_format", "symbol-number").lower()
-
     match = re.match(r"^(\d+)\s*([A-Za-z]+)$", remove_superscript_number(norm_iso))
+
     if not match:
         display_name = norm_iso
     else:
         display_name = format_isotope(norm_iso, fullname)
 
-    print_separator()
     if 'name' in info:
-        print(bold(display_name) + " - " + bold(info['name']) + ":")
+        print(f"- {bold(display_name)} ({bold(info['name'])}):")
     else:
-        print(bold(display_name) + ":")
+        print(f"- {bold(display_name)}:")
 
-    print(f"   p⁺ - {fore("Protons", PROTONS_COL)}: {bold(info['protons'])}")
-    print(f"   n⁰ - {fore("Neutrons", NEUTRONS_COL)}: {bold(info['neutrons'])}")
-    print(f"   e⁻ - {fore("Electrons", ELECTRONS_COL)}: {bold(info['electrons'])}")
-    print(f"   t1/2 - Half Life: {bold(info['half_life']) if info['half_life'] is not None else fore('Stable', NULL_COL)}")
-    print(f"   u - Isotope Weight: {bold(info['isotope_weight'])}g/mol")
+    protons = info['protons']
+    neutrons = info['neutrons']
+    electrons = info['electrons']
+    up_quarks = (info['protons'] * 2) + info['neutrons']
+    down_quarks = info['protons'] + (info['neutrons'] * 2)
+    half_life = info['half_life']
+    isotope_weight = info['isotope_weight']
+
+    print(f"   p⁺ - {fore("Protons", RED)}: {bold(protons)}")
+    print(f"   n⁰ - {fore("Neutrons", BLUE)}: {bold(neutrons)}")
+    print(f"   e⁻ - {fore("Electrons", YELLOW)}: {bold(electrons)}")
+    print(f"   u - {fore("Up Quarks", UP_QUARKS_COL)}: {bold(up_quarks)} (({fore(protons, RED)} * 2) + {fore(neutrons, BLUE)} = {bold(up_quarks)})")
+    print(f"   d - {fore("Down Quarks", DOWN_QUARKS_COL)}: {bold(down_quarks)} ({fore(protons, RED)} + ({fore(neutrons, BLUE)} * 2) = {bold(down_quarks)})")
+
+    print(f"   t1/2 - Half Life: {bold(half_life) if half_life is not None else fore('Stable', NULL_COL)}")
+    print(f"   u - Isotope Weight: {bold(isotope_weight)}g/mol")
+
     if 'daughter_isotope' in info:
         print(f"   🪞 - Daughter Isotope: {bold(format_isotope(info['daughter_isotope'], fullname))}")
     if 'decay' in info:
@@ -323,7 +341,8 @@ def find_isotope(symbol_or_name, mass_number, search_query):
                 if (remove_superscript_number(norm_iso).lower() == f"{mass_number}{sym}" or
                     remove_superscript_number(norm_iso).lower() == f"{sym}{mass_number}" or
                     norm_iso.lower() == search_query):
-                    logging.info(f"Found isotope match: {mass_number}{sym.upper()} / {name.capitalize()}")
+                    logging.info(f"Found isotope match: {mass_number}{sym.capitalize()} / {name.capitalize()}")
+                    print_separator()
                     print_isotope(norm_iso, info, name)
                     print_separator()
                     return True
@@ -341,7 +360,7 @@ def find_element(input_str):
             logging.info(f"Matched element full name: {input_str.capitalize()}")
             return val, None
         elif input_str == symbol:
-            logging.info(f"Matched element symbol: {input_str.upper()} ({val['general']['fullname']})")
+            logging.info(f"Matched element symbol: {input_str.capitalize()} ({val['general']['fullname']})")
             return val, None
 
     suggestion = difflib.get_close_matches(input_str, possible_names, n=1, cutoff=0.6)
@@ -416,7 +435,7 @@ symbol = element["general"]["symbol"]
 atomic_number = element["general"]["atomic_number"]
 description = element["general"]["description"]
 discoverers = element["historical"]["discoverers"]
-discovery_year = element["historical"]["year"]
+discovery_date = element["historical"]["date"]
 period = element["general"]["period"]
 group = element["general"]["group"]
 element_type = element["general"]["type"]
@@ -448,25 +467,20 @@ elif atomic_number in range(89, 104):
 else:
     periodic_table[period - 1][group - 1] = fore("▪", GREEN)
 
-discoverers_result = ""
-era = "AD" if discovery_year > 0 else "BC"
+entries = [
+    bold(fore(name, MALE if gender == "male" else FEMALE))
+    for name, gender in discoverers.items()
+]
 
-discoverers_result = ""
-era = "AD" if discovery_year > 0 else "BC"
-
-for name, gender in discoverers.items():
-    if list(discoverers.keys()).index(name) != len(list(discoverers.keys())) -1:
-        discoverers_result += f"{fore(name, MALE if gender == "male" else FEMALE)}, "
-    else:
-        discoverers_result += f"{fore(name, MALE if gender == "male" else FEMALE)}"
+discoverers = conjunction_join(entries)
 
 # Nuclear properties
 protons = element["nuclear"]["protons"]
 neutrons = element["nuclear"]["neutrons"]
 electrons = element["nuclear"]["electrons"]
 valence_electrons = element["nuclear"]["valence_electrons"]
-up_quarks = element["nuclear"]["quarks"]["up"]
-down_quarks = element["nuclear"]["quarks"]["down"]
+up_quarks = (protons * 2) + neutrons
+down_quarks = protons + (neutrons * 2)
 shells = element["electronic"]["shells"]
 subshells = element["electronic"]["subshells"]
 isotopes = element["nuclear"]["isotopes"]
@@ -483,6 +497,7 @@ for index, electron in enumerate(shells):
 subshell_capacities = {'s': 2, 'p': 6, 'd': 10, 'f': 14}
 subshell_result = ""
 for subshell in subshells:
+    subshell = remove_superscript_number(subshell) if not config["use_superscript"] else subshell
     match = re.match(r"(\d)([spdf])(\d+)", subshell)
     if match:
         _, subshell_type, electron_count = match.groups()
@@ -499,7 +514,6 @@ boiling_point = element["physical"]["boil"]
 atomic_mass = element["physical"]["atomic_mass"]
 radioactive = element["general"]["radioactive"]
 half_life = element["general"]["half_life"]
-lifetime = element["general"]["lifetime"]
 density = element["physical"]["density"]
 
 # Electronic properties
@@ -548,12 +562,13 @@ logging.info("Starting output.")
 
 print()
 print_header("General")
+print()
 
 print(f" 🔡 - Element Name: {bold(fullname)} ({bold(symbol)})")
 print(f" Z - Atomic Number: {bold(atomic_number)}")
 print(f" 📃 - Description:\n\n    {description}\n")
-print(f" 🔍 - Discoverer(s): {discoverers_result}")
-print(f" 🔍 - Discovery Date: {abs(discovery_year)} {era}")
+print(f" 🔍 - Discoverer(s): {discoverers}")
+print(f" 🔍 - Discovery Date: {bold(discovery_date)}")
 print(f" ↔️ - Period (Row): {bold(period)}")
 print(f" ↕️ - Group (Column): {bold(group)}")
 print(f" 🎨 - Type: {fore(element_type, types[element_type])}")
@@ -584,12 +599,12 @@ print()
 print_header("Nuclear Properties")
 print()
 
-print(f" p⁺ - {fore("Protons", PROTONS_COL)}: {bold(protons)}")
-print(f" n⁰ - {fore("Neutrons", NEUTRONS_COL)}: {bold(neutrons)}")
-print(f" e⁻ - {fore("Electrons", ELECTRONS_COL)}: {bold(electrons)}")
+print(f" p⁺ - {fore("Protons", RED)}: {bold(protons)}")
+print(f" n⁰ - {fore("Neutrons", BLUE)}: {bold(neutrons)}")
+print(f" e⁻ - {fore("Electrons", YELLOW)}: {bold(electrons)}")
 print(f" nv - {fore("Valence Electrons", VALENCE_ELECTRONS_COL)}: {bold(valence_electrons)}")
-print(f" u - {fore("Up Quarks", UP_QUARKS_COL)}: {bold(up_quarks)} (({fore(protons, PROTONS_COL)} * 2) + {fore(neutrons, NEUTRONS_COL)} = {bold(up_quarks)})")
-print(f" d - {fore("Down Quarks", DOWN_QUARKS_COL)}: {bold(down_quarks)} ({fore(protons, PROTONS_COL)} + ({fore(neutrons, NEUTRONS_COL)} * 2) = {bold(down_quarks)})")
+print(f" u - {fore("Up Quarks", UP_QUARKS_COL)}: {bold(up_quarks)} (({fore(protons, RED)} * 2) + {fore(neutrons, BLUE)} = {bold(up_quarks)})")
+print(f" d - {fore("Down Quarks", DOWN_QUARKS_COL)}: {bold(down_quarks)} ({fore(protons, RED)} + ({fore(neutrons, BLUE)} * 2) = {bold(down_quarks)})")
 print(f" ⚛️ - Shells {dim(f"(The electron in {fore("yellow", VALENCE_ELECTRONS_COL)} is the valence electron)")}:\n    {shell_result}")
 print(f" 🌀 - Subshells: {subshell_result}")
 print(" 🪞 - Isotopes:")
@@ -603,11 +618,10 @@ print()
 
 print(f" 💧 - {fore("Melting Point", MELT_COL)}: {bold(melting_point)}°C = {bold(celcius_to_fahrenheit(melting_point))}°F = {bold(celcius_to_kelvin(melting_point))}K")
 print(f" 💨 - {fore("Boiling Point", BOIL_COL)}: {bold(boiling_point)}°C = {bold(celcius_to_fahrenheit(boiling_point))}°F = {bold(celcius_to_kelvin(boiling_point))}K")
-print(f" A - Mass Number: {fore(protons, PROTONS_COL)} + {fore(neutrons, NEUTRONS_COL)} = {bold(protons + neutrons)}")
+print(f" A - Mass Number: {fore(protons, RED)} + {fore(neutrons, BLUE)} = {bold(protons + neutrons)}")
 print(f" u - Atomic Mass: {bold(atomic_mass)}g/mol")
-print(f" ☢️ - Radioactive: {fore("Yes", GREEN) if radioactive else fore("No", RED)}")
+print(f" ☢️ - {fore("Radioactive", ORANGE)}: {fore("Yes", GREEN) if radioactive else fore("No", RED)}")
 print(f" t1/2 - Half Life: {bold(half_life if not (half_life is None) else fore("Stable", NULL_COL))}")
-print(f" t - Lifetime: {bold(lifetime if not (lifetime is None) else fore("Stable", NULL_COL))}")
 print(f" ρ - Density: {bold(density)}g/cm³")
 
 print()
@@ -617,7 +631,7 @@ print()
 print(f" χ - Electronegativity: {bold(electronegativity)}")
 print(f" EA - Electron Affinity: {bold(electron_affinity)}eV = {bold(eV_to_kJpermol(electron_affinity))}kJ/mol")
 print(f" IE - {fore("Ionization Energy", IONIZATION_ENERGY_COL)}: {bold(ionization_energy)}eV = {bold(eV_to_kJpermol(ionization_energy))}kJ/mol")
-print(f" ⚡️ - {fore("Oxidation States", OXIDATION_STATES_COL)} {dim(f"(Only the ones that have {fore("color", BLUE)} are activated)")}:\n{"   " + negatives}\n{"   " + positives}\n")
+print(f" ⚡️ - {fore("Oxidation States", YELLOW)} {dim(f"(Only the ones that have {fore("color", BLUE)} are activated)")}:\n{"   " + negatives}\n{"   " + positives}\n")
 print(f" ⚡️ - Conductivity Type: {bold(conductivity_type)}")
 
 print()
