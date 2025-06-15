@@ -60,6 +60,8 @@ py -m pip install -r requirements.txt
 This is the recommended way to install packages, a global install.
 Now, just head inside the src folder, and **double-click the main.py file.** It will show you what program should it open the program for you, **select the Python interpreter.**
 
+> ABSOLUTELY **DO NOT RUN THE `periodica.sh` OR THE `build.sh` FILE ON YOUR MACHINE IF YOU ARE ON WINDOWS.** They are not tested for windows, and may cause unexpected conflicts. They are only there for Linux use.
+
 Anyways, that's about it! Have fun messing around, catching bugs, and do note, **you may use the `elementdata.json` file without any credits or permission,** but giving credit will help both clarify stuff and support the creator's hard work!
 
 > *(Unless you try to say that you made the `elementdata.json` file, you will be fine.)*
