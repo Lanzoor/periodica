@@ -8,21 +8,22 @@ However, for most cases, I recommend you run the following methods;
 **Run these commands, one-by-one.** The method below is heavily recommended, instead of downloading the zipped source code.
 
 ```bash
+# The following steps require you to run as super-user, since /opt/ and /usr/local/bin/ is protected by root.
 # This gets the GitHub repository, and adds it into the opt folder.
 sudo git clone https://github.com/Lanzoor/periodica.git /opt/periodica
 
 # Get inside the folder already!
 cd /opt/periodica
 
-# This will create a venv, and install required packages. READ THE SCRIPT FIRST! DO NOT TRUST SOURCES FROM ONLINE. It will create a venv folder. You will need to use sudo here, because /opt is protected by root.
+# This will create a venv, and install required packages. READ THE SCRIPT FIRST! DO NOT TRUST SOURCES FROM ONLINE. It will create a venv folder.
 sudo ./build.sh
 
 # Make it executable, so that you don't run into awful problems. This step is required for you to run periodica without using super-user.
 sudo chmod +x /opt/periodica/periodica.sh
 sudo chown -R $USER:$USER /opt/periodica
-chmod -R u+rwX /opt/periodica
+sudo chmod -R u+rwX /opt/periodica
 
-# Optional: move it into your /usr/local/bin/ so that you can access it anywhere by running periodica. SUDO IS REQUIRED, /usr/local/bin/ is protected by root.
+# Optional: move it into your /usr/local/bin/ so that you can access it anywhere by typing 'periodica'.
 sudo ln -s /opt/periodica/periodica.sh /usr/local/bin/periodica
 
 # Now let's test it!

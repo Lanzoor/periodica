@@ -24,8 +24,6 @@ valid_formats = [
     "numbersymbol"
 ]
 
-# TODO: ADD THIS LOGIC PLEASE.
-
 try:
     with open('./config.json', 'r', encoding="utf-8") as file:
         config = json.load(file)
@@ -194,8 +192,22 @@ def inverse_color(string) -> str:
 def dim(string) -> str:
     return f"\033[2m{string}\033[22m"
 
-tip = "(Tip: You can give this program argv to directly search an element from there. You can even give argv to the ./periodica.sh file too!)" if random.randint(0, 1) else ""
+tip = "(Tip: You can give this program argv to directly search an element from there. You can even give argv to the ./periodica.sh file too!)" if random.randint(0, 1) else "(Tip: run this script with the --info flag, and see what happens.)"
 
+program_information = f"""
+Welcome to {gradient("periodica", (156, 140, 255), (140, 255, 245)) if config['truecolor'] else fore("periodica", BLUE)}!
+This program provides useful information about the periodic elements.
+This project started as a fun hobby at around {bold("March 2025")}, but ended up getting taken seriously.
+This program was built with {fore("Python", BLUE)}, and uses {fore("JSON", YELLOW)} for configuration files.
+The vibrant colors and visuals were done with the help of {italic(bold("ANSI escape codes"))}, although you should note that {bold("some terminals may not have truecolor support.")}
+{dim("(You can disable this anytime in the config.json file, or using the --init flag.)")}
+{italic(bold(f"Special thanks to Discord user {fore("text_text_keke", CYAN)} for helping test this application!"))}
+There are also other flags you can provide to this program.
+
+- {bold("--info")} - Give this information message
+
+Anyways, I hope you enjoy this small program. {bold("Please read the README.md file for more information!")}
+"""
 # Reading json file, and trying to get from GitHub if fails
 
 elementdata_malformed = False
@@ -370,6 +382,11 @@ element = None
 suggestion = None
 
 if len(sys.argv) > 1:
+    if "--info" in sys.argv:
+        print(program_information)
+        sys.exit(0)
+    elif "--init" in sys.argv:
+        sys.exit(0)
     input_str = sys.argv[1].strip().lower()
     logging.info(f"User gave argv: \"{input_str}\"")
 
