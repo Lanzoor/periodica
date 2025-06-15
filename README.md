@@ -32,7 +32,7 @@ sudo ln -s /opt/periodica/periodica.sh /usr/local/bin/periodica
 periodica
 ```
 
-# ⚠️ Absolutely DO NOT run or use the `periodica.bat` file on Linux! It just won't work, and even if it does, you probably won't be able to access the `main.py` file with `periodica`.
+> ⚠️ Absolutely DO NOT run or use the `periodica.bat` file on Linux! It just won't work, and even if it does, you probably won't be able to access the `main.py` file with `periodica`.
 
 ## 🪟 Windows
 
