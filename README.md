@@ -3,10 +3,11 @@
 Of course, this is a Python script, which means you will need to run it with a Python interpreter.
 However, for most cases, I recommend you run the following methods;
 
-## For Linux
+## 🐧 Linux
 
 **Run these commands, one-by-one.** The method below is heavily recommended, instead of downloading the zipped source code.
-Make sure that you have the latest version of Python in your machine! It usually comes with Linux, but just be sure.
+
+> Make sure that you have the latest version of Python in your machine! It usually comes with Linux, but just be sure.
 
 ```bash
 # The following steps require you to run as super-user, since /opt/ and /usr/local/bin/ is protected by root.
@@ -17,7 +18,7 @@ sudo git clone https://github.com/Lanzoor/periodica.git /opt/periodica
 cd /opt/periodica
 
 # This will create a venv, and install required packages. READ THE SCRIPT FIRST! DO NOT TRUST SOURCES FROM ONLINE. It will create a venv folder.
-sudo ./build.sh
+sudo build.py
 
 # Make it executable, so that you don't run into awful problems. This step is required for you to run periodica without using super-user.
 sudo chmod +x /opt/periodica/periodica.sh
@@ -31,37 +32,78 @@ sudo ln -s /opt/periodica/periodica.sh /usr/local/bin/periodica
 periodica
 ```
 
-## Windows
+# ⚠️ Absolutely DO NOT run or use the `periodica.bat` file on Linux! It just won't work, and even if it does, you probably won't be able to access the `main.py` file with `periodica`.
 
-### Download the Python Interpreter
+## 🪟 Windows
 
-Unfortunately, **the Python interpreter does not come with your machine by default.** And even if it does, it is most likely very outdated.
-So, go to the official Python interpreter download page: <https://www.python.org/downloads/>
-And click **"Download Python"**.
+### 1. Install Python
 
-After you download the Python interpreter, run the following commands in your terminal to make sure it's installed properly:
+Windows doesn’t come with Python by default — and even if it does, it’s probably outdated.
+Go to the official Python download page:
+
+👉 https://www.python.org/downloads/
+
+Click the **"Download Python"** button and install it.
+
+After installing, open a terminal (Command Prompt or PowerShell) and verify it works:
 
 ```ps1
 py --version
 py -m pip --version
 ```
 
-(Make sure to replace the "py" keyword to something else if it does not work.)
+> If py doesn’t work, try using python or python3.
 
-### Download the Source Code
+### 2. Get the Source Code
 
-Now, download the zipped source code by clicking the **"<> Code ▼"** button in the GitHub repository, and clicking **"🗂️ Download ZIP"** button.
-The next thing you probably should do is install the required packages. Head into the directory of whatever place you downloaded the ZIP file, and run;
+Click the **"<> Code ▼"** button on the GitHub repo, then choose **"🗂️ Download ZIP"**.
+Extract the contents somewhere convenient, then open a terminal in that folder.
+
+### 3. Run the Setup Script
+
+Use this command to set everything up:
 
 ```ps1
-py -m pip install -r requirements.txt
+py build.py
 ```
 
-This is the recommended way to install packages, a global install.
-Now, just head inside the src folder, and **double-click the main.py file.** It will show you what program should it open the program for you, **select the Python interpreter.**
+This will:
 
-> ABSOLUTELY **DO NOT RUN THE `periodica.sh` OR THE `build.sh` FILE ON YOUR MACHINE IF YOU ARE ON WINDOWS.** They are not tested for windows, and may cause unexpected conflicts. They are only there for Linux use.
+> Create a virtual environment (venv)
 
-Anyways, that's about it! Have fun messing around, catching bugs, and do note, **you may use the `elementdata.json` file without any credits or permission,** but giving credit will help both clarify stuff and support the creator's hard work!
+> Install all required dependencies inside that venv
 
-> *(Unless you try to say that you made the `elementdata.json` file, you will be fine.)*
+### 4. Run the App
+
+Once setup is done, you can run the app in that same terminal:
+
+```ps1
+py src/main.py
+```
+
+Or open the folder and double-click `main.py` — then select the Python interpreter to open it.
+
+### 5. (Optional) Add the App on your PATH
+
+1. Press the shortcut `Win + R`, and in the input box, type `sysdm.cpl` carefully. Hit `Enter`.
+2. You will see a window named `System Properties`. Navigate to the `Advanced` tab. 
+3. Click `Environment Variables...` at the bottom.
+4. Under `User variables`, select `Path` and click `Edit`. 
+5. Click `New`, and paste the full absolute path to the folder containing your `periodica.bat` file.
+6. Now make sure to apply and confirm your edits. Exit all tabs.
+
+Now, you can just do this in a fresh terminal;
+
+```ps1
+periodica
+```
+
+And the project will automatically be runned once you type it.
+
+> ⚠️ **Absolutely DO NOT run the `periodica.sh` or `build.sh` scripts on Windows! They're only made for Linux/macOS and can (and will) cause problems on Windows.**
+
+## 🎉 You're Done!
+
+Go mess around with stuff, find some bugs, contribute improvements, or just enjoy playing with the element database!
+
+> The elementdata.json file is public domain — feel free to use it however you like. **But giving credit helps and shows respect to the effort behind it.** (Just don’t say that you made it, or use it to get profit. That's some real legal trouble right there.)
