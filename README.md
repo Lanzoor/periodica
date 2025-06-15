@@ -18,7 +18,7 @@ sudo git clone https://github.com/Lanzoor/periodica.git /opt/periodica
 cd /opt/periodica
 
 # This will create a venv, and install required packages. READ THE SCRIPT FIRST! DO NOT TRUST SOURCES FROM ONLINE. It will create a venv folder.
-sudo build.py
+sudo python3 build.py
 
 # Make it executable, so that you don't run into awful problems. This step is required for you to run periodica without using super-user.
 sudo chmod +x /opt/periodica/periodica.sh
