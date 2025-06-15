@@ -6,6 +6,7 @@ However, for most cases, I recommend you run the following methods;
 ## For Linux
 
 **Run these commands, one-by-one.** The method below is heavily recommended, instead of downloading the zipped source code.
+Make sure that you have the latest version of Python in your machine! It usually comes with Linux, but just be sure.
 
 ```bash
 # The following steps require you to run as super-user, since /opt/ and /usr/local/bin/ is protected by root.
@@ -32,7 +33,32 @@ periodica
 
 ## Windows
 
-Unfortunately, at least for now, **this program is not supported by Windows.** So unless you know the manual venv creation, please wait until a Windows version or a workaround is released.
+### Download the Python Interpreter
+
+Unfortunately, **the Python interpreter does not come with your machine by default.** And even if it does, it is most likely very outdated.
+So, go to the official Python interpreter download page: <https://www.python.org/downloads/>
+And click **"Download Python"**.
+
+After you download the Python interpreter, run the following commands in your terminal to make sure it's installed properly:
+
+```ps1
+py --version
+py -m pip --version
+```
+
+(Make sure to replace the "py" keyword to something else if it does not work.)
+
+### Download the Source Code
+
+Now, download the zipped source code by clicking the **"<> Code ▼"** button in the GitHub repository, and clicking **"🗂️ Download ZIP"** button.
+The next thing you probably should do is install the required packages. Head into the directory of whatever place you downloaded the ZIP file, and run;
+
+```ps1
+py -m pip install -r requirements.txt
+```
+
+This is the recommended way to install packages, a global install.
+Now, just head inside the src folder, and **double-click the main.py file.** It will show you what program should it open the program for you, **select the Python interpreter.**
 
 Anyways, that's about it! Have fun messing around, catching bugs, and do note, **you may use the `elementdata.json` file without any credits or permission,** but giving credit will help both clarify stuff and support the creator's hard work!
 
