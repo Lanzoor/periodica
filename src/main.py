@@ -353,7 +353,7 @@ def print_isotope(norm_iso, info, fullname):
     if 'daughter_isotope' in info:
         print(f"      🪞 - Daughter Isotope: {bold(format_isotope(info['daughter_isotope'], fullname))}")
     if 'decay' in info:
-        print(f"      ⛓️ - Decay Mode: {convert_superscripts(bold(info['decay'])) if superscripts else bold(info['decay'])}")
+        print(f"      ⛓️ - Decay Mode: {bold(info['decay'])}")
 
 def find_isotope(symbol_or_name, mass_number, search_query):
     for val in data.values():
