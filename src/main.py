@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 
-import logging, json, os, re, sys, logging, difflib, colorsys, random, re, sys, time
+import logging, json, os, re, sys, difflib, colorsys, random, time
+
+def abort_program(message):
+    logging.error(message)
+
+    time.sleep(2)
+    logging.fatal("Program terminated.")
+    sys.exit(1)
 
 with open('./execution.log', 'w', encoding="utf-8"):
     pass
@@ -74,6 +81,7 @@ if truecolor:
     BOIL_COL = (189, 165, 117)
     ORANGE = (245, 164, 66)
     IONIZATION_ENERGY_COL = (119, 50, 168)
+    INDIGO = (94, 52, 235)
 else:
     VALENCE_ELECTRONS_COL = YELLOW
     UP_QUARKS_COL = GREEN
@@ -85,6 +93,7 @@ else:
     BOIL_COL = YELLOW
     ORANGE = YELLOW
     IONIZATION_ENERGY_COL = MAGENTA
+    INDIGO = BLUE
 
 types = {
 	"Reactive nonmetal": GREEN,
@@ -93,6 +102,8 @@ types = {
 }
 
 # Other important functions / variables
+
+config_file = './config.json'
 
 def save_config():
     global config_file, config
@@ -173,11 +184,6 @@ def fore(string, color: int | list[int] | tuple[int, int, int], *, bright: bool 
         r, g, b = color
         return f"\033[38;2;{r};{g};{b}m{processed}\033[39m"
 
-def abort_program():
-    time.sleep(2)
-    logging.fatal("Program terminated.")
-    sys.exit(1)
-
 def gradient(string, start_rgb: list[int] | tuple[int, int, int], end_rgb: list[int] | tuple[int, int, int]):
     processed = str(string)
     start_h, start_l, start_s = colorsys.rgb_to_hls(start_rgb[0] / 255, start_rgb[1] / 255, start_rgb[2] / 255)
@@ -222,12 +228,11 @@ tip = "(Tip: You can give this program argv to directly search an element from t
 
 program_information = f"""
 Welcome to {bold(gradient("periodica", (156, 140, 255), (140, 255, 245)) if config['truecolor'] else fore("periodica", BLUE))}!
-This program provides useful information about the periodic elements.
+This program provides useful information about the periodic elements, and pretty much everything here was made by the Discord user {bold(fore("Lanzoor", INDIGO))}!
 This project started as a fun hobby at around {bold("March 2025")}, but ended up getting taken seriously.
-This program was built with {fore("Python", BLUE)}, and uses {fore("JSON", YELLOW)} for configuration files.
+This program was built with {fore("Python", CYAN)}, and uses {fore("JSON", YELLOW)} for configuration files / element database.
 The vibrant colors and visuals were done with the help of {italic(bold("ANSI escape codes"))}, although you should note that {bold("some terminals may not have truecolor support.")}
 {dim("(You can disable this anytime in the config.json file, or using the --init flag.)")}
-{italic(bold(f"Special thanks to Discord user {fore("text_text_keke", CYAN)} for helping test this application!"))}
 There are also other flags you can provide to this program.
 
 - {bold("--info")} - Give this information message
@@ -237,12 +242,13 @@ Anyways, I hope you enjoy this small program. {bold("Please read the README.md f
 # Reading json file, and trying to get from GitHub if fails
 
 elementdata_malformed = False
+
 try:
     with open("./elementdata.json", 'r', encoding="utf-8") as file:
         data = json.load(file)
         logging.info("elementdata.json file was successfully found.")
 except json.JSONDecodeError:
-    logging.error("elementdata.json file was modified, please do not do so no matter what.")
+    abort_program("elementdata.json file was modified, please do not do so no matter what.")
     print("The elementdata.json file was modified and malformed. Please do not do so, no matter what.\nThis means you need a fresh new elementdata.json file, is it okay for me to get the file for you on GitHub? (y/n)")
     elementdata_malformed = True
 except FileNotFoundError:
@@ -256,8 +262,7 @@ if elementdata_malformed:
         import requests
     except ImportError:
         print("Whoopsies, the requests module was not found in your environment! Please read the README.md file for more information.")
-        logging.error("Couldn't proceed; the requests library was not found in the environment.")
-        abort_program()
+        abort_program("Couldn't proceed; the requests library was not found in the environment.")
     if confirmation == "y":
         print("Getting content from https://raw.githubusercontent.com/Lanzoor/periodictable/main/src/elementdata.json, this should not take a while...")
         url = "https://raw.githubusercontent.com/Lanzoor/periodictable/main/src/elementdata.json"
@@ -265,8 +270,8 @@ if elementdata_malformed:
             response = requests.get(url)
         except requests.exceptions.ConnectionError:
             print("Whoops! There was a network connection error. Please check your network connection, and try again later.")
-            logging.error("Couldn't proceed; failed to connect to page.")
-            abort_program()
+            abort_program("Couldn't proceed; failed to connect to page.")
+
         if response.status_code == 200:
             print(f"HTTP status code: {response.status_code} (pass)")
             data = json.loads(response.text)
@@ -276,25 +281,27 @@ if elementdata_malformed:
             logging.info("Successfully got the elementdata.json file from https://raw.githubusercontent.com/Lanzoor/periodictable/main/src/elementdata.json.")
         else:
             print(f"Failed to download data! HTTP status code: {response.status_code}")
-            logging.error(f"Failed to fetch data. Status code: {response.status_code}.")
-            abort_program()
+            abort_program(f"Failed to fetch data. Status code: {response.status_code}.")
+
     elif confirmation == "n":
         print("Okay, exiting...")
-        logging.error("User denied confirmation for fetching the elementdata.json file.")
-        abort_program()
+        abort_program("User denied confirmation for fetching the elementdata.json file.")
     else:
         print("Invalid input, please try again later. Exiting...")
-        logging.error("User gave invalid confirmation.")
-        abort_program()
+        abort_program("User gave invalid confirmation.")
 
 # Getting element / isotope
 
-width = os.get_terminal_size().columns
+try:
+    width = os.get_terminal_size().columns
+except OSError:
+    print(bold("What?? So apparently, you aren't running this on a terminal, which is very weird. We will try to ignore this issue, and will determine your terminal width as 80. Please move on and ignore this message."))
+    logging.warning("The script ran without a terminal, so failback to reasonable terminal width variable.")
+    width = 80
 
 if width <= 80:
     print(fore(f"You are running this program in a terminal that has a width of {bold(width)},\nwhich may be too compact to display and provide the information.\nPlease try resizing your terminal.", RED))
     logging.warning("Not enough width for terminal.")
-
 element = None
 
 def match_isotope_input(input_str):
@@ -396,9 +403,12 @@ suggestion = None
 
 if len(sys.argv) > 1:
     if "--info" in sys.argv:
+        logging.info("User gave --info flag; redirecting to another logic.")
         print(program_information)
         sys.exit(0)
     elif "--init" in sys.argv:
+        logging.info("User gave --init flag; redirecting to another logic.")
+        pass
         sys.exit(0)
     input_str = sys.argv[1].strip().lower()
     logging.info(f"User gave argv: \"{input_str}\"")
@@ -459,18 +469,28 @@ if element is None:
         else:
             print(fore(f"Not a valid element or isotope. Did you mean \"{bold(suggestion[0])}\"?", YELLOW))
 
-# General info
-fullname = element["general"]["fullname"]
-symbol = element["general"]["symbol"]
-atomic_number = element["general"]["atomic_number"]
-description = element["general"]["description"]
-discoverers = element["historical"]["discoverers"]
-discovery_date = element["historical"]["date"]
-period = element["general"]["period"]
-group = element["general"]["group"]
-element_type = element["general"]["type"]
-block = element["general"]["block"]
-cas_number = element["general"]["cas_number"]
+# Dividing categories
+
+general = element["general"]
+historical = element["historical"]
+nuclear = element["nuclear"]
+electronic = element["electronic"]
+physical = element["physical"]
+measurements = element["measurements"]
+
+# General properties
+
+fullname = general["fullname"]
+symbol = general["symbol"]
+atomic_number = general["atomic_number"]
+description = general["description"]
+discoverers = historical["discoverers"]
+discovery_date = historical["date"]
+period = general["period"]
+group = general["group"]
+element_type = general["type"]
+block = general["block"]
+cas_number = general["cas_number"]
 
 periodic_table = [
     ["▪", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", "▪"],
@@ -506,15 +526,16 @@ entries = [
 discoverers = conjunction_join(entries)
 
 # Nuclear properties
-protons = element["nuclear"]["protons"]
-neutrons = element["nuclear"]["neutrons"]
-electrons = element["nuclear"]["electrons"]
-valence_electrons = element["nuclear"]["valence_electrons"]
+
+protons = nuclear["protons"]
+neutrons = nuclear["neutrons"]
+electrons = nuclear["electrons"]
+valence_electrons = nuclear["valence_electrons"]
 up_quarks = (protons * 2) + neutrons
 down_quarks = protons + (neutrons * 2)
-shells = element["electronic"]["shells"]
-subshells = element["electronic"]["subshells"]
-isotopes = element["nuclear"]["isotopes"]
+shells = electronic["shells"]
+subshells = electronic["subshells"]
+isotopes = nuclear["isotopes"]
 
 possible_shells = "klmnopqrstuvwxyz"
 shell_result = ""
@@ -540,18 +561,19 @@ for subshell in subshells:
 subshell_result = subshell_result.rstrip(", ")
 
 # Physical properties
-melting_point = element["physical"]["melt"]
-boiling_point = element["physical"]["boil"]
-atomic_mass = element["physical"]["atomic_mass"]
-radioactive = element["general"]["radioactive"]
-half_life = element["general"]["half_life"]
-density = element["physical"]["density"]
+
+melting_point = physical["melt"]
+boiling_point = physical["boil"]
+atomic_mass = physical["atomic_mass"]
+radioactive = general["radioactive"]
+half_life = general["half_life"]
+density = physical["density"]
 
 # Electronic properties
-electronegativity = element["electronic"]["electronegativity"]
-electron_affinity = element["electronic"]["electron_affinity"]
-ionization_energy = element["electronic"]["ionization_energy"]
-oxidation_states = element["electronic"]["oxidation_states"]
+electronegativity = electronic["electronegativity"]
+electron_affinity = electronic["electron_affinity"]
+ionization_energy = electronic["ionization_energy"]
+oxidation_states = electronic["oxidation_states"]
 
 negatives: list = [0, -1, -2, -3, -4, -5]
 positives: list = [1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -581,13 +603,13 @@ for index, pos_state in enumerate(positives):
 negatives_result = ", ".join(negatives)
 positives_result = ", ".join(positives)
 
-conductivity_type = element["electronic"]["conductivity_type"]
+conductivity_type = electronic["conductivity_type"]
 
 # Measurements
-radius = element["measurements"]["radius"]
-hardness = element["measurements"]["hardness"]
-atomic_volume = element["measurements"]["atomic_volume"]
-sound_transmission_speed = element["measurements"]["sound_transmission_speed"]
+radius = measurements["radius"]
+hardness = measurements["hardness"]
+atomic_volume = measurements["atomic_volume"]
+sound_transmission_speed = measurements["sound_transmission_speed"]
 
 logging.info("Starting output.")
 
