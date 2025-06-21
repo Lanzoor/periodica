@@ -27,7 +27,6 @@
                     "name": "Protium",
                     "protons": 1,
                     "neutrons": 0,
-                    "electrons": 1,
                     "half_life": null,
                     "isotope_weight": 1.007825031
                 },
@@ -35,7 +34,6 @@
                     "name": "Deuterium",
                     "protons": 1,
                     "neutrons": 1,
-                    "electrons": 1,
                     "half_life": null,
                     "isotope_weight": 2.014101777
                 },
@@ -43,17 +41,15 @@
                     "name": "Tritium",
                     "protons": 1,
                     "neutrons": 2,
-                    "electrons": 1,
                     "half_life": "12.32 years",
                     "isotope_weight": 3.016049281,
                     "daughter_isotope": "3He",
-                    "decay": "β⁻"
+                    "decay": "β-"
                 },
                 "4H": {
                     "half_life": "139 yoctoseconds",
                     "protons": 1,
                     "neutrons": 3,
-                    "electrons": 1,
                     "isotope_weight": 4.02643,
                     "daughter_isotope": "3H",
                     "decay": "n"
@@ -62,7 +58,6 @@
                     "half_life": "86 yoctoseconds",
                     "protons": 1,
                     "neutrons": 4,
-                    "electrons": 1,
                     "isotope_weight": 5.03531,
                     "daughter_isotope": "3H",
                     "decay": "2n"
@@ -71,14 +66,12 @@
                     "half_life": "294 yoctoseconds",
                     "protons": 1,
                     "neutrons": 5,
-                    "electrons": 1,
                     "isotope_weight": 6.04496
                 },
                 "7H": {
                     "half_life": "652 yoctoseconds",
                     "protons": 1,
                     "neutrons": 6,
-                    "electrons": 1,
                     "isotope_weight": 7.05275
                 }
             }
@@ -94,7 +87,7 @@
             "electron_affinity": 0.754,
             "ionization_energy": 13.598,
             "shells": [1],
-            "subshells": ["1s¹"],
+            "subshells": ["1s1"],
             "oxidation_states": [-1, 1],
             "conductivity_type": "Insulator"
         },
@@ -148,7 +141,6 @@
                     "half_life": "less than 1e-9 seconds",
                     "protons": 2,
                     "neutrons": 0,
-                    "electrons": 2,
                     "isotope_weight": 2.015894,
                     "decay": "p (> 99.99%), β⁺ (< 0.01%)",
                     "daughter_isotope": "1H (> 99.99%), 2H (< 0.01%)"
@@ -157,21 +149,18 @@
                     "half_life": null,
                     "protons": 2,
                     "neutrons": 1,
-                    "electrons": 2,
                     "isotope_weight": 3.0160293
                 },
                 "4He": {
                     "half_life": null,
                     "protons": 2,
                     "neutrons": 2,
-                    "electrons": 2,
                     "isotope_weight": 4.00260325415
                 },
                 "5He": {
                     "half_life": "6.02e22 seconds",
                     "protons": 2,
                     "neutrons": 3,
-                    "electrons": 2,
                     "isotope_weight": 5.012057,
                     "decay": "n",
                     "daughter_isotope": "4He"
@@ -180,19 +169,41 @@
                     "half_life": "806.92 ms",
                     "protons": 2,
                     "neutrons": 4,
-                    "electrons": 2,
                     "isotope_weight": 6.018885889,
-                    "decay": "β⁻ (99.999722%), β⁻d (0.000278%)",
+                    "decay": "β- (99.999722%), β-d (0.000278%)",
                     "daughter_isotope": "6Li (99.999722%), 4He (0.000278%)"
                 },
                 "7He": {
                     "half_life": "2.51e-21 s",
                     "protons": 2,
                     "neutrons": 5,
-                    "electrons": 2,
                     "isotope_weight": 7.027991,
                     "decay": "n",
                     "daughter_isotope": "6He"
+                },
+                "8He": {
+                    "half_life": "119.5 ms",
+                    "protons": 2,
+                    "neutrons": 6,
+                    "isotope_weight": 8.033934388,
+                    "decay": "β- (83.1%), β-n (16%), β-t (0.9%)",
+                    "daughter_isotope": "8Li (83.1%), 7Li (16%), 5He (0.9%)"
+                },
+                "9He": {
+                    "half_life": "2.5e−21 s",
+                    "protons": 2,
+                    "neutrons": 7,
+                    "isotope_weight": 9.043946,
+                    "decay": "n",
+                    "daughter_isotope": "8He"
+                },
+                "10He": {
+                    "half_life": "2.60e-22 s",
+                    "protons": 2,
+                    "neutrons": 8,
+                    "isotope_weight": 10.05281531,
+                    "decay": "2n",
+                    "daughter_isotope": "8He"
                 }
             }
         },
