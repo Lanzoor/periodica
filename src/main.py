@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import logging, json, os, re, sys, logging, difflib, colorsys, random, re, sys, time
 
 with open('./execution.log', 'w', encoding="utf-8"):
@@ -18,11 +20,7 @@ default_options = {
     "isotope_format": "fullname-number",
 }
 
-valid_formats = [
-    "fullname-number",
-    "symbol-number",
-    "numbersymbol"
-]
+valid_formats = ["fullname-number", "symbol-number", "numbersymbol"]
 
 try:
     with open('./config.json', 'r', encoding="utf-8") as file:
@@ -58,20 +56,32 @@ CYAN = 6
 WHITE = 7
 DEFAULT_COLOR = 9
 
-VALENCE_ELECTRONS_COL = (248, 255, 166) if config["truecolor"] else YELLOW
-UP_QUARKS_COL = (122, 255, 129) if config["truecolor"] else GREEN
-DOWN_QUARKS_COL = (230, 156, 60) if config["truecolor"] else CYAN
-MALE = (109, 214, 237) if config["truecolor"] else CYAN
-FEMALE = (255, 133, 245) if config["truecolor"] else MAGENTA
-NULL_COL = (90, 232, 227) if config["truecolor"] else CYAN
-MELT_COL = (52, 110, 235) if config["truecolor"] else BLUE
-BOIL_COL = (189, 165, 117) if config["truecolor"] else YELLOW
-ORANGE = (245, 164, 66) if config["truecolor"] else YELLOW
-IONIZATION_ENERGY_COL = (119, 50, 168) if config["truecolor"] else MAGENTA
+if config["truecolor"]:
+    VALENCE_ELECTRONS_COL = (248, 255, 166)
+    UP_QUARKS_COL = (122, 255, 129)
+    DOWN_QUARKS_COL = (230, 156, 60)
+    MALE = (109, 214, 237)
+    FEMALE = (255, 133, 245)
+    NULL_COL = (90, 232, 227)
+    MELT_COL = (52, 110, 235)
+    BOIL_COL = (189, 165, 117)
+    ORANGE = (245, 164, 66)
+    IONIZATION_ENERGY_COL = (119, 50, 168)
+else:
+    VALENCE_ELECTRONS_COL = YELLOW
+    UP_QUARKS_COL = GREEN
+    DOWN_QUARKS_COL = CYAN
+    MALE = CYAN
+    FEMALE = MAGENTA
+    NULL_COL = CYAN
+    MELT_COL = BLUE
+    BOIL_COL = YELLOW
+    ORANGE = YELLOW
+    IONIZATION_ENERGY_COL = MAGENTA
 
 types = {
-	"Reactive nonmetal": (27, 156, 20) if config["truecolor"] else GREEN,
-	"Noble gas": (252, 233, 61) if config["truecolor"] else YELLOW,
+	"Reactive nonmetal": GREEN,
+	"Noble gas": YELLOW,
 	"Alkali metal": (176, 176, 176) if config["truecolor"] else DEFAULT_COLOR
 }
 
@@ -152,6 +162,11 @@ def fore(string, color: int | list[int] | tuple[int, int, int], *, bright: bool 
         r, g, b = color
         return f"\033[38;2;{r};{g};{b}m{processed}\033[39m"
 
+def abort_program():
+    time.sleep(2)
+    logging.fatal("Program terminated.")
+    sys.exit(1)
+
 def gradient(string, start_rgb: list[int] | tuple[int, int, int], end_rgb: list[int] | tuple[int, int, int]):
     processed = str(string)
     start_h, start_l, start_s = colorsys.rgb_to_hls(start_rgb[0] / 255, start_rgb[1] / 255, start_rgb[2] / 255)
@@ -195,7 +210,7 @@ def dim(string) -> str:
 tip = "(Tip: You can give this program argv to directly search an element from there. You can even give argv to the ./periodica.sh file too!)" if random.randint(0, 1) else "(Tip: run this script with the --info flag, and see what happens.)"
 
 program_information = f"""
-Welcome to {gradient("periodica", (156, 140, 255), (140, 255, 245)) if config['truecolor'] else fore("periodica", BLUE)}!
+Welcome to {bold(gradient("periodica", (156, 140, 255), (140, 255, 245)) if config['truecolor'] else fore("periodica", BLUE))}!
 This program provides useful information about the periodic elements.
 This project started as a fun hobby at around {bold("March 2025")}, but ended up getting taken seriously.
 This program was built with {fore("Python", BLUE)}, and uses {fore("JSON", YELLOW)} for configuration files.
@@ -231,9 +246,7 @@ if elementdata_malformed:
     except ImportError:
         print("Whoopsies, the requests module was not found in your environment! Please read the README.md file for more information.")
         logging.error("Couldn't proceed; the requests library was not found in the environment.")
-        time.sleep(5)
-        logging.fatal("Program terminated.")
-        sys.exit(1)
+        abort_program()
     if confirmation == "y":
         print("Getting content from https://raw.githubusercontent.com/Lanzoor/periodictable/main/src/elementdata.json, this should not take a while...")
         url = "https://raw.githubusercontent.com/Lanzoor/periodictable/main/src/elementdata.json"
@@ -242,9 +255,7 @@ if elementdata_malformed:
         except requests.exceptions.ConnectionError:
             print("Whoops! There was a network connection error. Please check your network connection, and try again later.")
             logging.error("Couldn't proceed; failed to connect to page.")
-            time.sleep(2)
-            logging.fatal("Program terminated.")
-            sys.exit(1)
+            abort_program()
         if response.status_code == 200:
             print(f"HTTP status code: {response.status_code} (pass)")
             data = json.loads(response.text)
@@ -255,21 +266,15 @@ if elementdata_malformed:
         else:
             print(f"Failed to download data! HTTP status code: {response.status_code}")
             logging.error(f"Failed to fetch data. Status code: {response.status_code}.")
-            time.sleep(2)
-            logging.fatal("Program terminated.")
-            sys.exit(1)
+            abort_program()
     elif confirmation == "n":
         print("Okay, exiting...")
         logging.error("User denied confirmation for fetching the elementdata.json file.")
-        time.sleep(2)
-        logging.fatal("Program terminated.")
-        sys.exit(1)
+        abort_program()
     else:
         print("Invalid input, please try again later. Exiting...")
         logging.error("User gave invalid confirmation.")
-        time.sleep(2)
-        logging.fatal("Program terminated.")
-        sys.exit(1)
+        abort_program()
 
 # Getting element / isotope
 
@@ -474,6 +479,7 @@ actinides = [" "] * 4 + ["▪"] * 15
 
 if (period != 6 and group != 3) and (period != 7 and group != 3):
     periodic_table = [list(map(dim, symbol)) for symbol in periodic_table]
+
 lanthanides = [dim(symbol) for symbol in lanthanides]
 actinides = [dim(symbol) for symbol in actinides]
 
