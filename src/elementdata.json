@@ -43,24 +43,39 @@
                     "neutrons": 2,
                     "half_life": "12.32 years",
                     "isotope_weight": 3.016049281,
-                    "daughter_isotope": "3He",
-                    "decay": "β-"
+                    "decay": [
+                        {
+                            "mode": "β-",
+                            "product": ["3He"],
+                            "chance": 100
+                        }
+                    ]
                 },
                 "4H": {
                     "half_life": "139 yoctoseconds",
                     "protons": 1,
                     "neutrons": 3,
                     "isotope_weight": 4.02643,
-                    "daughter_isotope": "3H",
-                    "decay": "n"
+                    "decay": [
+                        {
+                            "mode": "n",
+                            "product": ["3H"],
+                            "chance": 100
+                        }
+                    ]
                 },
                 "5H": {
                     "half_life": "86 yoctoseconds",
                     "protons": 1,
                     "neutrons": 4,
                     "isotope_weight": 5.03531,
-                    "daughter_isotope": "3H",
-                    "decay": "2n"
+                    "decay": [
+                        {
+                            "mode": "2n",
+                            "product": ["3H"],
+                            "chance": 100
+                        }
+                    ]
                 },
                 "6H": {
                     "half_life": "294 yoctoseconds",
@@ -138,12 +153,22 @@
             "valence_electrons": 2,
             "isotopes": {
                 "2He": {
-                    "half_life": "less than 1e-9 seconds",
+                    "half_life": "much less than 1e-9 seconds",
                     "protons": 2,
                     "neutrons": 0,
                     "isotope_weight": 2.015894,
-                    "decay": "p (> 99.99%), β⁺ (< 0.01%)",
-                    "daughter_isotope": "1H (> 99.99%), 2H (< 0.01%)"
+                    "decay": [
+                        {
+                            "mode": "p",
+                            "product": ["1H"],
+                            "chance": 99.99
+                        },
+                        {
+                            "mode": "β+",
+                            "product": ["2H"],
+                            "chance": 0.01
+                        }
+                    ]
                 },
                 "3He": {
                     "half_life": null,
@@ -162,48 +187,93 @@
                     "protons": 2,
                     "neutrons": 3,
                     "isotope_weight": 5.012057,
-                    "decay": "n",
-                    "daughter_isotope": "4He"
+                    "decay": [
+                        {
+                            "mode": "n",
+                            "product": ["4He"],
+                            "chance": 100
+                        }
+                    ]
                 },
                 "6He": {
                     "half_life": "806.92 ms",
                     "protons": 2,
                     "neutrons": 4,
                     "isotope_weight": 6.018885889,
-                    "decay": "β- (99.999722%), β-d (0.000278%)",
-                    "daughter_isotope": "6Li (99.999722%), 4He (0.000278%)"
+                    "decay": [
+                        {
+                            "mode": "β-",
+                            "product": ["6Li"],
+                            "chance": 99.999722
+                        },
+                        {
+                            "mode": "β-d",
+                            "product": ["4He"],
+                            "chance": 0.000278
+                        }
+                    ]
                 },
                 "7He": {
                     "half_life": "2.51e-21 s",
                     "protons": 2,
                     "neutrons": 5,
                     "isotope_weight": 7.027991,
-                    "decay": "n",
-                    "daughter_isotope": "6He"
+                    "decay": [
+                        {
+                            "mode": "n",
+                            "product": ["6He"],
+                            "chance": 100
+                        }
+                    ]
                 },
                 "8He": {
                     "half_life": "119.5 ms",
                     "protons": 2,
                     "neutrons": 6,
                     "isotope_weight": 8.033934388,
-                    "decay": "β- (83.1%), β-n (16%), β-t (0.9%)",
-                    "daughter_isotope": "8Li (83.1%), 7Li (16%), 5He (0.9%)"
+                    "decay": [
+                        {
+                            "mode": "β-",
+                            "product": ["8Li"],
+                            "chance": 83.1
+                        },
+                        {
+                            "mode": "β-n",
+                            "product": ["7Li"],
+                            "chance": 16
+                        },
+                        {
+                            "mode": "β-t",
+                            "product": ["5He"],
+                            "chance": 0.9
+                        }
+                    ]
                 },
                 "9He": {
                     "half_life": "2.5e−21 s",
                     "protons": 2,
                     "neutrons": 7,
                     "isotope_weight": 9.043946,
-                    "decay": "n",
-                    "daughter_isotope": "8He"
+                    "decay": [
+                        {
+                            "mode": "n",
+                            "product": ["8He"],
+                            "chance": 100
+                        }
+                    ]
                 },
                 "10He": {
                     "half_life": "2.60e-22 s",
                     "protons": 2,
                     "neutrons": 8,
                     "isotope_weight": 10.05281531,
-                    "decay": "2n",
-                    "daughter_isotope": "8He"
+                    "decay": [
+                        {
+                            "mode": "2n",
+                            "product": ["8He"],
+                            "chance": 100
+                        }
+                    ]
                 }
             }
         },
