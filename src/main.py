@@ -19,102 +19,16 @@ logging.basicConfig(
     format='%(asctime)s [%(levelname)s] %(message)s'
 )
 
-logging.info("Program initiallized.")
-
-default_options = {
-    "use_superscripts": True,
-    "truecolor": True,
-    "isotope_format": "fullname-number",
-}
-
-valid_formats = ["fullname-number", "symbol-number", "numbersymbol"]
-
-try:
-    with open('./config.json', 'r', encoding="utf-8") as file:
-        config = json.load(file)
-        logging.info("The configuration file was found.")
-except json.JSONDecodeError:
-    with open('./config.json', 'w', encoding="utf-8") as file:
-        config = default_options
-        file.write(json.dumps(default_options))
-        logging.info("Overwrited configuration file since it was malformed.")
-except FileNotFoundError:
-    with open('./config.json', 'w', encoding="utf-8") as file:
-        config = default_options
-        file.write(json.dumps(default_options))
-        logging.info("Created a new configuration file, since it didn't exist.")
-
-for key, value in default_options.items():
-    if key == "isotope_format":
-        if config[key] not in valid_formats:
-            config[key] = value
-    else:
-        config.setdefault(key, value)
-
-superscripts = config["use_superscripts"]
-truecolor = config["truecolor"]
-isotope_format = config["isotope_format"]
-
-cm3 = "cm³" if superscripts else "cm3"
-mm2 = "mm²" if superscripts else "mm2"
-
-# Color Configs
-
-BLACK = 0
-RED = 1
-GREEN = 2
-YELLOW = 3
-BLUE = 4
-MAGENTA = 5
-CYAN = 6
-WHITE = 7
-DEFAULT_COLOR = 9
-
-if truecolor:
-    VALENCE_ELECTRONS_COL = (248, 255, 166)
-    UP_QUARKS_COL = (122, 255, 129)
-    DOWN_QUARKS_COL = (230, 156, 60)
-    MALE = (109, 214, 237)
-    FEMALE = (255, 133, 245)
-    NULL_COL = (90, 232, 227)
-    MELT_COL = (52, 110, 235)
-    BOIL_COL = (189, 165, 117)
-    ORANGE = (245, 164, 66)
-    IONIZATION_ENERGY_COL = (119, 50, 168)
-    INDIGO = (94, 52, 235)
-else:
-    VALENCE_ELECTRONS_COL = YELLOW
-    UP_QUARKS_COL = GREEN
-    DOWN_QUARKS_COL = CYAN
-    MALE = CYAN
-    FEMALE = MAGENTA
-    NULL_COL = CYAN
-    MELT_COL = BLUE
-    BOIL_COL = YELLOW
-    ORANGE = YELLOW
-    IONIZATION_ENERGY_COL = MAGENTA
-    INDIGO = BLUE
-
-types = {
-	"Reactive nonmetal": GREEN,
-	"Noble gas": YELLOW,
-	"Alkali metal": (176, 176, 176) if truecolor else DEFAULT_COLOR
-}
-
-# Other important functions / variables
-
-config_file = './config.json'
-
 def save_config():
-    global config_file, config
-    with open(config_file, 'w', encoding="utf-8") as file:
+    global config
+    with open('./config.json', 'w', encoding="utf-8") as file:
         json.dump(config, file, indent=4)
 
 def celcius_to_kelvin(celsius):
 	return (celsius * 1e16 + 273.15 * 1e16) / 1e16
 
 def celcius_to_fahrenheit(celsius):
-	return (celsius * 1e16 * 9/5) / 1e16
+	return (celsius * 9 / 5) + 32
 
 def eV_to_kJpermol(eV):
     return eV * 96.485
@@ -224,6 +138,92 @@ def inverse_color(string) -> str:
 def dim(string) -> str:
     return f"\033[2m{string}\033[22m"
 
+logging.info("Program initialized.")
+
+default_options = {
+    "use_superscripts": True,
+    "truecolor": True,
+    "isotope_format": "fullname-number",
+}
+
+valid_formats = ["fullname-number", "symbol-number", "numbersymbol"]
+
+try:
+    with open('./config.json', 'r', encoding="utf-8") as file:
+        config = json.load(file)
+        logging.info("The configuration file was found.")
+except json.JSONDecodeError:
+    with open('./config.json', 'w', encoding="utf-8") as file:
+        config = default_options
+        json.dump(default_options, file)
+        logging.info("Overwrited configuration file since it was malformed.")
+except FileNotFoundError:
+    with open('./config.json', 'w', encoding="utf-8") as file:
+        config = default_options
+        json.dump(default_options, file)
+        logging.info("Created a new configuration file, since it didn't exist.")
+
+for key, value in default_options.items():
+    if key == "isotope_format":
+        if config[key] not in valid_formats:
+            config[key] = value
+    else:
+        config.setdefault(key, value)
+save_config()
+
+superscripts = config["use_superscripts"]
+truecolor = config["truecolor"]
+isotope_format = config["isotope_format"]
+
+cm3 = "cm³" if superscripts else "cm3"
+mm2 = "mm²" if superscripts else "mm2"
+
+# Color Configs
+
+BLACK = 0
+RED = 1
+GREEN = 2
+YELLOW = 3
+BLUE = 4
+MAGENTA = 5
+CYAN = 6
+WHITE = 7
+DEFAULT_COLOR = 9
+
+if truecolor:
+    VALENCE_ELECTRONS_COL = (248, 255, 166)
+    UP_QUARKS_COL = (122, 255, 129)
+    DOWN_QUARKS_COL = (230, 156, 60)
+    MALE = (109, 214, 237)
+    FEMALE = (255, 133, 245)
+    NULL_COL = (90, 232, 227)
+    MELT_COL = (52, 110, 235)
+    BOIL_COL = (189, 165, 117)
+    ORANGE = (245, 164, 66)
+    IONIZATION_ENERGY_COL = (119, 50, 168)
+    INDIGO = (94, 52, 235)
+else:
+    VALENCE_ELECTRONS_COL = YELLOW
+    UP_QUARKS_COL = GREEN
+    DOWN_QUARKS_COL = CYAN
+    MALE = CYAN
+    FEMALE = MAGENTA
+    NULL_COL = CYAN
+    MELT_COL = BLUE
+    BOIL_COL = YELLOW
+    ORANGE = YELLOW
+    IONIZATION_ENERGY_COL = MAGENTA
+    INDIGO = BLUE
+
+types = {
+	"Reactive nonmetal": GREEN,
+	"Noble gas": YELLOW,
+	"Alkali metal": (176, 176, 176) if truecolor else DEFAULT_COLOR
+}
+
+# Other important functions / variables
+
+config_file = './config.json'
 tip = "(Tip: You can give this program argv to directly search an element from there. You can even give argv to the ./periodica.sh file too!)" if random.randint(0, 1) else "(Tip: run this script with the --info flag, and see what happens.)"
 
 program_information = f"""
@@ -357,10 +357,17 @@ def print_isotope(norm_iso, info, fullname):
     print(f"      t1/2 - Half Life: {bold(half_life) if half_life is not None else fore('Stable', NULL_COL)}")
     print(f"      u - Isotope Weight: {bold(isotope_weight)}g/mol")
 
-    if 'daughter_isotope' in info:
-        print(f"      🪞 - Daughter Isotope: {bold(format_isotope(info['daughter_isotope'], fullname))}")
-    if 'decay' in info:
-        print(f"      ⛓️ - Decay Mode: {bold(info['decay'])}")
+    if 'decay' in info and isinstance(info['decay'], list):
+        print(f"      ⛓️ - Possible Decays:")
+        for decay_branch in info['decay']:
+            decay_mode = decay_branch['mode']
+            chances = f"({decay_branch['chance']}%)" if decay_branch['chance'] != 100 else ""
+            products = decay_branch['product']
+            products = [format_isotope(element, fullname) for element in products]
+            products = list(map(lambda element: bold(element), products))
+            products = ", ".join(products)
+
+            print(f"        {bold(display_name)} -> {bold(decay_mode)} -> {products} {chances}")
 
 def find_isotope(symbol_or_name, mass_number, search_query):
     for val in data.values():
@@ -549,6 +556,9 @@ for index, electron in enumerate(shells):
 subshell_capacities = {'s': 2, 'p': 6, 'd': 10, 'f': 14}
 subshell_result = ""
 for subshell in subshells:
+    if len(subshell) < 3 or not subshell[-1].isdigit():
+        logging.warning(f"Malformed subshell: {subshell}")
+        continue
     subshell = subshell[:-1] + (convert_superscripts(subshell[-1]) if superscripts else subshell[-1])
     match = re.match(r"(\d)([spdf])(\d+)", subshell)
     if match:
@@ -575,30 +585,25 @@ electron_affinity = electronic["electron_affinity"]
 ionization_energy = electronic["ionization_energy"]
 oxidation_states = electronic["oxidation_states"]
 
-negatives: list = [0, -1, -2, -3, -4, -5]
-positives: list = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+raw_negatives = [0, -1, -2, -3, -4, -5]
+raw_positives = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+negatives = []
+positives = []
 
-for index, neg_state in enumerate(negatives):
-    if neg_state in oxidation_states:
-        if neg_state == 0:
-            negatives[index] = bold(fore(neg_state, GREEN))
-        elif neg_state < 0:
-            negatives[index] = bold(fore(neg_state, BLUE))
+for state in raw_negatives:
+    if state in oxidation_states:
+        if state == 0:
+            negatives.append(bold(fore(state, GREEN)))
         else:
-            negatives[index] = bold(fore(neg_state, RED))
+            negatives.append(bold(fore(state, BLUE)))
     else:
-        negatives[index] = dim(neg_state)
+        negatives.append(dim(str(state)))
 
-for index, pos_state in enumerate(positives):
-    if pos_state in oxidation_states:
-        if pos_state == 0:
-            positives[index] = bold(fore(pos_state, GREEN))
-        elif pos_state < 0:
-            positives[index] = bold(fore(pos_state, BLUE))
-        else:
-            positives[index] = bold(fore(pos_state, RED))
+for state in raw_positives:
+    if state in oxidation_states:
+        positives.append(bold(fore(state, RED)))
     else:
-        positives[index] = dim(pos_state)
+        positives.append(dim(str(state)))
 
 negatives_result = ", ".join(negatives)
 positives_result = ", ".join(positives)
