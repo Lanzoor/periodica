@@ -35,12 +35,12 @@ def eV_to_kJpermol(eV):
 
 def print_header(title):
     dashes = "-" * (width - len(title) - 2)
-    print(f"--{bold(title)}{dashes}")
+    animate_print(f"--{bold(title)}{dashes}")
 
 def print_separator():
-    print()
-    print("-" * width)
-    print()
+    animate_print()
+    animate_print("-" * width)
+    animate_print()
 
 def convert_superscripts(string: str) -> str:
     superscript_map = {
@@ -144,9 +144,12 @@ default_options = {
     "use_superscripts": True,
     "truecolor": True,
     "isotope_format": "fullname-number",
+    "animation": "none",
+    "animation_delay": 0.001
 }
 
 valid_formats = ["fullname-number", "symbol-number", "numbersymbol"]
+valid_animations = ["char", "line", "none"]
 
 try:
     with open('./config.json', 'r', encoding="utf-8") as file:
@@ -167,16 +170,47 @@ for key, value in default_options.items():
     if key == "isotope_format":
         if config[key] not in valid_formats:
             config[key] = value
+    elif key == "animation":
+        if config[key] not in valid_animations:
+            config[key] = value
     else:
         config.setdefault(key, value)
+
 save_config()
 
 superscripts = config["use_superscripts"]
 truecolor = config["truecolor"]
 isotope_format = config["isotope_format"]
+animation_type = config["animation"]
+animation_delay = config["animation_delay"]
 
 cm3 = "cm³" if superscripts else "cm3"
 mm2 = "mm²" if superscripts else "mm2"
+
+def animate_print(message: str = "", delay: float = animation_delay, *, end: str = "\n"):
+    global animation_type
+    if animation_type == "char":
+        ansi_escape = re.compile(r'(\x1b\[[0-9;]*m)')
+        parts = ansi_escape.split(message)
+        active_styles = ""
+        for part in parts:
+            if ansi_escape.fullmatch(part):
+                active_styles = part
+                sys.stdout.write(part)
+                sys.stdout.flush()
+            else:
+                for char in part:
+                    sys.stdout.write(f"{active_styles}{char}")
+                    sys.stdout.flush()
+                    time.sleep(delay)
+    elif animation_type == "line":
+        for line in message.splitlines():
+            sys.stdout.write(line + "\n")
+            sys.stdout.flush()
+            time.sleep(delay)
+    elif animation_type == "none":
+        print(message)
+    print(end, end="")
 
 # Color Configs
 
@@ -236,7 +270,9 @@ The vibrant colors and visuals were done with the help of {italic(bold("ANSI esc
 There are also other flags you can provide to this program.
 
 - {bold("--info")} - Give this information message
+- {bold("--init")} - Edit the settings
 
+{bold("Note: Giving a flag ignores any other arguments, except special ones marked with an asterisk.")}
 Anyways, I hope you enjoy this small program. {bold("Please read the README.md file for more information!")}
 """
 # Reading json file, and trying to get from GitHub if fails
@@ -249,11 +285,11 @@ try:
         logging.info("elementdata.json file was successfully found.")
 except json.JSONDecodeError:
     abort_program("elementdata.json file was modified, please do not do so no matter what.")
-    print("The elementdata.json file was modified and malformed. Please do not do so, no matter what.\nThis means you need a fresh new elementdata.json file, is it okay for me to get the file for you on GitHub? (y/n)")
+    animate_print("The elementdata.json file was modified and malformed. Please do not do so, no matter what.\nThis means you need a fresh new elementdata.json file, is it okay for me to get the file for you on GitHub? (y/n)")
     elementdata_malformed = True
 except FileNotFoundError:
     logging.warning("elementdata.json file was not found.")
-    print("The elementdata.json file was not found. Is it okay for me to get the file for you on GitHub? (y/n)")
+    animate_print("The elementdata.json file was not found. Is it okay for me to get the file for you on GitHub? (y/n)")
     elementdata_malformed = True
 
 if elementdata_malformed:
@@ -261,33 +297,33 @@ if elementdata_malformed:
     try:
         import requests
     except ImportError:
-        print("Whoopsies, the requests module was not found in your environment! Please read the README.md file for more information.")
+        animate_print("Whoopsies, the requests module was not found in your environment! Please read the README.md file for more information.")
         abort_program("Couldn't proceed; the requests library was not found in the environment.")
     if confirmation == "y":
-        print("Getting content from https://raw.githubusercontent.com/Lanzoor/periodictable/main/src/elementdata.json, this should not take a while...")
+        animate_print("Getting content from https://raw.githubusercontent.com/Lanzoor/periodictable/main/src/elementdata.json, this should not take a while...")
         url = "https://raw.githubusercontent.com/Lanzoor/periodictable/main/src/elementdata.json"
         try:
             response = requests.get(url)
         except requests.exceptions.ConnectionError:
-            print("Whoops! There was a network connection error. Please check your network connection, and try again later.")
+            animate_print("Whoops! There was a network connection error. Please check your network connection, and try again later.")
             abort_program("Couldn't proceed; failed to connect to page.")
 
         if response.status_code == 200:
-            print(f"HTTP status code: {response.status_code} (pass)")
+            animate_print(f"HTTP status code: {response.status_code} (pass)")
             data = json.loads(response.text)
             with open("./elementdata.json", "w", encoding="utf-8") as f:
                 f.write(response.text)
-            print("Going back to the program, since all issues were resolved.")
+            animate_print("Going back to the program, since all issues were resolved.")
             logging.info("Successfully got the elementdata.json file from https://raw.githubusercontent.com/Lanzoor/periodictable/main/src/elementdata.json.")
         else:
-            print(f"Failed to download data! HTTP status code: {response.status_code}")
+            animate_print(f"Failed to download data! HTTP status code: {response.status_code}")
             abort_program(f"Failed to fetch data. Status code: {response.status_code}.")
 
     elif confirmation == "n":
-        print("Okay, exiting...")
+        animate_print("Okay, exiting...")
         abort_program("User denied confirmation for fetching the elementdata.json file.")
     else:
-        print("Invalid input, please try again later. Exiting...")
+        animate_print("Invalid input, please try again later. Exiting...")
         abort_program("User gave invalid confirmation.")
 
 # Getting element / isotope
@@ -295,12 +331,12 @@ if elementdata_malformed:
 try:
     width = os.get_terminal_size().columns
 except OSError:
-    print(bold("What?? So apparently, you aren't running this on a terminal, which is very weird. We will try to ignore this issue, and will determine your terminal width as 80. Please move on and ignore this message."))
+    animate_print(bold("What?? So apparently, you aren't running this on a terminal, which is very weird. We will try to ignore this issue, and will determine your terminal width as 80. Please move on and ignore this message."))
     logging.warning("The script ran without a terminal, so failback to reasonable terminal width variable.")
     width = 80
 
 if width <= 80:
-    print(fore(f"You are running this program in a terminal that has a width of {bold(width)},\nwhich may be too compact to display and provide the information.\nPlease try resizing your terminal.", RED))
+    animate_print(fore(f"You are running this program in a terminal that has a width of {bold(width)},\nwhich may be too compact to display and provide the information.\nPlease try resizing your terminal.", RED))
     logging.warning("Not enough width for terminal.")
 element = None
 
@@ -329,7 +365,7 @@ def format_isotope(norm_iso, fullname):
             return f"{symbol}-{number}"
 
 def print_isotope(norm_iso, info, fullname):
-    print()
+    animate_print()
     match = re.match(r"^(\d+)\s*([A-Za-z]+)$", remove_superscripts(norm_iso))
 
     if not match:
@@ -338,9 +374,9 @@ def print_isotope(norm_iso, info, fullname):
         display_name = format_isotope(norm_iso, fullname)
 
     if 'name' in info:
-        print(f"  - {bold(display_name)} ({info['name']}):")
+        animate_print(f"  - {bold(display_name)} ({info['name']}):")
     else:
-        print(f"  - {bold(display_name)}:")
+        animate_print(f"  - {bold(display_name)}:")
 
     protons = info['protons']
     neutrons = info['neutrons']
@@ -349,16 +385,16 @@ def print_isotope(norm_iso, info, fullname):
     half_life = info['half_life']
     isotope_weight = info['isotope_weight']
 
-    print(f"      p{convert_superscripts("+")}, e{convert_superscripts("-")} - {fore("Protons", RED)} and {fore("Electrons", YELLOW)}: {bold(protons)}")
-    print(f"      n{"⁰" if superscripts else ""} - {fore("Neutrons", BLUE)}: {bold(neutrons)}")
-    print(f"      u - {fore("Up Quarks", UP_QUARKS_COL)}: ({fore(protons, RED)} * 2) + {fore(neutrons, BLUE)} = {bold(up_quarks)}")
-    print(f"      d - {fore("Down Quarks", DOWN_QUARKS_COL)}: {fore(protons, RED)} + ({fore(neutrons, BLUE)} * 2) = {bold(down_quarks)}")
+    animate_print(f"      p{convert_superscripts("+")}, e{convert_superscripts("-")} - {fore("Protons", RED)} and {fore("Electrons", YELLOW)}: {bold(protons)}")
+    animate_print(f"      n{"⁰" if superscripts else ""} - {fore("Neutrons", BLUE)}: {bold(neutrons)}")
+    animate_print(f"      u - {fore("Up Quarks", UP_QUARKS_COL)}: ({fore(protons, RED)} * 2) + {fore(neutrons, BLUE)} = {bold(up_quarks)}")
+    animate_print(f"      d - {fore("Down Quarks", DOWN_QUARKS_COL)}: {fore(protons, RED)} + ({fore(neutrons, BLUE)} * 2) = {bold(down_quarks)}")
 
-    print(f"      t1/2 - Half Life: {bold(half_life) if half_life is not None else fore('Stable', NULL_COL)}")
-    print(f"      u - Isotope Weight: {bold(isotope_weight)}g/mol")
+    animate_print(f"      t1/2 - Half Life: {bold(half_life) if half_life is not None else fore('Stable', NULL_COL)}")
+    animate_print(f"      u - Isotope Weight: {bold(isotope_weight)}g/mol")
 
     if 'decay' in info and isinstance(info['decay'], list):
-        print(f"      ⛓️ - Possible Decays:")
+        animate_print("      ⛓️ - Possible Decays:")
         for decay_branch in info['decay']:
             decay_mode = decay_branch['mode']
             chances = f"({decay_branch['chance']}%)" if decay_branch['chance'] != 100 else ""
@@ -367,7 +403,7 @@ def print_isotope(norm_iso, info, fullname):
             products = list(map(lambda element: bold(element), products))
             products = ", ".join(products)
 
-            print(f"        {bold(display_name)} -> {bold(decay_mode)} -> {products} {chances}")
+            animate_print(f"        {bold(display_name)} -> {bold(decay_mode)} -> {products} {chances}")
 
 def find_isotope(symbol_or_name, mass_number, search_query):
     for val in data.values():
@@ -410,12 +446,12 @@ suggestion = None
 
 if len(sys.argv) > 1:
     if "--info" in sys.argv:
-        logging.info("User gave --info flag; redirecting to another logic.")
-        print(program_information)
+        logging.info("User gave --info flag; redirecting to information logic.")
+        animate_print(program_information)
         sys.exit(0)
     elif "--init" in sys.argv:
-        logging.info("User gave --init flag; redirecting to another logic.")
-        pass
+        logging.info("User gave --init flag; redirecting to another script.")
+        import config
         sys.exit(0)
     input_str = sys.argv[1].strip().lower()
     logging.info(f"User gave argv: \"{input_str}\"")
@@ -437,16 +473,16 @@ if len(sys.argv) > 1:
 
     if element is None:
         if not suggestion:
-            print(fore("Invalid argv; falling back to interactive input.", RED))
+            animate_print(fore("Invalid argv; falling back to interactive input.", RED))
         else:
-            print(fore(f"Invalid argv. Did you mean \"{bold(suggestion[0])}\"?", YELLOW))
+            animate_print(fore(f"Invalid argv. Did you mean \"{bold(suggestion[0])}\"?", YELLOW))
         logging.warning("Argv invalid, fallback to interactive.")
 
 else:
     logging.warning("Argument not given, falling back to interactive input.")
 
 if element is None:
-    print(f"Search for an element by name, symbol, or atomic number. {dim(tip)}")
+    animate_print(f"Search for an element by name, symbol, or atomic number. {dim(tip)}")
     while True:
         input_str = input("> ").strip().lower()
         logging.info(f"User gave input: \"{input_str}\"")
@@ -472,9 +508,9 @@ if element is None:
             break
 
         if not suggestion:
-            print("Not a valid element or isotope, please try again.")
+            animate_print("Not a valid element or isotope, please try again.")
         else:
-            print(fore(f"Not a valid element or isotope. Did you mean \"{bold(suggestion[0])}\"?", YELLOW))
+            animate_print(fore(f"Not a valid element or isotope. Did you mean \"{bold(suggestion[0])}\"?", YELLOW))
 
 # Dividing categories
 
@@ -618,20 +654,20 @@ sound_transmission_speed = measurements["sound_transmission_speed"]
 
 logging.info("Starting output.")
 
-print()
+animate_print()
 print_header("General")
-print()
+animate_print()
 
-print(f" 🔡 - Element Name: {bold(fullname)} ({bold(symbol)})")
-print(f" Z - Atomic Number: {bold(atomic_number)}")
-print(f" 📃 - Description:\n\n    {description}\n")
-print(f" 🔍 - Discoverer(s): {discoverers}")
-print(f" 🔍 - Discovery Date: {bold(discovery_date)}")
-print(f" ↔️ - Period (Row): {bold(period)}")
-print(f" ↕️ - Group (Column): {bold(group)}")
-print(f" 🎨 - Type: {fore(element_type, types[element_type])}")
-print(f" 🧱 - Block: {bold(block)}")
-print(f" 📇 - CAS Number: {bold(cas_number)}")
+animate_print(f" 🔡 - Element Name: {bold(fullname)} ({bold(symbol)})")
+animate_print(f" Z - Atomic Number: {bold(atomic_number)}")
+animate_print(f" 📃 - Description:\n\n    {description}\n")
+animate_print(f" 🔍 - Discoverer(s): {discoverers}")
+animate_print(f" 🔍 - Discovery Date: {bold(discovery_date)}")
+animate_print(f" ↔️ - Period (Row): {bold(period)}")
+animate_print(f" ↕️ - Group (Column): {bold(group)}")
+animate_print(f" 🎨 - Type: {fore(element_type, types[element_type])}")
+animate_print(f" 🧱 - Block: {bold(block)}")
+animate_print(f" 📇 - CAS Number: {bold(cas_number)}")
 
 print()
 
@@ -657,55 +693,55 @@ print()
 print_header("Nuclear Properties")
 print()
 
-print(f" p{convert_superscripts("+")} - {fore("Protons", RED)}: {bold(protons)}")
-print(f" n{"⁰" if superscripts else ""} - {fore("Neutrons", BLUE)}: {bold(neutrons)}")
-print(f" e{convert_superscripts("-")} - {fore("Electrons", YELLOW)}: {bold(electrons)}")
-print(f" nv - {fore("Valence Electrons", VALENCE_ELECTRONS_COL)}: {bold(valence_electrons)}")
-print(f" u - {fore("Up Quarks", UP_QUARKS_COL)}: ({fore(protons, RED)} * 2) + {fore(neutrons, BLUE)} = {bold(up_quarks)}")
-print(f" d - {fore("Down Quarks", DOWN_QUARKS_COL)}: ({fore(protons, RED)} + ({fore(neutrons, BLUE)} * 2) = {bold(down_quarks)}")
-print(f" ⚛️ - Shells {dim(f"(The electron in {fore("yellow", VALENCE_ELECTRONS_COL)} is the valence electron)")}:\n    {shell_result}")
-print(f" 🌀 - Subshells: {subshell_result}")
-print(" 🪞 - Isotopes:")
+animate_print(f" p{convert_superscripts("+")} - {fore("Protons", RED)}: {bold(protons)}")
+animate_print(f" n{"⁰" if superscripts else ""} - {fore("Neutrons", BLUE)}: {bold(neutrons)}")
+animate_print(f" e{convert_superscripts("-")} - {fore("Electrons", YELLOW)}: {bold(electrons)}")
+animate_print(f" nv - {fore("Valence Electrons", VALENCE_ELECTRONS_COL)}: {bold(valence_electrons)}")
+animate_print(f" u - {fore("Up Quarks", UP_QUARKS_COL)}: ({fore(protons, RED)} * 2) + {fore(neutrons, BLUE)} = {bold(up_quarks)}")
+animate_print(f" d - {fore("Down Quarks", DOWN_QUARKS_COL)}: ({fore(protons, RED)} + ({fore(neutrons, BLUE)} * 2) = {bold(down_quarks)}")
+animate_print(f" ⚛️ - Shells {dim(f"(The electron in {fore("yellow", VALENCE_ELECTRONS_COL)} is the valence electron)")}:\n    {shell_result}")
+animate_print(f" 🌀 - Subshells: {subshell_result}")
+animate_print(" 🪞 - Isotopes:")
 
 for isotope, information in isotopes.items():
     print_isotope(isotope, information, fullname)
 
-print()
+animate_print()
 print_header("Physical Properties")
-print()
+animate_print()
 
-print(f" 💧 - {fore("Melting Point", MELT_COL)}: {bold(melting_point)}°C = {bold(celcius_to_fahrenheit(melting_point))}°F = {bold(celcius_to_kelvin(melting_point))}K")
-print(f" 💨 - {fore("Boiling Point", BOIL_COL)}: {bold(boiling_point)}°C = {bold(celcius_to_fahrenheit(boiling_point))}°F = {bold(celcius_to_kelvin(boiling_point))}K")
-print(f" A - Mass Number: {fore(protons, RED)} + {fore(neutrons, BLUE)} = {bold(protons + neutrons)}")
-print(f" u - Atomic Mass: {bold(atomic_mass)}g/mol")
-print(f" ☢️ - {fore("Radioactive", ORANGE)}: {fore("Yes", GREEN) if radioactive else fore("No", RED)}")
-print(f" t1/2 - Half Life: {bold(half_life if not (half_life is None) else fore("Stable", NULL_COL))}")
-print(f" ρ - Density: {bold(density)}g/{cm3}")
+animate_print(f" 💧 - {fore("Melting Point", MELT_COL)}: {bold(melting_point)}°C = {bold(celcius_to_fahrenheit(melting_point))}°F = {bold(celcius_to_kelvin(melting_point))}K")
+animate_print(f" 💨 - {fore("Boiling Point", BOIL_COL)}: {bold(boiling_point)}°C = {bold(celcius_to_fahrenheit(boiling_point))}°F = {bold(celcius_to_kelvin(boiling_point))}K")
+animate_print(f" A - Mass Number: {fore(protons, RED)} + {fore(neutrons, BLUE)} = {bold(protons + neutrons)}")
+animate_print(f" u - Atomic Mass: {bold(atomic_mass)}g/mol")
+animate_print(f" ☢️ - {fore("Radioactive", ORANGE)}: {fore("Yes", GREEN) if radioactive else fore("No", RED)}")
+animate_print(f" t1/2 - Half Life: {bold(half_life if not (half_life is None) else fore("Stable", NULL_COL))}")
+animate_print(f" ρ - Density: {bold(density)}g/{cm3}")
 
-print()
+animate_print()
 print_header("Electronic Properties")
-print()
+animate_print()
 
-print(f" χ - Electronegativity: {bold(electronegativity)}")
-print(f" EA - Electron Affinity: {bold(electron_affinity)}eV = {bold(eV_to_kJpermol(electron_affinity))}kJ/mol")
-print(f" IE - {fore("Ionization Energy", IONIZATION_ENERGY_COL)}: {bold(ionization_energy)}eV = {bold(eV_to_kJpermol(ionization_energy))}kJ/mol")
-print(f" ⚡️ - {fore("Oxidation States", YELLOW)} {dim(f"(Only the ones that have {fore("color", BLUE)} are activated)")}:\n{"   " + negatives_result}\n{"   " + positives_result}\n")
-print(f" ⚡️ - Conductivity Type: {bold(conductivity_type)}")
+animate_print(f" χ - Electronegativity: {bold(electronegativity)}")
+animate_print(f" EA - Electron Affinity: {bold(electron_affinity)}eV = {bold(eV_to_kJpermol(electron_affinity))}kJ/mol")
+animate_print(f" IE - {fore("Ionization Energy", IONIZATION_ENERGY_COL)}: {bold(ionization_energy)}eV = {bold(eV_to_kJpermol(ionization_energy))}kJ/mol")
+animate_print(f" ⚡️ - {fore("Oxidation States", YELLOW)} {dim(f"(Only the ones that have {fore("color", BLUE)} are activated)")}:\n{"   " + negatives_result}\n{"   " + positives_result}\n")
+animate_print(f" ⚡️ - Conductivity Type: {bold(conductivity_type)}")
 
-print()
+animate_print()
 print_header("Measurements")
-print()
+animate_print()
 
-print(" 📏 - Radius: ")
-print(f"   r_calc - Calculated: {bold(str(radius["calculated"]) + "pm" if not (radius["calculated"] is None) else fore("N/A", NULL_COL))}")
-print(f"   r_emp - Empirical: {bold(str(radius["empirical"]) + "pm" if not (radius["empirical"] is None) else fore("N/A", NULL_COL))}")
-print(f"   r_cov - Covalent: {bold(str(radius["covalent"]) + "pm" if not (radius["covalent"] is None) else fore("N/A", NULL_COL))}")
-print(f"   rvdW - Van der Waals: {bold(str(radius["van_der_waals"]) + "pm" if not (radius["van_der_waals"] is None) else fore("N/A", NULL_COL))}\n")
-print(" 🪨 - Hardness: ")
-print(f"   HB - Brinell: {bold(str(hardness["brinell"]) + f" kgf/{mm2}" if not (hardness["brinell"] is None) else fore("None", NULL_COL))}")
-print(f"   H - Mohs: {bold(str(hardness["mohs"]) if not (hardness["mohs"] is None) else fore("None", NULL_COL))}")
-print(f"   HV - Vickers: {bold(str(hardness["vickers"]) + f" kgf/{mm2}" if not (hardness["vickers"] is None) else fore("None", NULL_COL))}\n")
-print(f" Va - Atomic Volume: ≈ {bold(atomic_volume)}{cm3}/mol")
-print(f" 📢 - Speed of Sound Transmission: {bold(sound_transmission_speed)}m/s = {bold(sound_transmission_speed / 1000)}km/s")
+animate_print(" 📏 - Radius: ")
+animate_print(f"   r_calc - Calculated: {bold(str(radius["calculated"]) + "pm" if not (radius["calculated"] is None) else fore("N/A", NULL_COL))}")
+animate_print(f"   r_emp - Empirical: {bold(str(radius["empirical"]) + "pm" if not (radius["empirical"] is None) else fore("N/A", NULL_COL))}")
+animate_print(f"   r_cov - Covalent: {bold(str(radius["covalent"]) + "pm" if not (radius["covalent"] is None) else fore("N/A", NULL_COL))}")
+animate_print(f"   rvdW - Van der Waals: {bold(str(radius["van_der_waals"]) + "pm" if not (radius["van_der_waals"] is None) else fore("N/A", NULL_COL))}\n")
+animate_print(" 🪨 - Hardness: ")
+animate_print(f"   HB - Brinell: {bold(str(hardness["brinell"]) + f" kgf/{mm2}" if not (hardness["brinell"] is None) else fore("None", NULL_COL))}")
+animate_print(f"   H - Mohs: {bold(str(hardness["mohs"]) if not (hardness["mohs"] is None) else fore("None", NULL_COL))}")
+animate_print(f"   HV - Vickers: {bold(str(hardness["vickers"]) + f" kgf/{mm2}" if not (hardness["vickers"] is None) else fore("None", NULL_COL))}\n")
+animate_print(f" Va - Atomic Volume: ≈ {bold(atomic_volume)}{cm3}/mol")
+animate_print(f" 📢 - Speed of Sound Transmission: {bold(sound_transmission_speed)}m/s = {bold(sound_transmission_speed / 1000)}km/s")
 
 print_separator()
