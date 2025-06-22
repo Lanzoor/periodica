@@ -159,7 +159,7 @@ except json.JSONDecodeError:
     with open('./config.json', 'w', encoding="utf-8") as file:
         config = default_options
         json.dump(default_options, file)
-        logging.info("Overwrited configuration file since it was malformed.")
+        logging.info("Overwrited configuration file since it was malformed. Please use the --init flag instead.")
 except FileNotFoundError:
     with open('./config.json', 'w', encoding="utf-8") as file:
         config = default_options
@@ -258,7 +258,16 @@ types = {
 # Other important functions / variables
 
 config_file = './config.json'
-tip = "(Tip: You can give this program argv to directly search an element from there. You can even give argv to the ./periodica.sh file too!)" if random.randint(0, 1) else "(Tip: run this script with the --info flag, and see what happens.)"
+
+match random.randint(0, 3):
+    case 0:
+        tip = "(Tip: You can give this program argv to directly search an element from there. You can even give argv to the ./periodica.sh file too!)"
+    case 1:
+        tip = "(Tip: Run this script with the --info flag to get information.)"
+    case 2:
+        tip = "(Tip: Run this script with the --init flag to configure the script.)"
+    case 3:
+        tip = ""
 
 program_information = f"""
 Welcome to {bold(gradient("periodica", (156, 140, 255), (140, 255, 245)) if config['truecolor'] else fore("periodica", BLUE))}!
