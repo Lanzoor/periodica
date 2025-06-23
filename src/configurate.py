@@ -27,7 +27,7 @@ try:
             if user_input == "q":
                 for i in range(3, 0, -1):
                     animate_print(f"Exiting program in {bold(i)}...", end="")
-                    time.sleep(2)
+                    time.sleep(1)
                     clear_line()
                 save_config()
                 sys.exit(0)
@@ -134,7 +134,7 @@ try:
                     animate_print(bold("Your configuration has been reset. This program needs to restart in order to save the changes. Please run the script again."))
                     for i in range(3, 0, -1):
                         animate_print(f"Exiting program in {bold(i)}...", end="")
-                        time.sleep(2)
+                        time.sleep(1)
                         clear_line()
                     sys.exit(0)
                 else:
