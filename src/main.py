@@ -211,9 +211,10 @@ def match_isotope_input(input_str):
         return isotope_match.group(1), isotope_match.group(2)
     return None, None
 
-def format_isotope(norm_iso, fullname):
+def format_isotope(norm_iso, fullname, *, metastable = False):
     global isotope_format
 
+    m = "m" if metastable else ""
     match = re.match(r"^(\d+)\s*([A-Za-z]+)$", remove_superscripts(norm_iso))
     if not match:
         return norm_iso
@@ -222,13 +223,17 @@ def format_isotope(norm_iso, fullname):
         symbol = symbol.capitalize()
 
         if isotope_format == "fullname-number":
-            return f"{fullname.capitalize()}-{number}"
+            return f"{fullname.capitalize()}-{number}{m}"
         elif isotope_format == "numbersymbol":
-            return f"{convert_superscripts(str(number)) if superscripts else number}{symbol}"
+            return f"{convert_superscripts(str(number)) if superscripts else number}{m}{symbol}"
         else:
-            return f"{symbol}-{number}"
+            return f"{symbol}-{number}{m}"
 
 def print_isotope(norm_iso, info, fullname):
+    global animation_delay
+
+    animation_delay /= 2
+
     animate_print()
     match = re.match(r"^(\d+)\s*([A-Za-z]+)$", remove_superscripts(norm_iso))
 
@@ -261,13 +266,41 @@ def print_isotope(norm_iso, info, fullname):
         animate_print("      ⛓️ - Possible Decays:")
         for decay_branch in info['decay']:
             decay_mode = decay_branch['mode']
+            decay_mode = fore(decay_mode, RED) if decay_mode [-1] == "?" else decay_mode
             chances = f"({decay_branch['chance']}%)" if decay_branch['chance'] != 100 else ""
             products = decay_branch['product']
-            products = [format_isotope(element, fullname) for element in products]
+            products = [format_isotope(element.replace("?", ""), fullname) + ("?" if element[-1] == "?" else "") for element in products]
             products = list(map(lambda element: bold(element), products))
             products = ", ".join(products)
 
             animate_print(f"        {bold(display_name)} -> {bold(decay_mode)} -> {products} {chances}")
+
+    if 'metastable' in info:
+        animate_print("      m - Metastable Isotopes:")
+        metastable_isotopes = info['metastable']
+        for (key, value) in metastable_isotopes.items():
+            half_life = value['half_life']
+
+            match = re.match(r"^(\d+)\s*([A-Za-z]+)$", remove_superscripts(key))
+
+            display_name = format_isotope(key, fullname, metastable=True)
+
+            animate_print()
+            animate_print(f"        {bold(display_name)}:")
+            animate_print(f"          t1/2 - Half Life: {bold(half_life)}")
+            animate_print("          ⛓️ - Possible Decays:")
+
+            for decay_branch in value['decay']:
+                decay_mode = decay_branch['mode']
+                chances = f"({decay_branch['chance']}%)" if decay_branch['chance'] != 100 else ""
+                products = decay_branch['product']
+                products = [format_isotope(element, fullname) for element in products]
+                products = list(map(lambda element: bold(element), products))
+                products = ", ".join(products)
+
+                animate_print(f"            {bold(format_isotope(display_name, fullname, metastable=True))} -> {bold(decay_mode)} -> {products} {chances}")
+
+    animation_delay *= 2
 
 def find_isotope(symbol_or_name, mass_number, search_query):
     for val in data.values():
@@ -565,7 +598,7 @@ animate_print(f" u - {fore("Up Quarks", GREEN)}: ({fore(protons, RED)} * 2) + {f
 animate_print(f" d - {fore("Down Quarks", CYAN)}: ({fore(protons, RED)} + ({fore(neutrons, BLUE)} * 2) = {bold(down_quarks)}")
 animate_print(f" ⚛️ - Shells {dim(f"(The electron in {fore("yellow", VALENCE_ELECTRONS_COL)} is the valence electron)")}:\n    {shell_result}")
 animate_print(f" 🌀 - Subshells: {subshell_result}")
-animate_print(" 🪞 - Isotopes:")
+animate_print(f" 🪞 - Isotopes: {dim(f"(Decay processes in {fore("red", RED)} need verification. Do not trust them!)")}:")
 
 for isotope, information in isotopes.items():
     print_isotope(isotope, information, fullname)
