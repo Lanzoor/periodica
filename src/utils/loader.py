@@ -1,5 +1,16 @@
-import json
-import os
+import json, os, logging
+
+LOG_PATH = os.path.join(os.path.dirname(__file__), "../execution.log")
+
+with open(LOG_PATH, 'w', encoding="utf-8"):
+    pass
+
+logging.basicConfig(
+    filename=LOG_PATH,
+    filemode='w',
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(message)s'
+)
 
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), "../config.json")
 

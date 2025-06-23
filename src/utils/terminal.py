@@ -1,4 +1,4 @@
-from utils.config_loader import get_config
+from utils.loader import get_config
 import re, sys, time, colorsys
 
 config = get_config()
@@ -15,12 +15,20 @@ CYAN = 6
 WHITE = 7
 DEFAULT_COLOR = 9
 
-def fore(string, color: int | list[int] | tuple[int, int, int], *, bright: bool = False) -> str:
+B_BLACK = 0 + 60
+B_RED = 1 + 60
+B_GREEN = 2 + 60
+B_YELLOW = 3 + 60
+B_BLUE = 4 + 60
+B_MAGENTA = 5 + 60
+B_CYAN = 6 + 60
+
+def fore(string, color: int | list[int] | tuple[int, int, int]) -> str:
     if isinstance(color, int):
         processed = str(string)
-        if color > 7 and color != 9: raise Exception("Unsupported default terminal color.")
+        if (color > 7 and color != 9 and color < 60) or (color > 67): raise Exception("Unsupported default terminal color.")
         try:
-            return f"\033[{(30 + color) if not bright else (90 + color)}m{processed}\033[39m"
+            return f"\033[{(30 + color)}m{processed}\033[39m"
         except ValueError:
             raise Exception("Unsupported default terminal color.")
     else:

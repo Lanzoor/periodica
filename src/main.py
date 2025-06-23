@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import logging, json, os, re, sys, difflib, random, time
-from utils import get_config, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, DEFAULT_COLOR, fore, bold, dim, italic, gradient, animate_print
+from utils import get_config, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, B_BLACK, fore, bold, dim, italic, gradient, animate_print
 
 config = get_config()
 
@@ -18,7 +18,6 @@ if truecolor:
     MELT_COL = (52, 110, 235)
     BOIL_COL = (189, 165, 117)
     ORANGE = (245, 164, 66)
-    IONIZATION_ENERGY_COL = (119, 50, 168)
     INDIGO = (94, 52, 235)
 else:
     VALENCE_ELECTRONS_COL = YELLOW
@@ -27,7 +26,6 @@ else:
     MELT_COL = BLUE
     BOIL_COL = YELLOW
     ORANGE = YELLOW
-    IONIZATION_ENERGY_COL = MAGENTA
     INDIGO = BLUE
 
 def abort_program(message):
@@ -108,7 +106,7 @@ mm2 = "mm²" if superscripts else "mm2"
 types = {
 	"Reactive nonmetal": GREEN,
 	"Noble gas": YELLOW,
-	"Alkali metal": (176, 176, 176) if truecolor else DEFAULT_COLOR
+	"Alkali metal": (176, 176, 176) if truecolor else B_BLACK
 }
 
 # Other important functions / variables
@@ -309,7 +307,6 @@ def find_element(input_str):
 
 element = None
 suggestion = None
-data = {}
 
 if len(sys.argv) > 1:
     if "--info" in sys.argv:
@@ -318,7 +315,7 @@ if len(sys.argv) > 1:
         sys.exit(0)
     elif "--init" in sys.argv:
         logging.info("User gave --init flag; redirecting to another script.")
-        import config
+        import configurate
         sys.exit(0)
     input_str = sys.argv[1].strip().lower()
     logging.info(f"User gave argv: \"{input_str}\"")
@@ -591,7 +588,7 @@ animate_print()
 
 animate_print(f" χ - Electronegativity: {bold(electronegativity)}")
 animate_print(f" EA - Electron Affinity: {bold(electron_affinity)}eV = {bold(eV_to_kJpermol(electron_affinity))}kJ/mol")
-animate_print(f" IE - {fore("Ionization Energy", IONIZATION_ENERGY_COL)}: {bold(ionization_energy)}eV = {bold(eV_to_kJpermol(ionization_energy))}kJ/mol")
+animate_print(f" IE - {fore("Ionization Energy", MAGENTA)}: {bold(ionization_energy)}eV = {bold(eV_to_kJpermol(ionization_energy))}kJ/mol")
 animate_print(f" ⚡️ - {fore("Oxidation States", YELLOW)} {dim(f"(Only the ones that have {fore("color", BLUE)} are activated)")}:\n{"   " + negatives_result}\n{"   " + positives_result}\n")
 animate_print(f" ⚡️ - Conductivity Type: {bold(conductivity_type)}")
 
