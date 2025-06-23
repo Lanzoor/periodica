@@ -18,6 +18,7 @@ sudo git clone https://github.com/Lanzoor/periodica.git /opt/periodica
 sudo python3 /opt/periodica/build.py
 
 # Make it executable, so that you don't run into awful problems. This step is required for you to run periodica without using super-user.
+# DO NOT FORGET THIS PART! This step is crucial, and if you accidentally run periodica with super-user, you may run to horrible, unexplainable problems.
 sudo chmod +x /opt/periodica/periodica.sh
 sudo chown -R $USER:$USER /opt/periodica
 sudo chmod -R u+rwX /opt/periodica
@@ -83,9 +84,9 @@ Or open the folder and double-click `main.py` — then select the Python interpr
 ### 5. (Optional) Add the App on your PATH
 
 1. Press the shortcut `Win + R`, and in the input box, type `sysdm.cpl` carefully. Hit `Enter`.
-2. You will see a window named `System Properties`. Navigate to the `Advanced` tab. 
+2. You will see a window named `System Properties`. Navigate to the `Advanced` tab.
 3. Click `Environment Variables...` at the bottom.
-4. Under `User variables`, select `Path` and click `Edit`. 
+4. Under `User variables`, select `Path` and click `Edit`.
 5. Click `New`, and paste the full absolute path to the folder containing your `periodica.bat` file.
 6. Now make sure to apply and confirm your edits. Exit all tabs.
 
