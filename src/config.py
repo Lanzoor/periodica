@@ -1,112 +1,7 @@
-import json, time, sys, re
+import time, sys
+from utils import get_config, save_config, valid_formats, valid_animations, default_config, RED, GREEN, CYAN, fore, bold, dim, clear_screen, clear_line, animate_print
 
-def fore(string, color: int | list[int] | tuple[int, int, int], *, bright: bool = False) -> str:
-    if isinstance(color, int):
-        processed = str(string)
-        if color > 7 and color != 9: raise Exception("Unsupported default terminal color.")
-        try:
-            return f"\033[{(30 + color) if not bright else (90 + color)}m{processed}\033[39m"
-        except ValueError:
-            raise Exception("Unsupported default terminal color.")
-    else:
-        processed = str(string)
-        r, g, b = color
-        return f"\033[38;2;{r};{g};{b}m{processed}\033[39m"
-
-def bold(string) -> str:
-    return f"\033[1m{string}\033[22m"
-
-default_options = {
-    "use_superscripts": True,
-    "truecolor": True,
-    "isotope_format": "fullname-number",
-    "animation": "none",
-    "animation_delay": 0.001
-}
-
-valid_formats = ["fullname-number", "symbol-number", "numbersymbol"]
-valid_animations = ["char", "line", "none"]
-
-BLACK = 0
-RED = 1
-GREEN = 2
-YELLOW = 3
-BLUE = 4
-MAGENTA = 5
-CYAN = 6
-WHITE = 7
-DEFAULT_COLOR = 9
-
-def clear_screen():
-    print("\r\033[2J\033[H", end='', flush=True)
-
-def clear_line():
-    print("\r\033[2K", end='', flush=True)
-
-try:
-    with open('./config.json', 'r', encoding="utf-8") as file:
-        config = json.load(file)
-        print("The configuration file was found! Let's start editing it.")
-except json.JSONDecodeError:
-    with open('./config.json', 'w', encoding="utf-8") as file:
-        config = default_options
-        json.dump(default_options, file)
-        print("Overwrited configuration file since it was malformed.")
-except FileNotFoundError:
-    with open('./config.json', 'w', encoding="utf-8") as file:
-        config = default_options
-        json.dump(default_options, file)
-        print("Created a new configuration file, since it didn't exist.")
-
-def save_config():
-    global config
-    with open('./config.json', 'w', encoding="utf-8") as file:
-        json.dump(config, file, indent=4)
-
-superscripts = config["use_superscripts"]
-truecolor = config["truecolor"]
-isotope_format = config["isotope_format"]
-animation_type = config["animation"]
-animation_delay = config["animation_delay"]
-
-options_length = len(list(default_options.keys()))
-
-for key, value in default_options.items():
-    if key == "isotope_format":
-        if config[key] not in valid_formats:
-            config[key] = value
-    elif key == "animation":
-        if config[key] not in valid_animations:
-            config[key] = value
-    else:
-        config.setdefault(key, value)
-
-save_config()
-
-def animate_print(message: str = "", delay: float = animation_delay, *, end: str = "\n"):
-    global animation_type
-    if animation_type == "char":
-        ansi_escape = re.compile(r'(\x1b\[[0-9;]*m)')
-        parts = ansi_escape.split(message)
-        active_styles = ""
-        for part in parts:
-            if ansi_escape.fullmatch(part):
-                active_styles = part
-                sys.stdout.write(part)
-                sys.stdout.flush()
-            else:
-                for char in part:
-                    sys.stdout.write(f"{active_styles}{char}")
-                    sys.stdout.flush()
-                    time.sleep(delay)
-    elif animation_type == "line":
-        for line in message.splitlines():
-            sys.stdout.write(line + "\n")
-            sys.stdout.flush()
-            time.sleep(delay)
-    elif animation_type == "none":
-        print(message)
-    print(end, end="")
+config = get_config()
 
 try:
     while True:
@@ -117,12 +12,13 @@ try:
         animation_delay = config["animation_delay"]
 
         clear_screen()
-        animate_print("Here are all avaliable options that you can change in your config file.\n")
+        animate_print("Here are all available options that you can change in your config file.\n")
         animate_print(f"1. Use Superscripts: Determines whether to use superscripts (Set to {bold(fore(superscripts, GREEN) if superscripts else fore(superscripts, RED))})")
         animate_print(f"2. Use Truecolor: Determines whether to use RGB-accurate coloring in terminal (Set to {bold(fore(truecolor, GREEN) if truecolor else fore(truecolor, RED))})")
         animate_print("3. Isotope Display Format: Determines how isotopes are formatted")
         animate_print(f"4. Print Animation: Determines the print animation (Set to {bold(animation_type.capitalize())})")
-        animate_print(f"5. Animation Delay: Determines the delay between lines / characters based on animation type, does not work when animation is set to 'none' (Set to {bold(fore(animation_delay, CYAN))})\n")
+        animate_print(f"5. Animation Delay: Determines the delay between lines / characters based on animation type, does not work when animation is set to 'none' (Set to {bold(fore(animation_delay, CYAN))})")
+        animate_print(f"6. Reset Data: {bold("Overwrites all settings to the default settings.")}\n")
 
         animate_print(f"To change a setting, please input the corresponding function name. To exit, please enter the {bold('q')} key.")
         user_input = input("> ").lower().strip()
@@ -130,7 +26,7 @@ try:
         try:
             if user_input == "q":
                 for i in range(3, 0, -1):
-                    animate_print(f"Exiting program in {bold(i)}..", end="")
+                    animate_print(f"Exiting program in {bold(i)}...", end="")
                     time.sleep(2)
                     clear_line()
                 save_config()
@@ -224,14 +120,25 @@ try:
                         time.sleep(2)
                         break
                     except ValueError:
-                        if user_input not in valid_formats:
-                            animate_print(f"{user_input} is not a valid float integer. Please try again.")
-                            continue
-                        config['animation_delay'] = user_input
-                        animation_delay = config["animation_delay"]
-                        animate_print(f"Successfully changed option 'Animation Delay' to {bold(animation_delay)}.")
+                        animate_print(f"{user_input} is not a valid float integer. Please try again.")
+                        continue
+            case 6:
+                clear_screen()
+                animate_print(fore(f"Are you sure? This action will reset all settings to the default settings. \n{bold("THIS ACTION IS IRREVERSIBLE.")} We highly recommend you to create backups before resetting the configuration.\n", RED))
+
+                user_input = input(dim("Type '#' and press Enter to confirm the reset.") + "\n> ").lower().strip()
+
+                if user_input == "#":
+                    config = default_config.copy()
+                    save_config()
+                    animate_print(bold("Your configuration has been reset. This program needs to restart in order to save the changes. Please run the script again."))
+                    for i in range(3, 0, -1):
+                        animate_print(f"Exiting program in {bold(i)}...", end="")
                         time.sleep(2)
-                        break
+                        clear_line()
+                    sys.exit(0)
+                else:
+                    animate_print("User canceled configuration reset.")
             case _:
                 animate_print(fore(f"{user_input} is out of bounds. Can you please try again with a valid function number?", RED))
 

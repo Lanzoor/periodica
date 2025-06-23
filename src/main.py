@@ -1,6 +1,34 @@
 #!/usr/bin/env python3
 
-import logging, json, os, re, sys, difflib, colorsys, random, time
+import logging, json, os, re, sys, difflib, random, time
+from utils import get_config, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, DEFAULT_COLOR, fore, bold, dim, italic, gradient, animate_print
+
+config = get_config()
+
+superscripts = config["use_superscripts"]
+truecolor = config["truecolor"]
+isotope_format = config["isotope_format"]
+animation_type = config["animation"]
+animation_delay = config["animation_delay"]
+
+if truecolor:
+    VALENCE_ELECTRONS_COL = (248, 255, 166)
+    MALE = (109, 214, 237)
+    FEMALE = (255, 133, 245)
+    MELT_COL = (52, 110, 235)
+    BOIL_COL = (189, 165, 117)
+    ORANGE = (245, 164, 66)
+    IONIZATION_ENERGY_COL = (119, 50, 168)
+    INDIGO = (94, 52, 235)
+else:
+    VALENCE_ELECTRONS_COL = YELLOW
+    MALE = CYAN
+    FEMALE = MAGENTA
+    MELT_COL = BLUE
+    BOIL_COL = YELLOW
+    ORANGE = YELLOW
+    IONIZATION_ENERGY_COL = MAGENTA
+    INDIGO = BLUE
 
 def abort_program(message):
     logging.error(message)
@@ -8,21 +36,6 @@ def abort_program(message):
     time.sleep(2)
     logging.fatal("Program terminated.")
     sys.exit(1)
-
-with open('./execution.log', 'w', encoding="utf-8"):
-    pass
-
-logging.basicConfig(
-    filename='./execution.log',
-    filemode='w',
-    level=logging.INFO,
-    format='%(asctime)s [%(levelname)s] %(message)s'
-)
-
-def save_config():
-    global config
-    with open('./config.json', 'w', encoding="utf-8") as file:
-        json.dump(config, file, indent=4)
 
 def celcius_to_kelvin(celsius):
 	return (celsius * 1e16 + 273.15 * 1e16) / 1e16
@@ -85,169 +98,12 @@ def conjunction_join(entries: list) -> str:
         return f"{entries[0]} and {entries[1]}"
     return f"{', '.join(entries[:-1])}, and {entries[-1]}"
 
-def fore(string, color: int | list[int] | tuple[int, int, int], *, bright: bool = False) -> str:
-    if isinstance(color, int):
-        processed = str(string)
-        if color > 7 and color != 9: raise Exception("Unsupported default terminal color.")
-        try:
-            return f"\033[{(30 + color) if not bright else (90 + color)}m{processed}\033[39m"
-        except ValueError:
-            raise Exception("Unsupported default terminal color.")
-    else:
-        processed = str(string)
-        r, g, b = color
-        return f"\033[38;2;{r};{g};{b}m{processed}\033[39m"
-
-def gradient(string, start_rgb: list[int] | tuple[int, int, int], end_rgb: list[int] | tuple[int, int, int]):
-    processed = str(string)
-    start_h, start_l, start_s = colorsys.rgb_to_hls(start_rgb[0] / 255, start_rgb[1] / 255, start_rgb[2] / 255)
-    end_h, end_l, end_s = colorsys.rgb_to_hls(end_rgb[0] / 255, end_rgb[1] / 255, end_rgb[2] / 255)
-    processed = [char for char in processed if char != " "]
-    length = len(processed)
-    res = list(processed)
-    processed_index = 0
-    for index, char in enumerate(res):
-        if char == " ":
-            continue
-        interpolated_h = start_h + (end_h - start_h) * (processed_index / length)
-        interpolated_l = start_l + (end_l - start_l) * (processed_index / length)
-        interpolated_s = start_s + (end_s - start_s) * (processed_index / length)
-        new_r, new_g, new_b = [int(element * 255) for element in colorsys.hls_to_rgb(interpolated_h, interpolated_l, interpolated_s)]
-        res[index] = fore(char, (new_r, new_g, new_b))
-        processed_index += 1
-    return "".join(res)
-
-def italic(string) -> str:
-    return f"\033[3m{string}\033[23m"
-
-def bold(string) -> str:
-    return f"\033[1m{string}\033[22m"
-
-def underline(string) -> str:
-    return f"\033[4m{string}\033[24m"
-
-def crossout(string) -> str:
-    return f"\033[9m{string}\033[29m"
-
-def blink(string) -> str:
-    return f"\033[5m{string}\033[25m"
-
-def inverse_color(string) -> str:
-    return f"\033[7m{string}\033[27m"
-
-def dim(string) -> str:
-    return f"\033[2m{string}\033[22m"
-
 logging.info("Program initialized.")
-
-default_options = {
-    "use_superscripts": True,
-    "truecolor": True,
-    "isotope_format": "fullname-number",
-    "animation": "none",
-    "animation_delay": 0.001
-}
-
-valid_formats = ["fullname-number", "symbol-number", "numbersymbol"]
-valid_animations = ["char", "line", "none"]
-
-try:
-    with open('./config.json', 'r', encoding="utf-8") as file:
-        config = json.load(file)
-        logging.info("The configuration file was found.")
-except json.JSONDecodeError:
-    with open('./config.json', 'w', encoding="utf-8") as file:
-        config = default_options
-        json.dump(default_options, file)
-        logging.info("Overwrited configuration file since it was malformed. Please use the --init flag instead.")
-except FileNotFoundError:
-    with open('./config.json', 'w', encoding="utf-8") as file:
-        config = default_options
-        json.dump(default_options, file)
-        logging.info("Created a new configuration file, since it didn't exist.")
-
-for key, value in default_options.items():
-    if key == "isotope_format":
-        if config[key] not in valid_formats:
-            config[key] = value
-    elif key == "animation":
-        if config[key] not in valid_animations:
-            config[key] = value
-    else:
-        config.setdefault(key, value)
-
-save_config()
-
-superscripts = config["use_superscripts"]
-truecolor = config["truecolor"]
-isotope_format = config["isotope_format"]
-animation_type = config["animation"]
-animation_delay = config["animation_delay"]
 
 cm3 = "cm³" if superscripts else "cm3"
 mm2 = "mm²" if superscripts else "mm2"
 
-def animate_print(message: str = "", delay: float = animation_delay, *, end: str = "\n"):
-    global animation_type
-    if animation_type == "char":
-        ansi_escape = re.compile(r'(\x1b\[[0-9;]*m)')
-        parts = ansi_escape.split(message)
-        active_styles = ""
-        for part in parts:
-            if ansi_escape.fullmatch(part):
-                active_styles = part
-                sys.stdout.write(part)
-                sys.stdout.flush()
-            else:
-                for char in part:
-                    sys.stdout.write(f"{active_styles}{char}")
-                    sys.stdout.flush()
-                    time.sleep(delay)
-    elif animation_type == "line":
-        for line in message.splitlines():
-            sys.stdout.write(line + "\n")
-            sys.stdout.flush()
-            time.sleep(delay)
-    elif animation_type == "none":
-        print(message)
-    print(end, end="")
-
 # Color Configs
-
-BLACK = 0
-RED = 1
-GREEN = 2
-YELLOW = 3
-BLUE = 4
-MAGENTA = 5
-CYAN = 6
-WHITE = 7
-DEFAULT_COLOR = 9
-
-if truecolor:
-    VALENCE_ELECTRONS_COL = (248, 255, 166)
-    UP_QUARKS_COL = (122, 255, 129)
-    DOWN_QUARKS_COL = (230, 156, 60)
-    MALE = (109, 214, 237)
-    FEMALE = (255, 133, 245)
-    NULL_COL = (90, 232, 227)
-    MELT_COL = (52, 110, 235)
-    BOIL_COL = (189, 165, 117)
-    ORANGE = (245, 164, 66)
-    IONIZATION_ENERGY_COL = (119, 50, 168)
-    INDIGO = (94, 52, 235)
-else:
-    VALENCE_ELECTRONS_COL = YELLOW
-    UP_QUARKS_COL = GREEN
-    DOWN_QUARKS_COL = CYAN
-    MALE = CYAN
-    FEMALE = MAGENTA
-    NULL_COL = CYAN
-    MELT_COL = BLUE
-    BOIL_COL = YELLOW
-    ORANGE = YELLOW
-    IONIZATION_ENERGY_COL = MAGENTA
-    INDIGO = BLUE
 
 types = {
 	"Reactive nonmetal": GREEN,
@@ -314,6 +170,7 @@ if elementdata_malformed:
         try:
             response = requests.get(url)
         except requests.exceptions.ConnectionError:
+            response = requests.Response() # ignore this line, if you remove this line, the linter is going to scream at you / me
             animate_print("Whoops! There was a network connection error. Please check your network connection, and try again later.")
             abort_program("Couldn't proceed; failed to connect to page.")
 
@@ -396,10 +253,10 @@ def print_isotope(norm_iso, info, fullname):
 
     animate_print(f"      p{convert_superscripts("+")}, e{convert_superscripts("-")} - {fore("Protons", RED)} and {fore("Electrons", YELLOW)}: {bold(protons)}")
     animate_print(f"      n{"⁰" if superscripts else ""} - {fore("Neutrons", BLUE)}: {bold(neutrons)}")
-    animate_print(f"      u - {fore("Up Quarks", UP_QUARKS_COL)}: ({fore(protons, RED)} * 2) + {fore(neutrons, BLUE)} = {bold(up_quarks)}")
-    animate_print(f"      d - {fore("Down Quarks", DOWN_QUARKS_COL)}: {fore(protons, RED)} + ({fore(neutrons, BLUE)} * 2) = {bold(down_quarks)}")
+    animate_print(f"      u - {fore("Up Quarks", GREEN)}: ({fore(protons, RED)} * 2) + {fore(neutrons, BLUE)} = {bold(up_quarks)}")
+    animate_print(f"      d - {fore("Down Quarks", CYAN)}: {fore(protons, RED)} + ({fore(neutrons, BLUE)} * 2) = {bold(down_quarks)}")
 
-    animate_print(f"      t1/2 - Half Life: {bold(half_life) if half_life is not None else fore('Stable', NULL_COL)}")
+    animate_print(f"      t1/2 - Half Life: {bold(half_life) if half_life is not None else fore('Stable', CYAN)}")
     animate_print(f"      u - Isotope Weight: {bold(isotope_weight)}g/mol")
 
     if 'decay' in info and isinstance(info['decay'], list):
@@ -452,6 +309,7 @@ def find_element(input_str):
 
 element = None
 suggestion = None
+data = {}
 
 if len(sys.argv) > 1:
     if "--info" in sys.argv:
@@ -706,8 +564,8 @@ animate_print(f" p{convert_superscripts("+")} - {fore("Protons", RED)}: {bold(pr
 animate_print(f" n{"⁰" if superscripts else ""} - {fore("Neutrons", BLUE)}: {bold(neutrons)}")
 animate_print(f" e{convert_superscripts("-")} - {fore("Electrons", YELLOW)}: {bold(electrons)}")
 animate_print(f" nv - {fore("Valence Electrons", VALENCE_ELECTRONS_COL)}: {bold(valence_electrons)}")
-animate_print(f" u - {fore("Up Quarks", UP_QUARKS_COL)}: ({fore(protons, RED)} * 2) + {fore(neutrons, BLUE)} = {bold(up_quarks)}")
-animate_print(f" d - {fore("Down Quarks", DOWN_QUARKS_COL)}: ({fore(protons, RED)} + ({fore(neutrons, BLUE)} * 2) = {bold(down_quarks)}")
+animate_print(f" u - {fore("Up Quarks", GREEN)}: ({fore(protons, RED)} * 2) + {fore(neutrons, BLUE)} = {bold(up_quarks)}")
+animate_print(f" d - {fore("Down Quarks", CYAN)}: ({fore(protons, RED)} + ({fore(neutrons, BLUE)} * 2) = {bold(down_quarks)}")
 animate_print(f" ⚛️ - Shells {dim(f"(The electron in {fore("yellow", VALENCE_ELECTRONS_COL)} is the valence electron)")}:\n    {shell_result}")
 animate_print(f" 🌀 - Subshells: {subshell_result}")
 animate_print(" 🪞 - Isotopes:")
@@ -724,7 +582,7 @@ animate_print(f" 💨 - {fore("Boiling Point", BOIL_COL)}: {bold(boiling_point)}
 animate_print(f" A - Mass Number: {fore(protons, RED)} + {fore(neutrons, BLUE)} = {bold(protons + neutrons)}")
 animate_print(f" u - Atomic Mass: {bold(atomic_mass)}g/mol")
 animate_print(f" ☢️ - {fore("Radioactive", ORANGE)}: {fore("Yes", GREEN) if radioactive else fore("No", RED)}")
-animate_print(f" t1/2 - Half Life: {bold(half_life if not (half_life is None) else fore("Stable", NULL_COL))}")
+animate_print(f" t1/2 - Half Life: {bold(half_life if not (half_life is None) else fore("Stable", CYAN))}")
 animate_print(f" ρ - Density: {bold(density)}g/{cm3}")
 
 animate_print()
@@ -742,14 +600,14 @@ print_header("Measurements")
 animate_print()
 
 animate_print(" 📏 - Radius: ")
-animate_print(f"   r_calc - Calculated: {bold(str(radius["calculated"]) + "pm" if not (radius["calculated"] is None) else fore("N/A", NULL_COL))}")
-animate_print(f"   r_emp - Empirical: {bold(str(radius["empirical"]) + "pm" if not (radius["empirical"] is None) else fore("N/A", NULL_COL))}")
-animate_print(f"   r_cov - Covalent: {bold(str(radius["covalent"]) + "pm" if not (radius["covalent"] is None) else fore("N/A", NULL_COL))}")
-animate_print(f"   rvdW - Van der Waals: {bold(str(radius["van_der_waals"]) + "pm" if not (radius["van_der_waals"] is None) else fore("N/A", NULL_COL))}\n")
+animate_print(f"   r_calc - Calculated: {bold(str(radius["calculated"]) + "pm" if not (radius["calculated"] is None) else fore("N/A", CYAN))}")
+animate_print(f"   r_emp - Empirical: {bold(str(radius["empirical"]) + "pm" if not (radius["empirical"] is None) else fore("N/A", CYAN))}")
+animate_print(f"   r_cov - Covalent: {bold(str(radius["covalent"]) + "pm" if not (radius["covalent"] is None) else fore("N/A", CYAN))}")
+animate_print(f"   rvdW - Van der Waals: {bold(str(radius["van_der_waals"]) + "pm" if not (radius["van_der_waals"] is None) else fore("N/A", CYAN))}\n")
 animate_print(" 🪨 - Hardness: ")
-animate_print(f"   HB - Brinell: {bold(str(hardness["brinell"]) + f" kgf/{mm2}" if not (hardness["brinell"] is None) else fore("None", NULL_COL))}")
-animate_print(f"   H - Mohs: {bold(str(hardness["mohs"]) if not (hardness["mohs"] is None) else fore("None", NULL_COL))}")
-animate_print(f"   HV - Vickers: {bold(str(hardness["vickers"]) + f" kgf/{mm2}" if not (hardness["vickers"] is None) else fore("None", NULL_COL))}\n")
+animate_print(f"   HB - Brinell: {bold(str(hardness["brinell"]) + f" kgf/{mm2}" if not (hardness["brinell"] is None) else fore("None", CYAN))}")
+animate_print(f"   H - Mohs: {bold(str(hardness["mohs"]) if not (hardness["mohs"] is None) else fore("None", CYAN))}")
+animate_print(f"   HV - Vickers: {bold(str(hardness["vickers"]) + f" kgf/{mm2}" if not (hardness["vickers"] is None) else fore("None", CYAN))}\n")
 animate_print(f" Va - Atomic Volume: ≈ {bold(atomic_volume)}{cm3}/mol")
 animate_print(f" 📢 - Speed of Sound Transmission: {bold(sound_transmission_speed)}m/s = {bold(sound_transmission_speed / 1000)}km/s")
 
