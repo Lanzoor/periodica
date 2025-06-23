@@ -153,7 +153,7 @@
             "valence_electrons": 2,
             "isotopes": {
                 "2He": {
-                    "half_life": "much less than 1e-9 seconds",
+                    "half_life": "much less than 1e-9 s",
                     "protons": 2,
                     "neutrons": 0,
                     "isotope_weight": 2.015894,
@@ -183,7 +183,7 @@
                     "isotope_weight": 4.00260325415
                 },
                 "5He": {
-                    "half_life": "6.02e22 seconds",
+                    "half_life": "6.02e-22 s",
                     "protons": 2,
                     "neutrons": 3,
                     "isotope_weight": 5.012057,
@@ -288,7 +288,7 @@
             "electron_affinity": 0.0,
             "ionization_energy": 24.587,
             "shells": [2],
-            "subshells": ["1s²"],
+            "subshells": ["1s2"],
             "oxidation_states": [0],
             "conductivity_type": "Insulator"
         },
@@ -313,6 +313,145 @@
                 "Joseph Norman Lockyer": "male"
             },
             "date": "1868 AD"
+        }
+    },
+    "lithium": {
+        "general": {
+            "fullname": "Lithium",
+            "symbol": "Li",
+            "atomic_number": 3,
+            "description": "Lithium is a soft, silvery-white alkali metal. Under standard conditions it is the lightest metal and the least dense solid element.\nIt has important industrial applications in batteries, ceramics, and pharmaceuticals, and it is highly reactive—especially in water.",
+            "appearance": {
+                "color": "silvery-white",
+                "phase": "solid"
+            },
+            "period": 2,
+            "group": 1,
+            "block": "s",
+            "type": "Alkali metal",
+            "radioactive": false,
+            "half_life": null,
+            "cas_number": "CAS7439-93-2"
+        },
+        "nuclear": {
+            "protons": 3,
+            "neutrons": 4,
+            "electrons": 3,
+            "valence_electrons": 1,
+            "isotopes": {
+                "3Li": {
+                    "half_life": "???",
+                    "protons": 3,
+                    "neutrons": 0,
+                    "isotope_weight": 3.03078,
+                    "decay": [
+                        {
+                            "mode": "p?",
+                            "product": ["2He?"],
+                            "chance": 100
+                        }
+                    ]
+                },
+                "4Li": {
+                    "half_life": "91 ys",
+                    "protons": 3,
+                    "neutrons": 1,
+                    "isotope_weight": 4.02719,
+                    "decay": [
+                        {
+                            "mode": "p",
+                            "product": ["3He"],
+                            "chance": 100
+                        }
+                    ]
+                },
+                "5Li": {
+                    "half_life": "370 ys",
+                    "protons": 3,
+                    "neutrons": 2,
+                    "isotope_weight": 5.01254,
+                    "decay": [
+                        {
+                            "mode": "p",
+                            "product": ["4He"],
+                            "chance": 100
+                        }
+                    ]
+                },
+                "6Li": {
+                    "half_life": null,
+                    "protons": 3,
+                    "neutrons": 3,
+                    "isotope_weight": 6.0151228874,
+                    "metastable": {
+                        "6mLi": {
+                            "half_life": "56 as",
+                            "decay": [
+                                {
+                                    "mode": "IT",
+                                    "product": ["6Li"],
+                                    "chance": 100
+                                }
+                            ]
+                        }
+                    }
+                },
+                "7Li": {
+                    "half_life": null,
+                    "protons": 3,
+                    "neutrons": 4,
+                    "isotope_weight": 7.016003434
+                },
+                "8Li": {
+                    "half_life": "0.838 s",
+                    "protons": 3,
+                    "neutrons": 5,
+                    "isotope_weight": 8.02248624,
+                    "decay": [
+                        {
+                            "mode": "β-",
+                            "product": ["8Be"],
+                            "chance": 100
+                        }
+                    ]
+                }
+            }
+        },
+        "physical": {
+            "atomic_mass": 6.94,
+            "density": 0.534,
+            "melt": 180.54,
+            "boil": 1342
+        },
+        "electronic": {
+            "electronegativity": 0.98,
+            "electron_affinity": 0.618,
+            "ionization_energy": 5.3917,
+            "shells": [2, 1],
+            "subshells": ["1s2", "2s1"],
+            "oxidation_states": [1],
+            "conductivity_type": "Conductor"
+        },
+        "measurements": {
+            "radius": {
+                "calculated": 152,
+                "empirical": 145,
+                "covalent": 128,
+                "van_der_waals": 182
+            },
+            "hardness": {
+                "brinell": null,
+                "mohs": 0.6,
+                "vickers": null
+            },
+            "atomic_volume": 13.1,
+            "sound_transmission_speed": 6000
+        },
+        "historical": {
+            "discoverers": {
+                "Johan August Arfwedson": "male"
+            },
+            "date": "1817 AD"
         }
     }
 }
