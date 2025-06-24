@@ -116,7 +116,7 @@ try:
                             animate_print("Well, your delay was WAY LONG for our comprehension, and please do note it may take a very long time to display all the information.\nNonetheless, we value your configuration.")
                         config['animation_delay'] = user_input
                         animation_delay = config["animation_delay"]
-                        animate_print(f"Successfully changed option 'Animation Delay' to {bold(animation_delay)}.")
+                        animate_print(f"Successfully changed option 'Animation Delay' to {bold(animation_delay)} seconds.")
                         time.sleep(2)
                         break
                     except ValueError:
