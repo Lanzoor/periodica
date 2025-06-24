@@ -211,10 +211,10 @@ def match_isotope_input(input_str):
         return isotope_match.group(1), isotope_match.group(2)
     return None, None
 
-def format_isotope(norm_iso, fullname, *, metastable = False):
+def format_isotope(norm_iso, fullname, *, metastable = ""):
     global isotope_format
 
-    m = "m" if metastable else ""
+    m = metastable
     match = re.match(r"^(\d+)\s*([A-Za-z]+)$", remove_superscripts(norm_iso))
     if not match:
         return norm_iso
@@ -232,7 +232,7 @@ def format_isotope(norm_iso, fullname, *, metastable = False):
 def print_isotope(norm_iso, info, fullname):
     global animation_delay
 
-    animation_delay /= 2
+    animation_delay /= 4
 
     animate_print()
     match = re.match(r"^(\d+)\s*([A-Za-z]+)$", remove_superscripts(norm_iso))
@@ -280,14 +280,13 @@ def print_isotope(norm_iso, info, fullname):
         metastable_isotopes = info['metastable']
         for (key, value) in metastable_isotopes.items():
             half_life = value['half_life']
-
-            match = re.match(r"^(\d+)\s*([A-Za-z]+)$", remove_superscripts(key))
-
-            display_name = format_isotope(key, fullname, metastable=True)
+            energy = value['energy']
+            display_name = format_isotope(norm_iso, fullname, metastable=key)
 
             animate_print()
             animate_print(f"        {bold(display_name)}:")
             animate_print(f"          t1/2 - Half Life: {bold(half_life)}")
+            animate_print(f"          ⚡️ - Excitation Energy: {bold(energy)}keV")
             animate_print("          ⛓️ - Possible Decays:")
 
             for decay_branch in value['decay']:
@@ -298,9 +297,9 @@ def print_isotope(norm_iso, info, fullname):
                 products = list(map(lambda element: bold(element), products))
                 products = ", ".join(products)
 
-                animate_print(f"            {bold(format_isotope(display_name, fullname, metastable=True))} -> {bold(decay_mode)} -> {products} {chances}")
+                animate_print(f"            {bold(display_name)} -> {bold(decay_mode)} -> {products} {chances}")
 
-    animation_delay *= 2
+    animation_delay *= 4
 
 def find_isotope(symbol_or_name, mass_number, search_query):
     for val in data.values():
