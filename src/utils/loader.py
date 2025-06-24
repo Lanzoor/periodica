@@ -19,7 +19,7 @@ default_config = {
     "truecolor": True,
     "isotope_format": "fullname-number",
     "animation": "none",
-    "animation_delay": 0.001
+    "animation_delay": 0.0005
 }
 
 valid_formats = ["fullname-number", "symbol-number", "numbersymbol"]
