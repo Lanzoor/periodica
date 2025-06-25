@@ -118,7 +118,12 @@
                 "mohs": null,
                 "vickers": null
             },
-            "atomic_volume": 14.1,
+            "moduli": {
+                "bulk": null,
+                "young": null,
+                "shear": null,
+                "poissons_ratio": null
+            },
             "sound_transmission_speed": 1310
         },
         "historical": {
@@ -278,7 +283,7 @@
             }
         },
         "physical": {
-            "atomic_mass": 4.002602,
+            "atomic_mass": 4.00260128098301,
             "density": 0.0001786,
             "melt": -272.2,
             "boil": -268.93
@@ -296,7 +301,7 @@
             "radius": {
                 "calculated": 31,
                 "empirical": 28,
-                "covalent": 32,
+                "covalent": 37,
                 "van_der_waals": 140
             },
             "hardness": {
@@ -304,8 +309,13 @@
                 "mohs": null,
                 "vickers": null
             },
-            "atomic_volume": 31.8,
-            "sound_transmission_speed": 972
+            "moduli": {
+                "bulk": null,
+                "young": null,
+                "shear": null,
+                "poissons_ratio": null
+            },
+            "sound_transmission_speed": 965
         },
         "historical": {
             "discoverers": {
@@ -543,7 +553,7 @@
             }
         },
         "physical": {
-            "atomic_mass": 6.94,
+            "atomic_mass": 6.941765353712,
             "density": 0.534,
             "melt": 180.54,
             "boil": 1342
@@ -565,11 +575,16 @@
                 "van_der_waals": 182
             },
             "hardness": {
-                "brinell": null,
+                "brinell": 5.0,
                 "mohs": 0.6,
                 "vickers": null
             },
-            "atomic_volume": 13.1,
+            "moduli": {
+                "bulk": 11,
+                "young": 4.9,
+                "shear": 4.2,
+                "poissons_ratio": null
+            },
             "sound_transmission_speed": 6000
         },
         "historical": {

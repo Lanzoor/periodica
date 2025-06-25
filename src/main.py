@@ -545,7 +545,7 @@ conductivity_type = electronic["conductivity_type"]
 # Measurements
 radius = measurements["radius"]
 hardness = measurements["hardness"]
-atomic_volume = measurements["atomic_volume"]
+moduli = measurements["moduli"]
 sound_transmission_speed = measurements["sound_transmission_speed"]
 
 logging.info("Starting output.")
@@ -629,15 +629,19 @@ print_header("Measurements")
 animate_print()
 
 animate_print(" 📏 - Radius: ")
-animate_print(f"   r_calc - Calculated: {bold(str(radius["calculated"]) + "pm" if not (radius["calculated"] is None) else fore("N/A", CYAN))}")
-animate_print(f"   r_emp - Empirical: {bold(str(radius["empirical"]) + "pm" if not (radius["empirical"] is None) else fore("N/A", CYAN))}")
-animate_print(f"   r_cov - Covalent: {bold(str(radius["covalent"]) + "pm" if not (radius["covalent"] is None) else fore("N/A", CYAN))}")
-animate_print(f"   rvdW - Van der Waals: {bold(str(radius["van_der_waals"]) + "pm" if not (radius["van_der_waals"] is None) else fore("N/A", CYAN))}\n")
+animate_print(f"   r_calc - Calculated: {bold(str(radius["calculated"])) + "pm" if not (radius["calculated"] is None) else fore("N/A", CYAN)}")
+animate_print(f"   r_emp - Empirical: {bold(str(radius["empirical"])) + "pm" if not (radius["empirical"] is None) else fore("N/A", CYAN)}")
+animate_print(f"   r_cov - Covalent: {bold(str(radius["covalent"])) + "pm" if not (radius["covalent"] is None) else fore("N/A", CYAN)}")
+animate_print(f"   rvdW - Van der Waals: {bold(str(radius["van_der_waals"])) + "pm" if not (radius["van_der_waals"] is None) else fore("N/A", CYAN)}\n")
 animate_print(" 🪨 - Hardness: ")
-animate_print(f"   HB - Brinell: {bold(str(hardness["brinell"]) + f" kgf/{mm2}" if not (hardness["brinell"] is None) else fore("None", CYAN))}")
+animate_print(f"   HB - Brinell: {bold(str(hardness["brinell"])) + f"kgf/{mm2}" if not (hardness["brinell"] is None) else fore("None", CYAN)}")
 animate_print(f"   H - Mohs: {bold(str(hardness["mohs"]) if not (hardness["mohs"] is None) else fore("None", CYAN))}")
-animate_print(f"   HV - Vickers: {bold(str(hardness["vickers"]) + f" kgf/{mm2}" if not (hardness["vickers"] is None) else fore("None", CYAN))}\n")
-animate_print(f" Va - Atomic Volume: ≈ {bold(atomic_volume)}{cm3}/mol")
+animate_print(f"   HV - Vickers: {bold(str(hardness["vickers"])) + f"kgf/{mm2}" if not (hardness["vickers"] is None) else fore("None", CYAN)}\n")
+animate_print(" 🔃 - Moduli: ")
+animate_print(f"   K - Bulk Modulus: {bold(str(moduli["bulk"])) + "GPa" if not (moduli["bulk"] is None) else fore("None", CYAN)}")
+animate_print(f"   E - Young's Modulus: {bold(str(moduli['young'])) + "GPa" if moduli['young'] is not None else fore('None', CYAN)}")
+animate_print(f"   G - Shear Modulus: {bold(str(moduli["shear"])) + "GPa" if not (moduli['shear'] is None) else fore("None", CYAN)}")
+animate_print(f"   ν - Poisson's Ratio: {bold(str(moduli["poissons_ratio"])) if not (moduli["poissons_ratio"] is None) else fore("None", CYAN)}\n")
 animate_print(f" 📢 - Speed of Sound Transmission: {bold(sound_transmission_speed)}m/s = {bold(sound_transmission_speed / 1000)}km/s")
 
 print_separator()
