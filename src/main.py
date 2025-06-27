@@ -106,7 +106,8 @@ mm2 = "mm²" if superscripts else "mm2"
 types = {
 	"Reactive nonmetal": GREEN,
 	"Noble gas": YELLOW,
-	"Alkali metal": (176, 176, 176) if truecolor else B_BLACK
+	"Alkali metal": (176, 176, 176) if truecolor else B_BLACK,
+	"Alkali earth metal": ORANGE
 }
 
 # Other important functions / variables
@@ -276,28 +277,35 @@ def print_isotope(norm_iso, info, fullname):
             animate_print(f"        {bold(display_name)} -> {bold(decay_mode)} -> {products} {chances}")
 
     if 'metastable' in info:
+        if 'decay' in info:
+            animate_print()
         animate_print("      m - Metastable Isotopes:")
         metastable_isotopes = info['metastable']
         for (key, value) in metastable_isotopes.items():
-            half_life = value['half_life']
             energy = value['energy']
             display_name = format_isotope(norm_iso, fullname, metastable=key)
 
             animate_print()
             animate_print(f"        {bold(display_name)}:")
-            animate_print(f"          t1/2 - Half Life: {bold(half_life)}")
+
+            if 'half_life' in value.keys():
+                animate_print(f"          t1/2 - Half Life: {bold(half_life)}")
+
             animate_print(f"          ⚡️ - Excitation Energy: {bold(energy)}keV")
-            animate_print("          ⛓️ - Possible Decays:")
 
-            for decay_branch in value['decay']:
-                decay_mode = decay_branch['mode']
-                chances = f"({decay_branch['chance']}%)" if decay_branch['chance'] != 100 else ""
-                products = decay_branch['product']
-                products = [format_isotope(element, fullname) for element in products]
-                products = list(map(lambda element: bold(element), products))
-                products = ", ".join(products)
+            if 'decay' in value.keys():
+                animate_print("          ⛓️ - Possible Decays:")
 
-                animate_print(f"            {bold(display_name)} -> {bold(decay_mode)} -> {products} {chances}")
+                for decay_branch in value['decay']:
+                    decay_mode = decay_branch['mode']
+                    decay_mode = fore(decay_mode, RED) if decay_mode [-1] == "?" else decay_mode
+                    chances = f"({decay_branch['chance']}%)" if decay_branch['chance'] != 100 else ""
+                    products = decay_branch['product']
+                    products = [format_isotope(element, fullname) for element in products]
+                    products = list(map(lambda element: bold(element), products))
+                    products = ", ".join(products)
+
+                    animate_print(f"            {bold(display_name)} -> {bold(decay_mode)} -> {products} {chances}")
 
     animation_delay *= 4
 
