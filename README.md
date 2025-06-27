@@ -105,3 +105,5 @@ And the project will automatically be runned once you type it.
 Go mess around with stuff, find some bugs, contribute improvements, or just enjoy playing with the element database!
 
 > The elementdata.json file is public domain — feel free to use it however you like. **But giving credit helps and shows respect to the effort behind it.** (Just don’t say that you made it, or use it to get profit. That's some real legal trouble right there.)
+
+# IMPORTANT NOTE: Since how the program validates isotope names, any unadded isotope names will result in weird behaviours. Please, DO NOT TRUST THE DAUGHTER ISOTOPES OF RECENTLY ADDED ELEMENTS.

@@ -46,12 +46,12 @@ def eV_to_kJpermol(eV):
 
 def print_header(title):
     dashes = "-" * (width - len(title) - 2)
-    animate_print(f"--{bold(title)}{dashes}")
+    print(f"--{bold(title)}{dashes}")
 
 def print_separator():
-    animate_print()
-    animate_print("-" * width)
-    animate_print()
+    print()
+    print("-" * width)
+    print()
 
 def convert_superscripts(string: str) -> str:
     superscript_map = {
@@ -347,8 +347,7 @@ if len(sys.argv) > 1:
         sys.exit(0)
     elif "--init" in sys.argv:
         logging.info("User gave --init flag; redirecting to another script.")
-        import configurate
-        sys.exit(0)
+        import configuration
     input_str = sys.argv[1].strip().lower()
     logging.info(f"User gave argv: \"{input_str}\"")
 
