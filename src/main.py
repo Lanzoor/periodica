@@ -100,6 +100,7 @@ logging.info("Program initialized.")
 
 cm3 = "cm³" if superscripts else "cm3"
 mm2 = "mm²" if superscripts else "mm2"
+data = {}
 
 # Color Configs
 
@@ -107,7 +108,8 @@ types = {
 	"Reactive nonmetal": GREEN,
 	"Noble gas": YELLOW,
 	"Alkali metal": (176, 176, 176) if truecolor else B_BLACK,
-	"Alkali earth metal": ORANGE
+	"Alkali earth metal": ORANGE,
+	"Metalloid": CYAN
 }
 
 # Other important functions / variables
@@ -122,6 +124,8 @@ match random.randint(0, 3):
     case 2:
         tip = "(Tip: Run this script with the --init flag to configure the script.)"
     case 3:
+        tip = ""
+    case _:
         tip = ""
 
 program_information = f"""
@@ -266,26 +270,32 @@ def print_isotope(norm_iso, info, fullname):
     if 'decay' in info and isinstance(info['decay'], list):
         animate_print("      ⛓️ - Possible Decays:")
         for decay_branch in info['decay']:
-            decay_mode = decay_branch['mode']
-            decay_mode = fore(decay_mode, RED) if decay_mode [-1] == "?" else decay_mode
-            chances = f"({decay_branch['chance']}%)" if decay_branch['chance'] != 100 else ""
-            products = decay_branch['product']
-            products = [format_isotope(element.replace("?", ""), fullname) + ("?" if element[-1] == "?" else "") for element in products]
-            products = list(map(lambda element: bold(element), products))
-            products = ", ".join(products)
+            decay_mode = decay_branch.get("mode", "???")
+            if decay_mode.endswith("?"):
+                decay_mode = fore(decay_mode, RED)
 
-            animate_print(f"        {bold(display_name)} -> {bold(decay_mode)} -> {products} {chances}")
+            if 'chance' in decay_branch:
+                chance = decay_branch['chance']
+                chances = f"({chance}%)" if chance != 100 else ""
+            else:
+                chances = fore("(Not proven)", RED)
+
+            products = decay_branch.get("product", [])
+
+            if not isinstance(products, list):
+                products = [str(products)]
+            products = [bold(format_isotope(p, fullname)) for p in products]
+            product_string = ", ".join(products)
+
+            animate_print(f"            {bold(display_name)} -> {bold(decay_mode)} -> {product_string} {chances}")
 
     if 'metastable' in info:
-        if 'decay' in info:
-            animate_print()
         animate_print("      m - Metastable Isotopes:")
         metastable_isotopes = info['metastable']
         for (key, value) in metastable_isotopes.items():
             energy = value['energy']
             display_name = format_isotope(norm_iso, fullname, metastable=key)
 
-            animate_print()
             animate_print(f"        {bold(display_name)}:")
 
             if 'half_life' in value.keys():
@@ -297,15 +307,26 @@ def print_isotope(norm_iso, info, fullname):
                 animate_print("          ⛓️ - Possible Decays:")
 
                 for decay_branch in value['decay']:
-                    decay_mode = decay_branch['mode']
-                    decay_mode = fore(decay_mode, RED) if decay_mode [-1] == "?" else decay_mode
-                    chances = f"({decay_branch['chance']}%)" if decay_branch['chance'] != 100 else ""
-                    products = decay_branch['product']
-                    products = [format_isotope(element, fullname) for element in products]
-                    products = list(map(lambda element: bold(element), products))
-                    products = ", ".join(products)
+                    decay_mode = decay_branch.get("mode", "???")
+                    if decay_mode.endswith("?"):
+                        decay_mode = fore(decay_mode, RED)
 
-                    animate_print(f"            {bold(display_name)} -> {bold(decay_mode)} -> {products} {chances}")
+                    if 'chance' in decay_branch:
+                        chance = decay_branch['chance']
+                        chances = f"({chance}%)" if chance != 100 else ""
+                    else:
+                        chances = fore("(Not proven)", RED)
+
+                    products = decay_branch.get("product", [])
+
+                    if not isinstance(products, list):
+                        products = [str(products)]
+                    products = [bold(format_isotope(p, fullname)) for p in products]
+                    product_string = ", ".join(products)
+
+                    animate_print(f"            {bold(display_name)} -> {bold(decay_mode)} -> {product_string} {chances}")
+
+
 
     animation_delay *= 4
 
@@ -356,6 +377,12 @@ if len(sys.argv) > 1:
     elif "--init" in sys.argv:
         logging.info("User gave --init flag; redirecting to another script.")
         import configuration
+    elif [argv for argv in sys.argv if argv.startswith("--")]:
+        logging.info("Flag was not recognized.")
+        animate_print(fore("Invalid flag. Please run the script with the --info flag to get an information of all avaliable flags.", RED))
+
+    # TODO: Add update logic so that people don't need to download source code
+
     input_str = sys.argv[1].strip().lower()
     logging.info(f"User gave argv: \"{input_str}\"")
 
@@ -604,7 +631,7 @@ animate_print(f" u - {fore("Up Quarks", GREEN)}: ({fore(protons, RED)} * 2) + {f
 animate_print(f" d - {fore("Down Quarks", CYAN)}: ({fore(protons, RED)} + ({fore(neutrons, BLUE)} * 2) = {bold(down_quarks)}")
 animate_print(f" ⚛️ - Shells {dim(f"(The electron in {fore("yellow", VALENCE_ELECTRONS_COL)} is the valence electron)")}:\n    {shell_result}")
 animate_print(f" 🌀 - Subshells: {subshell_result}")
-animate_print(f" 🪞 - Isotopes: {dim(f"(Decay processes in {fore("red", RED)} need verification. Do not trust them!)")}:")
+animate_print(f" 🪞 - Isotopes ({len(isotopes.keys())}): {dim(f"(Decay processes in {fore("red", RED)} need verification. Do not trust them!)")}:")
 
 for isotope, information in isotopes.items():
     print_isotope(isotope, information, fullname)
@@ -635,7 +662,7 @@ animate_print()
 print_header("Measurements")
 animate_print()
 
-animate_print(" 📏 - Radius: ")
+animate_print(" r - Radius: ")
 animate_print(f"   r_calc - Calculated: {bold(str(radius["calculated"])) + "pm" if not (radius["calculated"] is None) else fore("N/A", CYAN)}")
 animate_print(f"   r_emp - Empirical: {bold(str(radius["empirical"])) + "pm" if not (radius["empirical"] is None) else fore("N/A", CYAN)}")
 animate_print(f"   r_cov - Covalent: {bold(str(radius["covalent"])) + "pm" if not (radius["covalent"] is None) else fore("N/A", CYAN)}")
