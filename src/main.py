@@ -163,6 +163,11 @@ except FileNotFoundError:
 
 def get_response(url: str):
     try:
+        import requests
+    except ImportError:
+        animate_print("Whoopsies, the requests module was not found in your environment! Please read the README.md file for more information.")
+        abort_program("Couldn't proceed; the requests library was not found in the environment.")
+    try:
         response = requests.get(url)
         response.raise_for_status()
         animate_print(f"HTTP status code: {response.status_code} (pass)")
@@ -176,11 +181,6 @@ def get_response(url: str):
 
 if elementdata_malformed:
     confirmation = input("> ").strip().lower()
-    try:
-        import requests
-    except ImportError:
-        animate_print("Whoopsies, the requests module was not found in your environment! Please read the README.md file for more information.")
-        abort_program("Couldn't proceed; the requests library was not found in the environment.")
     if confirmation == "y":
         url = "https://raw.githubusercontent.com/Lanzoor/periodictable/main/src/data.json"
         animate_print(f"Getting content from {url}, this should not take a while...")
@@ -406,12 +406,6 @@ def update():
         sys.exit(0)
 
     version = toml_data.get("project", {}).get("version")
-
-    try:
-        import requests
-    except ImportError:
-        animate_print("Whoopsies, the requests module was not found in your environment! Please read the README.md file for more information.")
-        abort_program("Couldn't proceed; the requests library was not found in the environment.")
 
     url = "https://raw.githubusercontent.com/Lanzoor/periodictable/main/pyproject.toml"
     animate_print(f"Getting content from {url}, this should not take a while...")
