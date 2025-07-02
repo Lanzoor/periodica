@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import logging, json, os, re, sys, difflib, random, time
+import logging, json, os, re, sys, difflib, random, time, tomllib
 from utils import get_config, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, B_BLACK, fore, bold, dim, italic, gradient, animate_print
 
 config = get_config()
@@ -139,6 +139,7 @@ There are also other flags you can provide to this program.
 
 - {bold("--info")} - Give this information message
 - {bold("--init")} - Edit the settings
+- {bold("--update")} - Check for updates
 
 {bold("Note: Giving a flag ignores any other arguments, except special ones marked with an asterisk.")}
 Anyways, I hope you enjoy this small program. {bold("Please read the README.md file for more information!")}
@@ -367,44 +368,63 @@ def find_element(input_str):
 element = None
 suggestion = None
 
-if len(sys.argv) > 1:
-    if "--info" in sys.argv:
-        logging.info("User gave --info flag; redirecting to information logic.")
-        animate_print(program_information)
-        sys.exit(0)
-    elif "--init" in sys.argv:
-        logging.info("User gave --init flag; redirecting to another script.")
-        import configuration
-    elif [argv for argv in sys.argv if argv.startswith("--")]:
-        logging.warning("Flag was not recognized.")
-        animate_print(fore("Invalid flag. Please run the script with the --info flag to get an information of all avaliable flags.", RED))
+recognized_flag = False
 
-    # TODO: Add update logic so that people don't need to download source code
+def create_flag(flag: str, callable):
+    if flag in sys.argv:
+        callable()
+        return True
+    return False
 
-    input_str = sys.argv[1].strip().lower()
-    logging.info(f"User gave argv: \"{input_str}\"")
+def get_information():
+    logging.info("User gave --info flag; redirecting to information logic.")
+    animate_print(program_information)
+    sys.exit(0)
 
+def configurate():
+    logging.info("User gave --init flag; redirecting to another script.")
+    import configuration
+    sys.exit(0)
+
+def update():
+    logging.info("User gave --update flag; redirecting to update logic.")
+    sys.exit(0)
+
+def process_isotope_input(input_str):
     try:
         index = int(input_str) - 1
         key = list(data.keys())[index]
-        element = data[key]
+        return data[key], None
     except (ValueError, IndexError):
         symbol_or_name, mass_number = match_isotope_input(input_str)
-
         if symbol_or_name and mass_number:
             found = find_isotope(symbol_or_name, mass_number, input_str)
             if found:
                 sys.exit(0)
             logging.warning(f"Invalid isotope input: {input_str}")
+            return None, None
         else:
-            element, suggestion = find_element(input_str)
+            return find_element(input_str)
 
-    if element is None:
-        if not suggestion:
-            animate_print(fore("Invalid argv; falling back to interactive input.", RED))
-        else:
-            animate_print(fore(f"Invalid argv. Did you mean \"{bold(suggestion[0])}\"?", YELLOW))
-        logging.warning("Argv invalid, fallback to interactive.")
+if len(sys.argv) > 1:
+    recognized_flag = create_flag("--info", get_information) or \
+                      create_flag("--init", configurate) or \
+                      create_flag("--update", update)
+
+    if recognized_flag:
+        pass
+    else:
+        input_str = sys.argv[1].strip().lower()
+        logging.info(f"User gave argv: \"{input_str}\"")
+
+        element, suggestion = process_isotope_input(input_str)
+
+        if element is None:
+            if not suggestion:
+                animate_print(fore("Invalid argv; falling back to interactive input.", RED))
+            else:
+                animate_print(fore(f"Invalid argv. Did you mean \"{bold(suggestion[0])}\"?", YELLOW))
+            logging.warning("Argv invalid, fallback to interactive.")
 
 else:
     logging.warning("Argument not given, falling back to interactive input.")
@@ -415,22 +435,7 @@ if element is None:
         input_str = input("> ").strip().lower()
         logging.info(f"User gave input: \"{input_str}\"")
 
-        suggestion = None
-
-        try:
-            index = int(input_str) - 1
-            key = list(data.keys())[index]
-            element = data[key]
-        except (ValueError, IndexError):
-            symbol_or_name, mass_number = match_isotope_input(input_str)
-
-            if symbol_or_name and mass_number:
-                found = find_isotope(symbol_or_name, mass_number, input_str)
-                if found:
-                    sys.exit(0)
-                logging.warning(f"Invalid isotope input: {input_str}")
-            else:
-                element, suggestion = find_element(input_str)
+        element, suggestion = process_isotope_input(input_str)
 
         if element is not None:
             break
