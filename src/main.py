@@ -161,6 +161,19 @@ except FileNotFoundError:
     animate_print("The data.json file was not found. Is it okay for me to get the file for you on GitHub? (y/n)")
     elementdata_malformed = True
 
+def get_response(url: str):
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        animate_print(f"HTTP status code: {response.status_code} (pass)")
+        return response
+    except requests.exceptions.ConnectionError:
+        animate_print("Whoops! There was a network connection error. Please check your network connection, and try again later.")
+        abort_program("Couldn't proceed; failed to connect to page.")
+    except requests.exceptions.HTTPError:
+        animate_print(f"Failed to download data! HTTP status code: {response.status_code}")
+        abort_program(f"Failed to fetch data. Status code: {response.status_code}.")
+
 if elementdata_malformed:
     confirmation = input("> ").strip().lower()
     try:
@@ -169,25 +182,16 @@ if elementdata_malformed:
         animate_print("Whoopsies, the requests module was not found in your environment! Please read the README.md file for more information.")
         abort_program("Couldn't proceed; the requests library was not found in the environment.")
     if confirmation == "y":
-        animate_print("Getting content from https://raw.githubusercontent.com/Lanzoor/periodictable/main/src/data.json, this should not take a while...")
         url = "https://raw.githubusercontent.com/Lanzoor/periodictable/main/src/data.json"
-        try:
-            response = requests.get(url)
-        except requests.exceptions.ConnectionError:
-            response = requests.Response() # ignore this line, if you remove this line, the linter is going to scream at you / me
-            animate_print("Whoops! There was a network connection error. Please check your network connection, and try again later.")
-            abort_program("Couldn't proceed; failed to connect to page.")
+        animate_print(f"Getting content from {url}, this should not take a while...")
 
-        if response.status_code == 200:
-            animate_print(f"HTTP status code: {response.status_code} (pass)")
-            data = json.loads(response.text)
-            with open("./data.json", "w", encoding="utf-8") as f:
-                f.write(response.text)
-            animate_print("Going back to the program, since all issues were resolved.")
-            logging.info("Successfully got the data.json file from https://raw.githubusercontent.com/Lanzoor/periodictable/main/src/data.json.")
-        else:
-            animate_print(f"Failed to download data! HTTP status code: {response.status_code}")
-            abort_program(f"Failed to fetch data. Status code: {response.status_code}.")
+        response = get_response(url)
+
+        data = json.loads(response.text)
+        with open("./data.json", "w", encoding="utf-8") as f:
+            f.write(response.text)
+        animate_print("Successfully resolved the data.json file issue.")
+        logging.info(f"Successfully got the data.json file from {url}.")
 
     elif confirmation == "n":
         animate_print("Okay, exiting...")
@@ -388,6 +392,49 @@ def configurate():
 
 def update():
     logging.info("User gave --update flag; redirecting to update logic.")
+
+    try:
+        with open("./pyproject.toml", "rb") as f:
+            toml_data = tomllib.load(f)
+    except PermissionError:
+        animate_print("Permission denied, failed to search for updates.")
+        toml_data = []
+        sys.exit(0)
+    except FileNotFoundError:
+        animate_print("pyproject.toml file was not found. If you were using a version under v5.0.2-alpha, please manually download the update.")
+        toml_data = []
+        sys.exit(0)
+
+    version = toml_data.get("project", {}).get("version")
+
+    try:
+        import requests
+    except ImportError:
+        animate_print("Whoopsies, the requests module was not found in your environment! Please read the README.md file for more information.")
+        abort_program("Couldn't proceed; the requests library was not found in the environment.")
+
+    url = "https://raw.githubusercontent.com/Lanzoor/periodictable/main/pyproject.toml"
+    animate_print(f"Getting content from {url}, this should not take a while...")
+
+    response = get_response(url)
+
+    lts_toml = tomllib.loads(response.text)
+    lts_version = lts_toml.get("project", {}).get("version")
+
+    if not lts_version:
+        animate_print("Failed to get latest version info.")
+        sys.exit(1)
+
+    animate_print(f"Local version: {version}")
+    animate_print(f"Latest version: {lts_version}")
+
+    if version == lts_version:
+        animate_print(bold("You are using the latest version."))
+    else:
+        animate_print(bold(f"Update available: {lts_version}!"))
+
+    # TODO: Add update logic.
+
     sys.exit(0)
 
 def process_isotope_input(input_str):
