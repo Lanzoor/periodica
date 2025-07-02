@@ -394,7 +394,7 @@ def update():
     logging.info("User gave --update flag; redirecting to update logic.")
 
     try:
-        with open("./pyproject.toml", "rb") as f:
+        with open("../pyproject.toml", "rb") as f:
             toml_data = tomllib.load(f)
     except PermissionError:
         animate_print("Permission denied, failed to search for updates.")
