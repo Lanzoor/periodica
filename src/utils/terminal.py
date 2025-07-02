@@ -1,4 +1,4 @@
-from utils.loader import get_config
+from utils.loader import get_config, logging
 import re, sys, time, colorsys
 
 config = get_config()
@@ -30,7 +30,8 @@ def fore(string, color: int | list[int] | tuple[int, int, int]) -> str:
         try:
             return f"\033[{(30 + color)}m{processed}\033[39m"
         except ValueError:
-            raise Exception("Unsupported default terminal color.")
+            logging.warning(f"{color} was an invalid default terminal color. To the developers, please diagnose this issue.")
+            return processed
     else:
         processed = str(string)
         r, g, b = color

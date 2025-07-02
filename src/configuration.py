@@ -1,7 +1,9 @@
 import time, sys
 from utils import get_config, save_config, valid_formats, valid_animations, default_config, RED, GREEN, CYAN, fore, bold, dim, clear_screen, clear_line, animate_print
+from utils.loader import logging
 
 config = get_config()
+logging.info("Configuration program initialized.")
 
 try:
     while True:
@@ -30,11 +32,12 @@ try:
                     time.sleep(1)
                     clear_line()
                 save_config()
+                logging.info("User quit the program. Aborting...")
                 sys.exit(0)
             user_input = int(user_input)
         except ValueError:
             animate_print(fore(f"{user_input} is not a valid function number. Can you please try again?", RED))
-
+            logging.warning(f"{user_input} was not a valid function number.")
             time.sleep(2)
             continue
 
@@ -43,11 +46,13 @@ try:
                 config['use_superscripts'] = not config['use_superscripts']
                 superscripts = config["use_superscripts"]
                 animate_print(f"The setting 'Use Superscripts' was changed to {bold(fore(superscripts, GREEN) if superscripts else fore(superscripts, RED))}.")
+                logging.info(f"Setting 'Use Superscripts' changed from {not superscripts} to {superscripts}.")
                 time.sleep(2)
             case 2:
                 config['truecolor'] = not config['truecolor']
                 truecolor = config["truecolor"]
                 animate_print(f"The setting 'Use Truecolor' was changed to {bold(fore(truecolor, GREEN) if truecolor else fore(truecolor, RED))}.")
+                logging.info(f"Setting 'Use Truecolor' changed from {not truecolor} to {truecolor}.")
                 time.sleep(2)
             case 3:
                 while True:
@@ -66,15 +71,18 @@ try:
                         config['isotope_format'] = valid_formats[user_input - 1]
                         isotope_format = config["isotope_format"]
                         animate_print(f"Successfully changed option 'Isotope Format' to {bold(isotope_format)}.")
+                        logging.info(f"Setting 'Isotope Format' changed to {isotope_format}.")
                         time.sleep(2)
                         break
                     except ValueError:
                         if user_input not in valid_formats:
                             animate_print(f"{user_input} is neither a valid option name nor a valid option number. Please try again.")
+                            logging.warning(f"{user_input} was neither a valid option name nor a valid option number.")
                             continue
                         config['isotope_format'] = user_input
                         isotope_format = config["isotope_format"]
                         animate_print(f"Successfully changed option 'Isotope Format' to {bold(isotope_format)}.")
+                        logging.info(f"Setting 'Isotope Format' changed to {isotope_format}.")
                         time.sleep(2)
                         break
             case 4:
@@ -94,14 +102,17 @@ try:
                         config['animation'] = valid_animations[user_input - 1]
                         animation_type = config["animation"]
                         animate_print(f"Successfully changed option 'Animation Type' to {bold(animation_type)}.")
+                        logging.info(f"Setting 'Animation Type' changed to {animation_type}.")
                         break
                     except ValueError:
                         if user_input not in valid_animations:
                             animate_print(f"{user_input} is neither a valid option name nor a valid option number. Please try again.")
+                            logging.warning(f"{user_input} was neither a valid option name nor a valid option number.")
                             continue
                         config['animation'] = user_input
                         animation_type = config["animation"]
                         animate_print(f"Successfully changed option 'Animation Type' to {bold(animation_type)}.")
+                        logging.info(f"Setting 'Animation Type' changed to {animation_type}.")
                         break
             case 5:
                 while True:
@@ -117,10 +128,12 @@ try:
                         config['animation_delay'] = user_input
                         animation_delay = config["animation_delay"]
                         animate_print(f"Successfully changed option 'Animation Delay' to {bold(animation_delay)} seconds.")
+                        logging.info(f"Setting 'Animation Delay' changed to {animation_type} seconds.")
                         time.sleep(2)
                         break
                     except ValueError:
-                        animate_print(f"{user_input} is not a valid float integer. Please try again.")
+                        animate_print(f"{user_input} is not a valid float. Please try again.")
+                        logging.warning(f"{user_input} was not a valid float.")
                         continue
             case 6:
                 clear_screen()
@@ -131,6 +144,7 @@ try:
                 if user_input == "#":
                     config = default_config.copy()
                     save_config()
+                    logging.info("User re-initialized the configuration. Restarting program...")
                     animate_print(bold("Your configuration has been reset. This program needs to restart in order to save the changes. Please run the script again."))
                     for i in range(3, 0, -1):
                         animate_print(f"Exiting program in {bold(i)}...", end="")
@@ -138,14 +152,15 @@ try:
                         clear_line()
                     sys.exit(0)
                 else:
-                    animate_print("User canceled configuration reset.")
+                    logging.info("User canceled configuration reset.")
             case _:
                 animate_print(fore(f"{user_input} is out of bounds. Can you please try again with a valid function number?", RED))
 
+                logging.warning(f"{user_input} was an invalid function number.")
                 time.sleep(2)
                 continue
 except KeyboardInterrupt:
     animate_print("\nYou have pressed ^C while editing the settings. Please do not do so. Your data has been saved anyways. Have a nice day!")
     save_config()
-    time.sleep(2)
+    logging.info("User force quit the program. Aborting...")
     sys.exit(0)

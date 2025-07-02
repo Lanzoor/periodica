@@ -148,16 +148,16 @@ Anyways, I hope you enjoy this small program. {bold("Please read the README.md f
 elementdata_malformed = False
 
 try:
-    with open("./elementdata.json", 'r', encoding="utf-8") as file:
+    with open("./data.json", 'r', encoding="utf-8") as file:
         data = json.load(file)
-        logging.info("elementdata.json file was successfully found.")
+        logging.info("data.json file was successfully found.")
 except json.JSONDecodeError:
-    abort_program("elementdata.json file was modified, please do not do so no matter what.")
-    animate_print("The elementdata.json file was modified and malformed. Please do not do so, no matter what.\nThis means you need a fresh new elementdata.json file, is it okay for me to get the file for you on GitHub? (y/n)")
+    abort_program("data.json file was modified, please do not do so no matter what.")
+    animate_print("The data.json file was modified and malformed. Please do not do so, no matter what.\nThis means you need a fresh new data.json file, is it okay for me to get the file for you on GitHub? (y/n)")
     elementdata_malformed = True
 except FileNotFoundError:
-    logging.warning("elementdata.json file was not found.")
-    animate_print("The elementdata.json file was not found. Is it okay for me to get the file for you on GitHub? (y/n)")
+    logging.warning("data.json file was not found.")
+    animate_print("The data.json file was not found. Is it okay for me to get the file for you on GitHub? (y/n)")
     elementdata_malformed = True
 
 if elementdata_malformed:
@@ -168,8 +168,8 @@ if elementdata_malformed:
         animate_print("Whoopsies, the requests module was not found in your environment! Please read the README.md file for more information.")
         abort_program("Couldn't proceed; the requests library was not found in the environment.")
     if confirmation == "y":
-        animate_print("Getting content from https://raw.githubusercontent.com/Lanzoor/periodictable/main/src/elementdata.json, this should not take a while...")
-        url = "https://raw.githubusercontent.com/Lanzoor/periodictable/main/src/elementdata.json"
+        animate_print("Getting content from https://raw.githubusercontent.com/Lanzoor/periodictable/main/src/data.json, this should not take a while...")
+        url = "https://raw.githubusercontent.com/Lanzoor/periodictable/main/src/data.json"
         try:
             response = requests.get(url)
         except requests.exceptions.ConnectionError:
@@ -180,17 +180,17 @@ if elementdata_malformed:
         if response.status_code == 200:
             animate_print(f"HTTP status code: {response.status_code} (pass)")
             data = json.loads(response.text)
-            with open("./elementdata.json", "w", encoding="utf-8") as f:
+            with open("./data.json", "w", encoding="utf-8") as f:
                 f.write(response.text)
             animate_print("Going back to the program, since all issues were resolved.")
-            logging.info("Successfully got the elementdata.json file from https://raw.githubusercontent.com/Lanzoor/periodictable/main/src/elementdata.json.")
+            logging.info("Successfully got the data.json file from https://raw.githubusercontent.com/Lanzoor/periodictable/main/src/data.json.")
         else:
             animate_print(f"Failed to download data! HTTP status code: {response.status_code}")
             abort_program(f"Failed to fetch data. Status code: {response.status_code}.")
 
     elif confirmation == "n":
         animate_print("Okay, exiting...")
-        abort_program("User denied confirmation for fetching the elementdata.json file.")
+        abort_program("User denied confirmation for fetching the data.json file.")
     else:
         animate_print("Invalid input, please try again later. Exiting...")
         abort_program("User gave invalid confirmation.")
@@ -326,8 +326,6 @@ def print_isotope(norm_iso, info, fullname):
 
                     animate_print(f"            {bold(display_name)} -> {bold(decay_mode)} -> {product_string} {chances}")
 
-
-
     animation_delay *= 4
 
 def find_isotope(symbol_or_name, mass_number, search_query):
@@ -378,7 +376,7 @@ if len(sys.argv) > 1:
         logging.info("User gave --init flag; redirecting to another script.")
         import configuration
     elif [argv for argv in sys.argv if argv.startswith("--")]:
-        logging.info("Flag was not recognized.")
+        logging.warning("Flag was not recognized.")
         animate_print(fore("Invalid flag. Please run the script with the --info flag to get an information of all avaliable flags.", RED))
 
     # TODO: Add update logic so that people don't need to download source code
@@ -679,3 +677,6 @@ animate_print(f"   ν - Poisson's Ratio: {bold(str(moduli["poissons_ratio"])) if
 animate_print(f" 📢 - Speed of Sound Transmission: {bold(sound_transmission_speed)}m/s = {bold(sound_transmission_speed / 1000)}km/s")
 
 print_separator()
+
+logging.info("End of program reached. Aborting...")
+sys.exit(0)
