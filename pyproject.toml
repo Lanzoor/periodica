@@ -1,0 +1,10 @@
+[project]
+name = "periodica"
+version = "v5.0.2-alpha"
+description = "CLI tool for displaying element and isotope information"
+requires-python = ">=3.11"
+dependencies = ["requests"]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"

@@ -10,21 +10,16 @@ However, for most cases, I recommend you run the following methods;
 > Make sure that you have the latest version of Python in your machine! It usually comes with Linux, but just be sure.
 
 ```bash
-# The following steps require you to run as super-user, since /opt/ and /usr/local/bin/ is protected by root.
 # This gets the GitHub repository, and adds it into the opt folder.
-sudo git clone https://github.com/Lanzoor/periodica.git /opt/periodica
+git clone https://github.com/Lanzoor/periodica.git ~/.local/bin/periodica
 
-# This will create a venv, and install required packages. READ THE SCRIPT FIRST! DO NOT TRUST SOURCES FROM ONLINE. It will create a venv folder.
-sudo python3 /opt/periodica/build.py
+# This will create a venv, and install required packages. READ THE SCRIPT FIRST! DO NOT TRUST SOURCES FROM ONLINE.
+python3 ~/.local/bin/periodica/build.py
+# Run the command above with sudo if it gives a permission error.
 
-# Make it executable, so that you don't run into awful problems. This step is required for you to run periodica without using super-user.
-# DO NOT FORGET THIS PART! This step is crucial, and if you accidentally run periodica with super-user, you may run to horrible, unexplainable problems.
-sudo chmod +x /opt/periodica/periodica.sh
-sudo chown -R $USER:$USER /opt/periodica
-sudo chmod -R u+rwX /opt/periodica
-
-# Optional: move it into your /usr/local/bin/ so that you can access it anywhere by typing 'periodica'.
-sudo ln -s /opt/periodica/periodica.sh /usr/local/bin/periodica
+# Run the commands below if ~/.local/bin/ is not in PATH.
+# echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+# source ~/.bashrc
 
 # Now let's test it!
 periodica
