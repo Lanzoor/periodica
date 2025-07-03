@@ -55,7 +55,7 @@ def update_main():
         sys.exit(0)
 
     animate_print(bold(f"Update available: {lts_version}!"))
-    animate_print("This will pull the latest source code from GitHub. Proceed? (Y/n)")
+    animate_print(f"This will pull the latest source code from GitHub. Proceed?\n{fore("Warning! This will delete your config.json file. Backup it if you want.", RED)} (Y/n)")
 
     confirmation = input("> ").strip().lower()
     if confirmation not in ["y", "yes", ""]:
