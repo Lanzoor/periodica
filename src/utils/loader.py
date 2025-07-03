@@ -1,4 +1,4 @@
-import json, os, logging
+import json, os, logging, time, sys
 
 LOG_PATH = os.path.join(os.path.dirname(__file__), "../execution.log")
 
@@ -53,3 +53,29 @@ def save_config():
     global _config
     with open(CONFIG_PATH, "w", encoding="utf-8") as file:
         json.dump(_config or default_config, file, indent=4)
+
+def abort_program(message):
+    logging.error(message)
+
+    time.sleep(2)
+    logging.fatal("Program terminated.")
+    sys.exit(1)
+
+def get_response(url: str):
+    from .terminal import animate_print
+    try:
+        import requests
+    except ImportError:
+        animate_print("Whoopsies, the requests module was not found in your environment! Please read the README.md file for more information.")
+        abort_program("Couldn't proceed; the requests library was not found in the environment.")
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        animate_print(f"HTTP status code: {response.status_code} (pass)")
+        return response
+    except requests.exceptions.ConnectionError:
+        animate_print("Whoops! There was a network connection error. Please check your network connection, and try again later.")
+        abort_program("Couldn't proceed; failed to connect to page.")
+    except requests.exceptions.HTTPError:
+        animate_print(f"Failed to download data! HTTP status code: {response.status_code}")
+        abort_program(f"Failed to fetch data. Status code: {response.status_code}.")

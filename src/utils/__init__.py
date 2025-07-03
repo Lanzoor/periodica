@@ -8,7 +8,7 @@ from .terminal import (
     B_MAGENTA, B_CYAN,
 )
 
-from .loader import get_config, save_config, valid_formats, valid_animations, default_config
+from .loader import get_config, save_config, valid_formats, valid_animations, default_config, abort_program, get_response
 
 __all__ = [
     "bold", "dim", "italic", "underline", "crossout", "blink",
@@ -18,5 +18,5 @@ __all__ = [
     "MAGENTA", "CYAN", "WHITE", "DEFAULT_COLOR",
     "B_BLACK", "B_RED", "B_GREEN", "B_YELLOW", "B_BLUE",
     "B_MAGENTA", "B_CYAN",
-    "get_config", "save_config", "valid_formats", "valid_animations", "default_config"
+    "get_config", "save_config", "valid_formats", "valid_animations", "default_config", "abort_program", "get_response"
 ]
