@@ -44,18 +44,26 @@ def update_main():
     animate_print(f"Local version: {local_version}")
     animate_print(f"Latest version: {lts_version}")
 
-    local_version = version.parse(local_version)
-    lts_version = version.parse(lts_version)
+    try:
+        local_version = version.parse(local_version)
+        lts_version = version.parse(lts_version)
+    except Exception:
+        animate_print(fore("Failed to parse version. Check if pyproject.toml is malformed.", RED))
+        sys.exit(1)
 
     if local_version == lts_version:
         animate_print(bold("You are using the latest version."))
         sys.exit(0)
-    if local_version > lts_version:
-        animate_print(bold("You are using the nightly version. (in development, you probably either modified pyproject.toml or you are the developer)"))
+    elif local_version > lts_version:
+        animate_print(bold("You are using a newer or development version."))
         sys.exit(0)
 
     animate_print(bold(f"Update available: {lts_version}!"))
-    animate_print(f"This will pull the latest source code from GitHub. Proceed?\n{fore("Warning! This will delete your config.json file. Backup it if you want.", RED)} (Y/n)")
+    animate_print(
+        f"This will forcefully update the repo from GitHub.\n"
+        f"{fore('Warning! This will reset all local changes and delete your config.json file.', RED)}\n"
+        "Do you want to continue? (Y/n)"
+    )
 
     confirmation = input("> ").strip().lower()
     if confirmation not in ["y", "yes", ""]:
@@ -63,7 +71,8 @@ def update_main():
         sys.exit(0)
 
     try:
-        subprocess.run(["git", "pull"], cwd=project_root, check=True)
+        subprocess.run(["git", "fetch"], cwd=project_root, check=True)
+        subprocess.run(["git", "reset", "--hard", "origin/main"], cwd=project_root, check=True)
         animate_print(bold("Successfully pulled the latest changes. Let's build it up for you once again..."))
         time.sleep(2)
 
@@ -75,7 +84,7 @@ def update_main():
         sys.exit(0)
 
     except subprocess.CalledProcessError:
-        animate_print(fore("Git pull or build failed. This may not be a valid repository. Make sure you are in the right directory, and use git pull to try manually.", RED))
+        animate_print(fore("Git fetch/reset or build failed. Ensure this is a valid Git repo.", RED))
         sys.exit(1)
 
 if __name__ == "__main__":
