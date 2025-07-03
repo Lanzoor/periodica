@@ -1,39 +1,7 @@
 #!/usr/bin/env python3
 
-import logging, json, os, re, sys, difflib, random, time, tomllib
-from utils import get_config, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, B_BLACK, fore, bold, dim, italic, gradient, animate_print
-
-config = get_config()
-
-superscripts = config["use_superscripts"]
-truecolor = config["truecolor"]
-isotope_format = config["isotope_format"]
-animation_type = config["animation"]
-animation_delay = config["animation_delay"]
-
-if truecolor:
-    VALENCE_ELECTRONS_COL = (248, 255, 166)
-    MALE = (109, 214, 237)
-    FEMALE = (255, 133, 245)
-    MELT_COL = (52, 110, 235)
-    BOIL_COL = (189, 165, 117)
-    ORANGE = (245, 164, 66)
-    INDIGO = (94, 52, 235)
-else:
-    VALENCE_ELECTRONS_COL = YELLOW
-    MALE = CYAN
-    FEMALE = MAGENTA
-    MELT_COL = BLUE
-    BOIL_COL = YELLOW
-    ORANGE = YELLOW
-    INDIGO = BLUE
-
-def abort_program(message):
-    logging.error(message)
-
-    time.sleep(2)
-    logging.fatal("Program terminated.")
-    sys.exit(1)
+import logging, json, os, re, sys, difflib, random
+from utils import get_config, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, B_BLACK, fore, bold, dim, italic, gradient, animate_print, abort_program, get_response
 
 def celcius_to_kelvin(celsius):
 	return (celsius * 1e16 + 273.15 * 1e16) / 1e16
@@ -96,123 +64,27 @@ def conjunction_join(entries: list) -> str:
         return f"{entries[0]} and {entries[1]}"
     return f"{', '.join(entries[:-1])}, and {entries[-1]}"
 
-logging.info("Program initialized.")
+def create_flag(flag: str, callable):
+    if flag in sys.argv:
+        callable()
+        return True
+    return False
 
-cm3 = "cm³" if superscripts else "cm3"
-mm2 = "mm²" if superscripts else "mm2"
-data = {}
+def get_information():
+    logging.info("User gave --info flag; redirecting to information logic.")
+    animate_print(program_information)
+    sys.exit(0)
 
-# Color Configs
+def configurate():
+    logging.info("User gave --init flag; redirecting to another script.")
+    import configuration
+    sys.exit(0)
 
-types = {
-	"Reactive nonmetal": GREEN,
-	"Noble gas": YELLOW,
-	"Alkali metal": (176, 176, 176) if truecolor else B_BLACK,
-	"Alkali earth metal": ORANGE,
-	"Metalloid": CYAN
-}
-
-# Other important functions / variables
-
-config_file = './config.json'
-
-match random.randint(0, 3):
-    case 0:
-        tip = "(Tip: You can give this program argv to directly search an element from there. You can even give argv to the ./periodica.sh file too!)"
-    case 1:
-        tip = "(Tip: Run this script with the --info flag to get information.)"
-    case 2:
-        tip = "(Tip: Run this script with the --init flag to configure the script.)"
-    case 3:
-        tip = ""
-    case _:
-        tip = ""
-
-program_information = f"""
-Welcome to {bold(gradient("periodica", (156, 140, 255), (140, 255, 245)) if config['truecolor'] else fore("periodica", BLUE))}!
-This program provides useful information about the periodic elements, and pretty much everything here was made by the Discord user {bold(fore("Lanzoor", INDIGO))}!
-This project started as a fun hobby at around {bold("March 2025")}, but ended up getting taken seriously.
-This program was built with {fore("Python", CYAN)}, and uses {fore("JSON", YELLOW)} for configuration files / element database.
-The vibrant colors and visuals were done with the help of {italic(bold("ANSI escape codes"))}, although you should note that {bold("some terminals may not have truecolor support.")}
-{dim("(You can disable this anytime in the config.json file, or using the --init flag.)")}
-There are also other flags you can provide to this program.
-
-- {bold("--info")} - Give this information message
-- {bold("--init")} - Edit the settings
-- {bold("--update")} - Check for updates
-
-{bold("Note: Giving a flag ignores any other arguments, except special ones marked with an asterisk.")}
-Anyways, I hope you enjoy this small program. {bold("Please read the README.md file for more information!")}
-"""
-# Reading json file, and trying to get from GitHub if fails
-
-elementdata_malformed = False
-
-try:
-    with open("./data.json", 'r', encoding="utf-8") as file:
-        data = json.load(file)
-        logging.info("data.json file was successfully found.")
-except json.JSONDecodeError:
-    abort_program("data.json file was modified, please do not do so no matter what.")
-    animate_print("The data.json file was modified and malformed. Please do not do so, no matter what.\nThis means you need a fresh new data.json file, is it okay for me to get the file for you on GitHub? (y/n)")
-    elementdata_malformed = True
-except FileNotFoundError:
-    logging.warning("data.json file was not found.")
-    animate_print("The data.json file was not found. Is it okay for me to get the file for you on GitHub? (y/n)")
-    elementdata_malformed = True
-
-def get_response(url: str):
-    try:
-        import requests
-    except ImportError:
-        animate_print("Whoopsies, the requests module was not found in your environment! Please read the README.md file for more information.")
-        abort_program("Couldn't proceed; the requests library was not found in the environment.")
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        animate_print(f"HTTP status code: {response.status_code} (pass)")
-        return response
-    except requests.exceptions.ConnectionError:
-        animate_print("Whoops! There was a network connection error. Please check your network connection, and try again later.")
-        abort_program("Couldn't proceed; failed to connect to page.")
-    except requests.exceptions.HTTPError:
-        animate_print(f"Failed to download data! HTTP status code: {response.status_code}")
-        abort_program(f"Failed to fetch data. Status code: {response.status_code}.")
-
-if elementdata_malformed:
-    confirmation = input("> ").strip().lower()
-    if confirmation == "y":
-        url = "https://raw.githubusercontent.com/Lanzoor/periodictable/main/src/data.json"
-        animate_print(f"Getting content from {url}, this should not take a while...")
-
-        response = get_response(url)
-
-        data = json.loads(response.text)
-        with open("./data.json", "w", encoding="utf-8") as f:
-            f.write(response.text)
-        animate_print("Successfully resolved the data.json file issue.")
-        logging.info(f"Successfully got the data.json file from {url}.")
-
-    elif confirmation == "n":
-        animate_print("Okay, exiting...")
-        abort_program("User denied confirmation for fetching the data.json file.")
-    else:
-        animate_print("Invalid input, please try again later. Exiting...")
-        abort_program("User gave invalid confirmation.")
-
-# Getting element / isotope
-
-try:
-    width = os.get_terminal_size().columns
-except OSError:
-    animate_print(bold("What?? So apparently, you aren't running this on a terminal, which is very weird. We will try to ignore this issue, and will determine your terminal width as 80. Please move on and ignore this message."))
-    logging.warning("The script ran without a terminal, so failback to reasonable terminal width variable.")
-    width = 80
-
-if width <= 80:
-    animate_print(fore(f"You are running this program in a terminal that has a width of {bold(width)},\nwhich may be too compact to display and provide the information.\nPlease try resizing your terminal.", RED))
-    logging.warning("Not enough width for terminal.")
-element = None
+def update():
+    logging.info("User gave --update flag; redirecting to update logic.")
+    from update import update_main
+    update_main()
+    sys.exit(0)
 
 def match_isotope_input(input_str):
     if isotope_match := re.match(r"^(\d+)([A-Za-z]+)$", input_str):  # 1H
@@ -369,68 +241,6 @@ def find_element(input_str):
     suggestion = difflib.get_close_matches(input_str, possible_names, n=1, cutoff=0.6)
     return None, suggestion
 
-element = None
-suggestion = None
-
-recognized_flag = False
-
-def create_flag(flag: str, callable):
-    if flag in sys.argv:
-        callable()
-        return True
-    return False
-
-def get_information():
-    logging.info("User gave --info flag; redirecting to information logic.")
-    animate_print(program_information)
-    sys.exit(0)
-
-def configurate():
-    logging.info("User gave --init flag; redirecting to another script.")
-    import configuration
-    sys.exit(0)
-
-def update():
-    logging.info("User gave --update flag; redirecting to update logic.")
-
-    try:
-        with open("../pyproject.toml", "rb") as f:
-            toml_data = tomllib.load(f)
-    except PermissionError:
-        animate_print("Permission denied, failed to search for updates.")
-        toml_data = []
-        sys.exit(0)
-    except FileNotFoundError:
-        animate_print("pyproject.toml file was not found. If you were using a version under v5.0.2-alpha, please manually download the update.")
-        toml_data = []
-        sys.exit(0)
-
-    version = toml_data.get("project", {}).get("version")
-
-    url = "https://raw.githubusercontent.com/Lanzoor/periodictable/main/pyproject.toml"
-    animate_print(f"Getting content from {url}, this should not take a while...")
-
-    response = get_response(url)
-
-    lts_toml = tomllib.loads(response.text)
-    lts_version = lts_toml.get("project", {}).get("version")
-
-    if not lts_version:
-        animate_print("Failed to get latest version info.")
-        sys.exit(1)
-
-    animate_print(f"Local version: {version}")
-    animate_print(f"Latest version: {lts_version}")
-
-    if version == lts_version:
-        animate_print(bold("You are using the latest version."))
-    else:
-        animate_print(bold(f"Update available: {lts_version}!"))
-
-    # TODO: Add update logic.
-
-    sys.exit(0)
-
 def process_isotope_input(input_str):
     try:
         index = int(input_str) - 1
@@ -446,6 +256,131 @@ def process_isotope_input(input_str):
             return None, None
         else:
             return find_element(input_str)
+config = get_config()
+
+superscripts = config["use_superscripts"]
+truecolor = config["truecolor"]
+isotope_format = config["isotope_format"]
+animation_type = config["animation"]
+animation_delay = config["animation_delay"]
+
+if truecolor:
+    VALENCE_ELECTRONS_COL = (248, 255, 166)
+    MALE = (109, 214, 237)
+    FEMALE = (255, 133, 245)
+    MELT_COL = (52, 110, 235)
+    BOIL_COL = (189, 165, 117)
+    ORANGE = (245, 164, 66)
+    INDIGO = (94, 52, 235)
+else:
+    VALENCE_ELECTRONS_COL = YELLOW
+    MALE = CYAN
+    FEMALE = MAGENTA
+    MELT_COL = BLUE
+    BOIL_COL = YELLOW
+    ORANGE = YELLOW
+    INDIGO = BLUE
+
+logging.info("Program initialized.")
+
+cm3 = "cm³" if superscripts else "cm3"
+mm2 = "mm²" if superscripts else "mm2"
+data = {}
+
+# Color Configs
+
+types = {
+	"Reactive nonmetal": GREEN,
+	"Noble gas": YELLOW,
+	"Alkali metal": (176, 176, 176) if truecolor else B_BLACK,
+	"Alkali earth metal": ORANGE,
+	"Metalloid": CYAN
+}
+
+# Other important functions / variables
+
+config_file = './config.json'
+
+match random.randint(0, 3):
+    case 0:
+        tip = "(Tip: You can give this program argv to directly search an element from there. You can even give argv to the ./periodica.sh file too!)"
+    case 1:
+        tip = "(Tip: Run this script with the --info flag to get information.)"
+    case 2:
+        tip = "(Tip: Run this script with the --init flag to configure the script.)"
+    case 3:
+        tip = ""
+    case _:
+        tip = ""
+
+program_information = f"""
+Welcome to {bold(gradient("periodica", (156, 140, 255), (140, 255, 245)) if config['truecolor'] else fore("periodica", BLUE))}!
+This program provides useful information about the periodic elements, and pretty much everything here was made by the Discord user {bold(fore("Lanzoor", INDIGO))}!
+This project started as a fun hobby at around {bold("March 2025")}, but ended up getting taken seriously.
+This program was built with {fore("Python", CYAN)}, and uses {fore("JSON", YELLOW)} for configuration files / element database.
+The vibrant colors and visuals were done with the help of {italic(bold("ANSI escape codes"))}, although you should note that {bold("some terminals may not have truecolor support.")}
+{dim("(You can disable this anytime in the config.json file, or using the --init flag.)")}
+There are also other flags you can provide to this program.
+
+- {bold("--info")} - Give this information message
+- {bold("--init")} - Edit the settings
+- {bold("--update")} - Check for updates
+
+{bold("Note: Giving a flag ignores any other arguments, except special ones marked with an asterisk.")}
+Anyways, I hope you enjoy this small program. {bold("Please read the README.md file for more information!")}
+"""
+# Reading json file, and trying to get from GitHub if fails
+
+elementdata_malformed = False
+
+try:
+    with open("./data.json", 'r', encoding="utf-8") as file:
+        data = json.load(file)
+        logging.info("data.json file was successfully found.")
+except json.JSONDecodeError:
+    abort_program("data.json file was modified, please do not do so no matter what.")
+    animate_print("The data.json file was modified and malformed. Please do not do so, no matter what.\nThis means you need a fresh new data.json file, is it okay for me to get the file for you on GitHub? (y/n)")
+    elementdata_malformed = True
+except FileNotFoundError:
+    logging.warning("data.json file was not found.")
+    animate_print("The data.json file was not found. Is it okay for me to get the file for you on GitHub? (y/N)")
+    elementdata_malformed = True
+
+if elementdata_malformed:
+    confirmation = input("> ").strip().lower()
+    if confirmation not in ["y", "yes"]:
+        animate_print("Okay, exiting...")
+        abort_program("User denied confirmation for fetching the data.json file.")
+
+    url = "https://raw.githubusercontent.com/Lanzoor/periodictable/main/src/data.json"
+    animate_print(f"Getting content from {url}, this should not take a while...")
+
+    response = get_response(url)
+
+    animate_print("Successfully got the data.json file! Replacing it...")
+
+    data = json.loads(response.text)
+    with open("./data.json", "w", encoding="utf-8") as f:
+        f.write(response.text)
+
+    logging.info(f"Successfully got the data.json file from {url}.")
+
+# Getting element / isotope
+
+try:
+    width = os.get_terminal_size().columns
+except OSError:
+    animate_print(bold("What?? So apparently, you aren't running this on a terminal, which is very weird. We will try to ignore this issue, and will determine your terminal width as 80. Please move on and ignore this message."))
+    logging.warning("The script ran without a terminal, so failback to reasonable terminal width variable.")
+    width = 80
+
+if width <= 80:
+    animate_print(fore(f"You are running this program in a terminal that has a width of {bold(width)},\nwhich may be too compact to display and provide the information.\nPlease try resizing your terminal.", RED))
+    logging.warning("Not enough width for terminal.")
+
+element = None
+suggestion = None
+recognized_flag = False
 
 if len(sys.argv) > 1:
     recognized_flag = create_flag("--info", get_information) or \
