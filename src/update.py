@@ -1,8 +1,13 @@
-import tomllib, sys, subprocess, time
+import tomllib, sys, subprocess, time, platform
 from pathlib import Path
 from utils import animate_print, bold, fore, RED, get_response, abort_program
 from utils.loader import logging
 
+OS = platform.system()
+
+if OS not in ["Linux", "Darwin"]:
+    animate_print("This program is only supported in Unix systems. If you are on Windows, please get them manually.")
+    sys.exit(0)
 try:
     from packaging import version
 except ImportError:
