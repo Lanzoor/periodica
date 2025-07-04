@@ -105,7 +105,6 @@ def animate_print(message: str = "", delay: float = animation_delay, *, end: str
             sys.stdout.flush()
             time.sleep(delay)
     elif animation_type == "none":
-        print(message)
+        print(message, end="")
 
-    if animation_type != "none":
-        print(end, end="")
+    print(end, end="")

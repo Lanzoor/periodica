@@ -5,6 +5,136 @@ from utils.loader import logging
 config = get_config()
 logging.info("Configuration program initialized.")
 
+def fancy_abort():
+    for i in range(3, 0, -1):
+        animate_print(f"Exiting program in {bold(i)}...", end="")
+        time.sleep(1)
+        clear_line()
+
+def create_fn_event(input: str, function_no: int, callable):
+    if input == function_no:
+        callable()
+        return True
+    return False
+
+def toggle_superscript():
+    global config, superscripts
+
+    config['use_superscripts'] = not config['use_superscripts']
+    superscripts = config["use_superscripts"]
+    animate_print(f"The setting 'Use Superscripts' was changed to {bold(fore(superscripts, GREEN) if superscripts else fore(superscripts, RED))}.")
+    logging.info(f"Setting 'Use Superscripts' changed from {not superscripts} to {superscripts}.")
+    time.sleep(2)
+
+def toggle_truecolor():
+    global config, truecolor
+
+    config['truecolor'] = not config['truecolor']
+    truecolor = config["truecolor"]
+    animate_print(f"The setting 'Use Truecolor' was changed to {bold(fore(truecolor, GREEN) if truecolor else fore(truecolor, RED))}.")
+    logging.info(f"Setting 'Use Truecolor' changed from {not truecolor} to {truecolor}.")
+    time.sleep(2)
+
+def change_isotope_format():
+    global config, isotope_format
+
+    user_input = ""
+    while user_input not in valid_formats:
+        clear_screen()
+        animate_print("You are about to change the isotope display format. Here are all valid options;\n")
+
+        animate_print(f"1. fullname-number (preview: {bold("Helium-8")})")
+        animate_print(f"2. symbol-number (preview: {bold("He-8")})")
+        animate_print(f"3. numbersymbol (preview: {bold("8He")})")
+        animate_print(f"4. number-symbol (preview: {bold("8-He")})\n")
+
+        animate_print("To change to an option, please input the corresponding option name, or the option number.")
+        user_input = input("> ").lower().strip()
+
+        try:
+            user_input = int(user_input)
+            config['isotope_format'] = valid_formats[user_input - 1]
+            isotope_format = config["isotope_format"]
+            animate_print(f"Successfully changed option 'Isotope Format' to {bold(isotope_format)}.")
+            logging.info(f"Setting 'Isotope Format' changed to {isotope_format}.")
+            time.sleep(2)
+        except ValueError:
+            if user_input not in valid_formats:
+                animate_print(f"{user_input} is neither a valid option name nor a valid option number. Please try again.")
+                logging.warning(f"{user_input} was neither a valid option name nor a valid option number.")
+            config['isotope_format'] = user_input
+            isotope_format = config["isotope_format"]
+            animate_print(f"Successfully changed option 'Isotope Format' to {bold(isotope_format)}.")
+            logging.info(f"Setting 'Isotope Format' changed to {isotope_format}.")
+            time.sleep(2)
+
+def change_animation_type():
+    global config, animation_type
+
+    user_input = ""
+    while user_input not in valid_animations:
+        clear_screen()
+        animate_print("You are about to change the animation type. Here are all valid options;\n")
+
+        animate_print("1. char (character-by-character animation)")
+        animate_print("2. line (line-by-line animation)")
+        animate_print("3. none (don't use any animations in output)")
+
+        animate_print("To change to an option, please input the corresponding option name, or the option number.")
+        user_input = input("> ").lower().strip()
+
+        try:
+            user_input = int(user_input)
+            config['animation'] = valid_animations[user_input - 1]
+            animation_type = config["animation"]
+            animate_print(f"Successfully changed option 'Animation Type' to {bold(animation_type)}.")
+            logging.info(f"Setting 'Animation Type' changed to {animation_type}.")
+        except ValueError:
+            if user_input not in valid_animations:
+                animate_print(f"{user_input} is neither a valid option name nor a valid option number. Please try again.")
+                logging.warning(f"{user_input} was neither a valid option name nor a valid option number.")
+            config['animation'] = user_input
+            animation_type = config["animation"]
+            animate_print(f"Successfully changed option 'Animation Type' to {bold(animation_type)}.")
+            logging.info(f"Setting 'Animation Type' changed to {animation_type}.")
+
+def change_animation_delay():
+    global config, animation_delay
+
+    while True:
+        clear_screen()
+        animate_print("You are about to change the animation delay. Please input a float in seconds.")
+
+        user_input = input("> ").lower().strip()
+
+        try:
+            user_input = float(user_input)
+            if user_input > 0.25:
+                animate_print("Well, your delay was WAY LONG for our comprehension, and please do note it may take a very long time to display all the information.\nNonetheless, we value your configuration.")
+            config['animation_delay'] = user_input
+            animation_delay = config["animation_delay"]
+            animate_print(f"Successfully changed option 'Animation Delay' to {bold(animation_delay)} seconds.")
+            logging.info(f"Setting 'Animation Delay' changed to {animation_delay} seconds.")
+            time.sleep(2)
+            break
+        except ValueError:
+            animate_print(f"{user_input} is not a valid float. Please try again.")
+            logging.warning(f"{user_input} was not a valid float.")
+            continue
+
+def reset():
+    clear_screen()
+    animate_print(fore(f"Are you sure? This action will reset all settings to the default settings. \n{bold("THIS ACTION IS IRREVERSIBLE.")} We highly recommend you to create backups before resetting the configuration.\n", RED))
+    user_input = input(dim("Type '#' and press Enter to confirm the reset.") + "\n> ").lower().strip()
+    if user_input == "#":
+        config = default_config.copy()
+        save_config()
+        logging.info("User re-initialized the configuration. Restarting program...")
+        animate_print(bold("Your configuration has been reset. This program needs to restart in order to save the changes. Please run the script again."))
+        fancy_abort()
+    else:
+        logging.info("User canceled configuration reset.")
+
 try:
     while True:
         superscripts = config["use_superscripts"]
@@ -27,10 +157,7 @@ try:
 
         try:
             if user_input == "q":
-                for i in range(3, 0, -1):
-                    animate_print(f"Exiting program in {bold(i)}...", end="")
-                    time.sleep(1)
-                    clear_line()
+                fancy_abort()
                 save_config()
                 logging.info("User quit the program. Aborting...")
                 sys.exit(0)
@@ -41,124 +168,20 @@ try:
             time.sleep(2)
             continue
 
-        match user_input:
-            case 1:
-                config['use_superscripts'] = not config['use_superscripts']
-                superscripts = config["use_superscripts"]
-                animate_print(f"The setting 'Use Superscripts' was changed to {bold(fore(superscripts, GREEN) if superscripts else fore(superscripts, RED))}.")
-                logging.info(f"Setting 'Use Superscripts' changed from {not superscripts} to {superscripts}.")
-                time.sleep(2)
-            case 2:
-                config['truecolor'] = not config['truecolor']
-                truecolor = config["truecolor"]
-                animate_print(f"The setting 'Use Truecolor' was changed to {bold(fore(truecolor, GREEN) if truecolor else fore(truecolor, RED))}.")
-                logging.info(f"Setting 'Use Truecolor' changed from {not truecolor} to {truecolor}.")
-                time.sleep(2)
-            case 3:
-                while True:
-                    clear_screen()
-                    animate_print("You are about to change the isotope display format. Here are all valid options;\n")
+        recognized_flag = (
+            create_fn_event(user_input, 1, toggle_superscript) or
+            create_fn_event(user_input, 2, toggle_truecolor) or
+            create_fn_event(user_input, 3, change_isotope_format) or
+            create_fn_event(user_input, 4, change_animation_type) or
+            create_fn_event(user_input, 5, change_animation_delay) or
+            create_fn_event(user_input, 6, reset)
+        )
 
-                    animate_print(f"1. fullname-number (preview: {bold("Helium-8")})")
-                    animate_print(f"2. symbol-number (preview: {bold("He-8")})")
-                    animate_print(f"3. numbersymbol (preview: {bold("8He")})\n")
+        if not recognized_flag:
+            animate_print(fore(f"{user_input} is out of bounds. Can you please try again with a valid function number?", RED))
 
-                    animate_print("To change to an option, please input the corresponding option name, or the option number.")
-                    user_input = input("> ").lower().strip()
-
-                    try:
-                        user_input = int(user_input)
-                        config['isotope_format'] = valid_formats[user_input - 1]
-                        isotope_format = config["isotope_format"]
-                        animate_print(f"Successfully changed option 'Isotope Format' to {bold(isotope_format)}.")
-                        logging.info(f"Setting 'Isotope Format' changed to {isotope_format}.")
-                        time.sleep(2)
-                        break
-                    except ValueError:
-                        if user_input not in valid_formats:
-                            animate_print(f"{user_input} is neither a valid option name nor a valid option number. Please try again.")
-                            logging.warning(f"{user_input} was neither a valid option name nor a valid option number.")
-                            continue
-                        config['isotope_format'] = user_input
-                        isotope_format = config["isotope_format"]
-                        animate_print(f"Successfully changed option 'Isotope Format' to {bold(isotope_format)}.")
-                        logging.info(f"Setting 'Isotope Format' changed to {isotope_format}.")
-                        time.sleep(2)
-                        break
-            case 4:
-                while True:
-                    clear_screen()
-                    animate_print("You are about to change the animation type. Here are all valid options;\n")
-
-                    animate_print("1. char (character-by-character animation)")
-                    animate_print("2. line (line-by-line animation)")
-                    animate_print("3. none (don't use any animations in output)")
-
-                    animate_print("To change to an option, please input the corresponding option name, or the option number.")
-                    user_input = input("> ").lower().strip()
-
-                    try:
-                        user_input = int(user_input)
-                        config['animation'] = valid_animations[user_input - 1]
-                        animation_type = config["animation"]
-                        animate_print(f"Successfully changed option 'Animation Type' to {bold(animation_type)}.")
-                        logging.info(f"Setting 'Animation Type' changed to {animation_type}.")
-                        break
-                    except ValueError:
-                        if user_input not in valid_animations:
-                            animate_print(f"{user_input} is neither a valid option name nor a valid option number. Please try again.")
-                            logging.warning(f"{user_input} was neither a valid option name nor a valid option number.")
-                            continue
-                        config['animation'] = user_input
-                        animation_type = config["animation"]
-                        animate_print(f"Successfully changed option 'Animation Type' to {bold(animation_type)}.")
-                        logging.info(f"Setting 'Animation Type' changed to {animation_type}.")
-                        break
-            case 5:
-                while True:
-                    clear_screen()
-                    animate_print("You are about to change the animation delay. Please input a float in seconds.")
-
-                    user_input = input("> ").lower().strip()
-
-                    try:
-                        user_input = float(user_input)
-                        if user_input > 0.25:
-                            animate_print("Well, your delay was WAY LONG for our comprehension, and please do note it may take a very long time to display all the information.\nNonetheless, we value your configuration.")
-                        config['animation_delay'] = user_input
-                        animation_delay = config["animation_delay"]
-                        animate_print(f"Successfully changed option 'Animation Delay' to {bold(animation_delay)} seconds.")
-                        logging.info(f"Setting 'Animation Delay' changed to {animation_type} seconds.")
-                        time.sleep(2)
-                        break
-                    except ValueError:
-                        animate_print(f"{user_input} is not a valid float. Please try again.")
-                        logging.warning(f"{user_input} was not a valid float.")
-                        continue
-            case 6:
-                clear_screen()
-                animate_print(fore(f"Are you sure? This action will reset all settings to the default settings. \n{bold("THIS ACTION IS IRREVERSIBLE.")} We highly recommend you to create backups before resetting the configuration.\n", RED))
-
-                user_input = input(dim("Type '#' and press Enter to confirm the reset.") + "\n> ").lower().strip()
-
-                if user_input == "#":
-                    config = default_config.copy()
-                    save_config()
-                    logging.info("User re-initialized the configuration. Restarting program...")
-                    animate_print(bold("Your configuration has been reset. This program needs to restart in order to save the changes. Please run the script again."))
-                    for i in range(3, 0, -1):
-                        animate_print(f"Exiting program in {bold(i)}...", end="")
-                        time.sleep(1)
-                        clear_line()
-                    sys.exit(0)
-                else:
-                    logging.info("User canceled configuration reset.")
-            case _:
-                animate_print(fore(f"{user_input} is out of bounds. Can you please try again with a valid function number?", RED))
-
-                logging.warning(f"{user_input} was an invalid function number.")
-                time.sleep(2)
-                continue
+            logging.warning(f"{user_input} was an invalid function number.")
+            time.sleep(1)
 except KeyboardInterrupt:
     animate_print("\nYou have pressed ^C while editing the settings. Please do not do so. Your data has been saved anyways. Have a nice day!")
     save_config()

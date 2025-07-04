@@ -128,16 +128,16 @@ def export():
 
     element = None
     if args:
-        input_str = args[0]
-        element, _ = process_isotope_input(input_str)
+        user_input = args[0]
+        element, _ = process_isotope_input(user_input)
         if element is None:
             animate_print(fore("Could not find that element or isotope. Please enter one manually.", RED))
 
     animate_print(f"Search for an element {italic("to export")} by name, symbol, or atomic number.")
 
     while element is None:
-        input_str = input("> ").strip()
-        element, _ = process_isotope_input(input_str)
+        user_input = input("> ").strip()
+        element, _ = process_isotope_input(user_input)
         if element is None:
             animate_print(fore("Could not find element or isotope to export. Please try again.", RED))
 
@@ -167,11 +167,11 @@ def export():
 def get_element_argument() -> str | None:
     return next((arg for arg in sys.argv[1:] if not arg.startswith("--")), None)
 
-def match_isotope_input(input_str) -> typing.Tuple[str | None, str | None]:
-    match = re.match(r"^(\d+)([A-Za-z]+)$", input_str)
+def match_isotope_input(user_input) -> typing.Tuple[str | None, str | None]:
+    match = re.match(r"^(\d+)([A-Za-z]+)$", user_input)
     if match:
         return match.group(2), match.group(1)
-    match = re.match(r"^([A-Za-z]+)[\s\-]*(\d+)$", input_str)
+    match = re.match(r"^([A-Za-z]+)[\s\-]*(\d+)$", user_input)
     if match:
         return match.group(1), match.group(2)
     return None, None
@@ -235,7 +235,7 @@ def print_isotope(norm_iso, info, fullname):
 
 def format_isotope(norm_iso, fullname, *, metastable = ""):
     global isotope_format
-    m = metastable
+
     match = re.match(r"^(\d+)\s*([A-Za-z]+)$", remove_superscripts(norm_iso))
     if not match:
         return norm_iso
@@ -243,11 +243,17 @@ def format_isotope(norm_iso, fullname, *, metastable = ""):
         number, symbol = match.groups()
         symbol = symbol.capitalize()
         if isotope_format == "fullname-number":
-            return f"{fullname.capitalize()}-{number}{m}"
+            return f"{fullname.capitalize()}-{number}{metastable}"
+        elif isotope_format == "symbol-number":
+            return f"{symbol}-{number}{metastable}"
         elif isotope_format == "numbersymbol":
-            return f"{convert_superscripts(str(number)) if superscripts else number}{m}{symbol}"
+            number = convert_superscripts(str(number)) if superscripts else number
+            return f"{number}{metastable}{symbol}"
+        elif isotope_format == "number-symbol":
+            number = convert_superscripts(str(number)) if superscripts else number
+            return f"{number}{metastable}-{symbol}"
         else:
-            return f"{symbol}-{number}{m}"
+            return f"{symbol}-{number}{metastable}"
 
 def find_isotope(symbol_or_name, mass_number, search_query):
     for val in data.values():
@@ -276,40 +282,40 @@ def find_isotope(symbol_or_name, mass_number, search_query):
                     return True
     return False
 
-def find_element(input_str) -> typing.Tuple[str | None, str | None]:
-    input_str = input_str.lower()
+def find_element(user_input) -> typing.Tuple[str | None, str | None]:
+    user_input = user_input.lower()
     possible_names = []
 
-    for val in data.values():
-        name = val["general"]["fullname"].lower()
-        symbol = val["general"]["symbol"].lower()
+    for element_candidate in data.values():
+        name = element_candidate["general"]["fullname"].lower()
+        symbol = element_candidate["general"]["symbol"].lower()
         possible_names.extend([name, symbol])
 
-        if input_str == name:
-            logging.info(f"Matched element full name: {input_str.capitalize()}")
-            return val, None
-        if input_str == symbol:
-            logging.info(f"Matched element symbol: {input_str.capitalize()} ({val['general']['fullname']})")
-            return val, None
+        if user_input == name:
+            logging.info(f"Matched element full name: {user_input.capitalize()}")
+            return element_candidate, None
+        if user_input == symbol:
+            logging.info(f"Matched element symbol: {user_input.capitalize()} ({element_candidate['general']['fullname']})")
+            return element_candidate, None
 
-    suggestion = difflib.get_close_matches(input_str, possible_names, n=1, cutoff=0.6)
+    suggestion = difflib.get_close_matches(user_input, possible_names, n=1, cutoff=0.6)
     suggestion = suggestion[0] if suggestion else None
 
     return None, suggestion
 
-def process_isotope_input(input_str):
+def process_isotope_input(user_input):
     try:
-        index = int(input_str) - 1
+        index = int(user_input) - 1
         search_result = data[list(data.keys())[index]]
         return search_result, None
     except (ValueError, IndexError):
-        symbol_or_name, mass_number = match_isotope_input(input_str)
+        symbol_or_name, mass_number = match_isotope_input(user_input)
         if symbol_or_name and mass_number:
-            result = find_isotope(symbol_or_name, mass_number, input_str)
+            result = find_isotope(symbol_or_name, mass_number, user_input)
             if result:
                 return result, None
             return None, None
-        return find_element(input_str)
+        return find_element(user_input)
 
 config = get_config()
 
@@ -366,8 +372,10 @@ match random.randint(0, 3):
     case _:
         tip = ""
 
+periodica = bold(gradient("periodica", (156, 140, 255), (140, 255, 245)) if config['truecolor'] else fore("periodica", BLUE))
+
 program_information = f"""
-Welcome to {bold(gradient("periodica", (156, 140, 255), (140, 255, 245)) if config['truecolor'] else fore("periodica", BLUE))}!
+Welcome to {periodica}!
 This program provides useful information about the periodic elements, and pretty much everything here was made by the Discord user {bold(fore("Lanzoor", INDIGO))}!
 This project started as a fun hobby at around {bold("March 2025")}, but ended up getting taken seriously.
 This program was built with {fore("Python", CYAN)}, and uses {fore("JSON", YELLOW)} for configuration files / element database.
@@ -449,14 +457,14 @@ if len(sys.argv) > 1:
     )
 
     if not recognized_flag:
-        input_str = get_element_argument()
+        user_input = get_element_argument()
 
-        if not input_str:
+        if not user_input:
             animate_print(fore("No valid element or isotope provided. Falling back to interactive input.", RED))
             logging.warning("Argv missing valid content, fallback to interactive.")
         else:
-            logging.info(f"User gave argv: \"{input_str}\"")
-            element, suggestion = process_isotope_input(input_str)
+            logging.info(f"User gave argv: \"{user_input}\"")
+            element, suggestion = process_isotope_input(user_input)
 
             if element is None:
                 message = f"Invalid argv.{' Did you mean \"' + bold(suggestion) + '\"?' if suggestion else ' Falling back to interactive input.'}"
@@ -468,10 +476,10 @@ else:
 if element is None:
     animate_print(f"Search for an element by name, symbol, or atomic number. {dim(tip)}")
     while True:
-        input_str = input("> ").strip().lower()
-        logging.info(f"User gave input: \"{input_str}\"")
+        user_input = input("> ").strip().lower()
+        logging.info(f"User gave input: \"{user_input}\"")
 
-        element, suggestion = process_isotope_input(input_str)
+        element, suggestion = process_isotope_input(user_input)
 
         if element is not None:
             break
@@ -523,10 +531,18 @@ if (period != 6 and group != 3) and (period != 7 and group != 3):
 lanthanides = [dim(symbol) for symbol in lanthanides]
 actinides = [dim(symbol) for symbol in actinides]
 
-if atomic_number in range(57, 72):
-    lanthanides[atomic_number - 57 + 3] = fore("▪", GREEN)
-elif atomic_number in range(89, 104):
-    actinides[atomic_number - 89 + 3] = fore("▪", GREEN)
+LANTHANUM = 57
+LUTHENIUM = 72
+ACTINIUM = 89
+LAWRENCIUM = 103
+
+lanthanides_range = range(LANTHANUM, LUTHENIUM + 1)
+actinides_range = range(ACTINIUM, LAWRENCIUM + 1)
+
+if atomic_number in lanthanides_range:
+    lanthanides[atomic_number - LANTHANUM + 3] = fore("▪", GREEN)
+elif atomic_number in actinides_range:
+    actinides[atomic_number - ACTINIUM + 3] = fore("▪", GREEN)
 else:
     periodic_table[period - 1][group - 1] = fore("▪", GREEN)
 
@@ -562,7 +578,7 @@ subshell_capacities = {'s': 2, 'p': 6, 'd': 10, 'f': 14}
 subshell_result = ""
 for subshell in subshells:
     if len(subshell) < 3 or not subshell[-1].isdigit():
-        logging.warning(f"Malformed subshell: {subshell}")
+        logging.warning(f"To the developers, a malformed subshell was detected in {fullname.capitalize()}. Issue: {subshell}")
         continue
     subshell = subshell[:-1] + (convert_superscripts(subshell[-1]) if superscripts else subshell[-1])
     match = re.match(r"(\d)([spdf])(\d+)", subshell)
@@ -590,12 +606,13 @@ electron_affinity = electronic["electron_affinity"]
 ionization_energy = electronic["ionization_energy"]
 oxidation_states = electronic["oxidation_states"]
 
-raw_negatives = [0, -1, -2, -3, -4, -5]
-raw_positives = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+negatives_template = [0, -1, -2, -3, -4, -5]
+positives_template = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+
 negatives = []
 positives = []
 
-for state in raw_negatives:
+for state in negatives_template:
     if state in oxidation_states:
         if state == 0:
             negatives.append(bold(fore(state, GREEN)))
@@ -604,7 +621,7 @@ for state in raw_negatives:
     else:
         negatives.append(dim(str(state)))
 
-for state in raw_positives:
+for state in positives_template:
     if state in oxidation_states:
         positives.append(bold(fore(state, RED)))
     else:
@@ -648,13 +665,13 @@ for y in periodic_table:
 
 print()
 
-for lanth in lanthanides:
-    print(lanth, end=" ")
+for lanthanide in lanthanides:
+    print(lanthanide, end=" ")
 
 print()
 
-for actin in actinides:
-    print(actin, end=" ")
+for actinide in actinides:
+    print(actinide, end=" ")
 
 print()
 

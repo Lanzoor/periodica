@@ -22,7 +22,7 @@ default_config = {
     "animation_delay": 0.0005
 }
 
-valid_formats = ["fullname-number", "symbol-number", "numbersymbol"]
+valid_formats = ["fullname-number", "symbol-number", "numbersymbol", "number-symbol"]
 valid_animations = ["char", "line", "none"]
 
 _config = None
@@ -57,7 +57,7 @@ def save_config():
 def abort_program(message):
     logging.error(message)
 
-    time.sleep(2)
+    time.sleep(1)
     logging.fatal("Program terminated.")
     sys.exit(1)
 
