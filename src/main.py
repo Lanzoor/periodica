@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
-import logging, json, os, re, sys, difflib, random
-from utils import get_config, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, B_BLACK, fore, bold, dim, italic, gradient, animate_print, abort_program, get_response
+import logging, json, os, re, sys, difflib, random, typing
+from utils import get_config, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, B_BLACK, fore, bold, dim, italic, gradient, animate_print, clear_screen, abort_program, get_response
+
+EXPORT = False
 
 def celcius_to_kelvin(celsius):
 	return (celsius * 1e16 + 273.15 * 1e16) / 1e16
@@ -64,10 +66,11 @@ def conjunction_join(entries: list) -> str:
         return f"{entries[0]} and {entries[1]}"
     return f"{', '.join(entries[:-1])}, and {entries[-1]}"
 
-def create_flag(flag: str, callable):
-    if flag in sys.argv:
-        callable()
-        return True
+def create_flag(*flags: str, callable):
+    for arg in sys.argv[1:]:
+        if arg in flags:
+            callable()
+            return True
     return False
 
 def get_information():
@@ -80,22 +83,158 @@ def configurate():
     import configuration
     sys.exit(0)
 
-def update():
+def check_for_update():
     logging.info("User gave --update flag; redirecting to update logic.")
     from update import update_main
     update_main()
     sys.exit(0)
 
-def match_isotope_input(input_str):
-    if isotope_match := re.match(r"^(\d+)([A-Za-z]+)$", input_str):  # 1H
-        return isotope_match.group(2), isotope_match.group(1)
-    if isotope_match := re.match(r"^([A-Za-z]+)[\s\-]*(\d+)$", input_str):  # H-1 or Hydrogen-1
-        return isotope_match.group(1), isotope_match.group(2)
+def view_table():
+    logging.info("User gave --table flag; redirecting to another logic.")
+
+    COLUMNS = 18 * 4
+    ROWS = 7 * 3
+    if width < COLUMNS:
+        animate_print(f"Well, the terminal is way too small to display the table. Please run this on a larger window.\n{bold(f"At least a terminal size of {COLUMNS} x {ROWS} is required to display the content.")}")
+        abort_program("Terminal too small to display the table.")
+        sys.exit(0)
+
+    if height < ROWS:
+        animate_print(f"Well, the terminal is way too small to display the table. Please run this on a larger window.\n{bold(f"At least a terminal size of {COLUMNS} x {ROWS} is required to display the content.")}")
+        abort_program("Terminal too small to display the table.")
+        sys.exit(0)
+
+    clear_screen()
+
+    # TODO: Continue the logic. Way too busy to refactor stuff for now.
+
+    sys.exit(0)
+
+def export():
+    global EXPORT
+
+    if "--export" not in sys.argv:
+        return
+
+    EXPORT = True
+    sys.argv.remove("--export")
+
+    args = [arg for arg in sys.argv[1:] if not arg.startswith("--")]
+
+    if len(args) > 1:
+        animate_print(fore("Invalid usage. Example usage: ./periodica.sh --export H. Please run the script with the --info flag to get information.", RED))
+        abort_program("Export flag with too many arguments.")
+        sys.exit(1)
+
+    element = None
+    if args:
+        input_str = args[0]
+        element, _ = process_isotope_input(input_str)
+        if element is None:
+            animate_print(fore("Could not find that element or isotope. Please enter one manually.", RED))
+
+    animate_print(f"Search for an element {italic("to export")} by name, symbol, or atomic number.")
+
+    while element is None:
+        input_str = input("> ").strip()
+        element, _ = process_isotope_input(input_str)
+        if element is None:
+            animate_print(fore("Could not find element or isotope to export. Please try again.", RED))
+
+    filename = "output.json"
+
+    if "info" in element and "symbol" in element:
+        name = f"{element['isotope']}"
+    else:
+        name = f"{element['general']['fullname'].capitalize()}"
+
+    animate_print(f"Saving data of {bold(name)} to {filename}...")
+
+    with open(filename, "w", encoding="utf-8") as file:
+        if "info" in element and "symbol" in element:
+            json.dump({
+                "symbol": element["symbol"].capitalize(),
+                "fullname": element["fullname"],
+                "isotope": element["isotope"],
+                "data": element["info"]
+            }, file, indent=4, ensure_ascii=False)
+        else:
+            json.dump(element, file, indent=4, ensure_ascii=False)
+
+    animate_print(fore(f"Successfully saved to {filename}.", GREEN))
+    sys.exit(0)
+
+def get_element_argument() -> str | None:
+    return next((arg for arg in sys.argv[1:] if not arg.startswith("--")), None)
+
+def match_isotope_input(input_str) -> typing.Tuple[str | None, str | None]:
+    match = re.match(r"^(\d+)([A-Za-z]+)$", input_str)
+    if match:
+        return match.group(2), match.group(1)
+    match = re.match(r"^([A-Za-z]+)[\s\-]*(\d+)$", input_str)
+    if match:
+        return match.group(1), match.group(2)
     return None, None
+
+def print_isotope(norm_iso, info, fullname):
+    global animation_delay
+    animation_delay /= 4
+    animate_print()
+
+    match = re.match(r"^(\d+)\s*([A-Za-z]+)$", remove_superscripts(norm_iso))
+    display_name = format_isotope(norm_iso, fullname) if match else norm_iso
+
+    name_display = f" ({info['name']})" if 'name' in info else ""
+    animate_print(f"  - {bold(display_name)}{name_display}:")
+
+    protons = info['protons']
+    neutrons = info['neutrons']
+    animate_print(f"      p{convert_superscripts('+')}, e{convert_superscripts('-')} - {fore('Protons', RED)} and {fore('Electrons', YELLOW)}: {bold(protons)}")
+    animate_print(f"      n{'⁰' if superscripts else ''} - {fore('Neutrons', BLUE)}: {bold(neutrons)}")
+
+    up_quarks = protons * 2 + neutrons
+    down_quarks = protons + neutrons * 2
+    animate_print(f"      u - {fore('Up Quarks', GREEN)}: ({fore(protons, RED)} * 2) + {fore(neutrons, BLUE)} = {bold(up_quarks)}")
+    animate_print(f"      d - {fore('Down Quarks', CYAN)}: {fore(protons, RED)} + ({fore(neutrons, BLUE)} * 2) = {bold(down_quarks)}")
+
+    half_life = info.get('half_life')
+    animate_print(f"      t1/2 - Half Life: {bold(half_life) if half_life else fore('Stable', CYAN)}")
+    animate_print(f"      u - Isotope Weight: {bold(info['isotope_weight'])}g/mol")
+
+    def show_decay(decays, indent=12):
+        padding = " " * indent
+        for branch in decays:
+            mode = branch.get("mode", "???")
+            if mode.endswith("?"):
+                mode = fore(mode, RED)
+            chance = f"({branch['chance']}%)" if 'chance' in branch and branch['chance'] != 100 else ""
+            if 'chance' not in branch:
+                chance = fore("(Not proven)", RED)
+            products = branch.get("product", [])
+            if not isinstance(products, list): products = [str(products)]
+            out = ", ".join(bold(format_isotope(p, fullname)) for p in products)
+            animate_print(f"{padding}{bold(display_name)} -> {bold(mode)} -> {out} {chance}")
+
+    if isinstance(info.get("decay"), list):
+        animate_print("      ⛓️ - Possible Decays:")
+        show_decay(info["decay"])
+
+    if isinstance(info.get("metastable"), dict):
+        animate_print("      m - Metastable Isotopes:")
+        for state, data in info["metastable"].items():
+            display_meta = format_isotope(norm_iso, fullname, metastable=state)
+            animate_print(f"        {bold(display_meta)}:")
+            if "half_life" in data:
+                animate_print(f"          t1/2 - Half Life: {bold(data['half_life'])}")
+            animate_print(f"          ⚡️ - Excitation Energy: {bold(data['energy'])}keV")
+            if "decay" in data:
+                animate_print("          ⛓️ - Possible Decays:")
+                show_decay(data["decay"], indent=14)
+
+    animation_delay *= 4
 
 def format_isotope(norm_iso, fullname, *, metastable = ""):
     global isotope_format
-
     m = metastable
     match = re.match(r"^(\d+)\s*([A-Za-z]+)$", remove_superscripts(norm_iso))
     if not match:
@@ -103,107 +242,12 @@ def format_isotope(norm_iso, fullname, *, metastable = ""):
     else:
         number, symbol = match.groups()
         symbol = symbol.capitalize()
-
         if isotope_format == "fullname-number":
             return f"{fullname.capitalize()}-{number}{m}"
         elif isotope_format == "numbersymbol":
             return f"{convert_superscripts(str(number)) if superscripts else number}{m}{symbol}"
         else:
             return f"{symbol}-{number}{m}"
-
-def print_isotope(norm_iso, info, fullname):
-    global animation_delay
-
-    animation_delay /= 4
-
-    animate_print()
-    match = re.match(r"^(\d+)\s*([A-Za-z]+)$", remove_superscripts(norm_iso))
-
-    if not match:
-        display_name = norm_iso
-    else:
-        display_name = format_isotope(norm_iso, fullname)
-
-    if 'name' in info:
-        animate_print(f"  - {bold(display_name)} ({info['name']}):")
-    else:
-        animate_print(f"  - {bold(display_name)}:")
-
-    protons = info['protons']
-    neutrons = info['neutrons']
-    up_quarks = (info['protons'] * 2) + info['neutrons']
-    down_quarks = info['protons'] + (info['neutrons'] * 2)
-    half_life = info['half_life']
-    isotope_weight = info['isotope_weight']
-
-    animate_print(f"      p{convert_superscripts("+")}, e{convert_superscripts("-")} - {fore("Protons", RED)} and {fore("Electrons", YELLOW)}: {bold(protons)}")
-    animate_print(f"      n{"⁰" if superscripts else ""} - {fore("Neutrons", BLUE)}: {bold(neutrons)}")
-    animate_print(f"      u - {fore("Up Quarks", GREEN)}: ({fore(protons, RED)} * 2) + {fore(neutrons, BLUE)} = {bold(up_quarks)}")
-    animate_print(f"      d - {fore("Down Quarks", CYAN)}: {fore(protons, RED)} + ({fore(neutrons, BLUE)} * 2) = {bold(down_quarks)}")
-
-    animate_print(f"      t1/2 - Half Life: {bold(half_life) if half_life is not None else fore('Stable', CYAN)}")
-    animate_print(f"      u - Isotope Weight: {bold(isotope_weight)}g/mol")
-
-    if 'decay' in info and isinstance(info['decay'], list):
-        animate_print("      ⛓️ - Possible Decays:")
-        for decay_branch in info['decay']:
-            decay_mode = decay_branch.get("mode", "???")
-            if decay_mode.endswith("?"):
-                decay_mode = fore(decay_mode, RED)
-
-            if 'chance' in decay_branch:
-                chance = decay_branch['chance']
-                chances = f"({chance}%)" if chance != 100 else ""
-            else:
-                chances = fore("(Not proven)", RED)
-
-            products = decay_branch.get("product", [])
-
-            if not isinstance(products, list):
-                products = [str(products)]
-            products = [bold(format_isotope(p, fullname)) for p in products]
-            product_string = ", ".join(products)
-
-            animate_print(f"            {bold(display_name)} -> {bold(decay_mode)} -> {product_string} {chances}")
-
-    if 'metastable' in info:
-        animate_print("      m - Metastable Isotopes:")
-        metastable_isotopes = info['metastable']
-        for (key, value) in metastable_isotopes.items():
-            energy = value['energy']
-            display_name = format_isotope(norm_iso, fullname, metastable=key)
-
-            animate_print(f"        {bold(display_name)}:")
-
-            if 'half_life' in value.keys():
-                animate_print(f"          t1/2 - Half Life: {bold(half_life)}")
-
-            animate_print(f"          ⚡️ - Excitation Energy: {bold(energy)}keV")
-
-            if 'decay' in value.keys():
-                animate_print("          ⛓️ - Possible Decays:")
-
-                for decay_branch in value['decay']:
-                    decay_mode = decay_branch.get("mode", "???")
-                    if decay_mode.endswith("?"):
-                        decay_mode = fore(decay_mode, RED)
-
-                    if 'chance' in decay_branch:
-                        chance = decay_branch['chance']
-                        chances = f"({chance}%)" if chance != 100 else ""
-                    else:
-                        chances = fore("(Not proven)", RED)
-
-                    products = decay_branch.get("product", [])
-
-                    if not isinstance(products, list):
-                        products = [str(products)]
-                    products = [bold(format_isotope(p, fullname)) for p in products]
-                    product_string = ", ".join(products)
-
-                    animate_print(f"            {bold(display_name)} -> {bold(decay_mode)} -> {product_string} {chances}")
-
-    animation_delay *= 4
 
 def find_isotope(symbol_or_name, mass_number, search_query):
     for val in data.values():
@@ -213,19 +257,29 @@ def find_isotope(symbol_or_name, mass_number, search_query):
             for isotope, info in val["nuclear"]["isotopes"].items():
                 norm_iso_match = re.match(r"^(.*?)(?:\s*-\s*.*)?$", isotope)
                 norm_iso = norm_iso_match.group(1) if norm_iso_match else isotope
-                if (remove_superscripts(norm_iso).lower() == f"{mass_number}{sym}" or
+                if (
+                    remove_superscripts(norm_iso).lower() == f"{mass_number}{sym}" or
                     remove_superscripts(norm_iso).lower() == f"{sym}{mass_number}" or
-                    norm_iso.lower() == search_query):
-                    logging.info(f"Found isotope match: {mass_number}{sym.capitalize()} / {name.capitalize()}")
+                    norm_iso.lower() == search_query
+                ):
+                    logging.info(f"Found isotope match: {mass_number}{sym} / {name}")
+                    if EXPORT:
+                        return {
+                            "isotope": isotope,
+                            "symbol": sym,
+                            "fullname": name,
+                            "info": info
+                        }
                     print_separator()
                     print_isotope(norm_iso, info, name)
                     print_separator()
                     return True
     return False
 
-def find_element(input_str):
+def find_element(input_str) -> typing.Tuple[str | None, str | None]:
     input_str = input_str.lower()
     possible_names = []
+
     for val in data.values():
         name = val["general"]["fullname"].lower()
         symbol = val["general"]["symbol"].lower()
@@ -234,28 +288,29 @@ def find_element(input_str):
         if input_str == name:
             logging.info(f"Matched element full name: {input_str.capitalize()}")
             return val, None
-        elif input_str == symbol:
+        if input_str == symbol:
             logging.info(f"Matched element symbol: {input_str.capitalize()} ({val['general']['fullname']})")
             return val, None
 
     suggestion = difflib.get_close_matches(input_str, possible_names, n=1, cutoff=0.6)
+    suggestion = suggestion[0] if suggestion else None
+
     return None, suggestion
 
 def process_isotope_input(input_str):
     try:
         index = int(input_str) - 1
-        key = list(data.keys())[index]
-        return data[key], None
+        search_result = data[list(data.keys())[index]]
+        return search_result, None
     except (ValueError, IndexError):
         symbol_or_name, mass_number = match_isotope_input(input_str)
         if symbol_or_name and mass_number:
-            found = find_isotope(symbol_or_name, mass_number, input_str)
-            if found:
-                sys.exit(0)
-            logging.warning(f"Invalid isotope input: {input_str}")
+            result = find_isotope(symbol_or_name, mass_number, input_str)
+            if result:
+                return result, None
             return None, None
-        else:
-            return find_element(input_str)
+        return find_element(input_str)
+
 config = get_config()
 
 superscripts = config["use_superscripts"]
@@ -286,8 +341,6 @@ logging.info("Program initialized.")
 cm3 = "cm³" if superscripts else "cm3"
 mm2 = "mm²" if superscripts else "mm2"
 data = {}
-
-# Color Configs
 
 types = {
 	"Reactive nonmetal": GREEN,
@@ -325,6 +378,8 @@ There are also other flags you can provide to this program.
 - {bold("--info")} - Give this information message
 - {bold("--init")} - Edit the settings
 - {bold("--update")} - Check for updates
+- {bold("--table")} - View the periodic table
+- {bold("--export")} \"element\" | \"isotope\" - Export element or isotope to a .json file
 
 {bold("Note: Giving a flag ignores any other arguments, except special ones marked with an asterisk.")}
 Anyways, I hope you enjoy this small program. {bold("Please read the README.md file for more information!")}
@@ -360,8 +415,8 @@ if elementdata_malformed:
     animate_print("Successfully got the data.json file! Replacing it...")
 
     data = json.loads(response.text)
-    with open("./data.json", "w", encoding="utf-8") as f:
-        f.write(response.text)
+    with open("./data.json", "w", encoding="utf-8") as file:
+        file.write(response.text)
 
     logging.info(f"Successfully got the data.json file from {url}.")
 
@@ -369,10 +424,12 @@ if elementdata_malformed:
 
 try:
     width = os.get_terminal_size().columns
+    height = os.get_terminal_size().lines
 except OSError:
     animate_print(bold("What?? So apparently, you aren't running this on a terminal, which is very weird. We will try to ignore this issue, and will determine your terminal width as 80. Please move on and ignore this message."))
     logging.warning("The script ran without a terminal, so failback to reasonable terminal width variable.")
     width = 80
+    height = 40
 
 if width <= 80:
     animate_print(fore(f"You are running this program in a terminal that has a width of {bold(width)},\nwhich may be too compact to display and provide the information.\nPlease try resizing your terminal.", RED))
@@ -383,25 +440,28 @@ suggestion = None
 recognized_flag = False
 
 if len(sys.argv) > 1:
-    recognized_flag = create_flag("--info", get_information) or \
-                      create_flag("--init", configurate) or \
-                      create_flag("--update", update)
+    recognized_flag = (
+        create_flag("--info", callable=get_information) or
+        create_flag("--init", callable=configurate) or
+        create_flag("--update", callable=check_for_update) or
+        create_flag("--table", callable=view_table) or
+        create_flag("--export", callable=export)
+    )
 
-    if recognized_flag:
-        pass
-    else:
-        input_str = sys.argv[1].strip().lower()
-        logging.info(f"User gave argv: \"{input_str}\"")
+    if not recognized_flag:
+        input_str = get_element_argument()
 
-        element, suggestion = process_isotope_input(input_str)
+        if not input_str:
+            animate_print(fore("No valid element or isotope provided. Falling back to interactive input.", RED))
+            logging.warning("Argv missing valid content, fallback to interactive.")
+        else:
+            logging.info(f"User gave argv: \"{input_str}\"")
+            element, suggestion = process_isotope_input(input_str)
 
-        if element is None:
-            if not suggestion:
-                animate_print(fore("Invalid argv; falling back to interactive input.", RED))
-            else:
-                animate_print(fore(f"Invalid argv. Did you mean \"{bold(suggestion[0])}\"?", YELLOW))
-            logging.warning("Argv invalid, fallback to interactive.")
-
+            if element is None:
+                message = f"Invalid argv.{' Did you mean \"' + bold(suggestion) + '\"?' if suggestion else ' Falling back to interactive input.'}"
+                animate_print(fore(message, YELLOW if suggestion else RED))
+                logging.warning("Argv invalid, fallback to interactive.")
 else:
     logging.warning("Argument not given, falling back to interactive input.")
 
@@ -416,10 +476,10 @@ if element is None:
         if element is not None:
             break
 
-        if not suggestion:
-            animate_print("Not a valid element or isotope, please try again.")
-        else:
-            animate_print(fore(f"Not a valid element or isotope. Did you mean \"{bold(suggestion[0])}\"?", YELLOW))
+        message = "Not a valid element or isotope."
+        if suggestion:
+            message += f" Did you mean \"{bold(suggestion)}\"?"
+        animate_print(fore(message, YELLOW if suggestion else RED))
 
 # Dividing categories
 
