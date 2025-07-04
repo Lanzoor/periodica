@@ -3,3 +3,5 @@ src/execution.log
 src/config.json
 src/__pycache__
 src/utils/__pycache__
+.ropeproject
+src/output.json
