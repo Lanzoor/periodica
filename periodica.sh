@@ -8,6 +8,13 @@ while [ -L "$SOURCE" ]; do
 done
 SCRIPT_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
 
-cd "$SCRIPT_DIR/src" || exit 1
+cd "$SCRIPT_DIR" || exit 1
 
-python3 main.py "$@"
+if [ ! -d venv ]; then
+  echo "Virtual environment not found. Please run the build.py file."
+  exit 1
+fi
+
+source "$SCRIPT_DIR/venv/bin/activate"
+python3 "$SCRIPT_DIR/src/main.py" "$@"
+deactivate
