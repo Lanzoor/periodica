@@ -159,31 +159,23 @@ def view_table():
     sys.exit(0)
 
 def export():
-    logging.info("User gave --export flag; redirecting to another logic.")
-
+    logging.info("User gave --export flag; redirecting to export logic.")
     global EXPORT
-
-    if "--export" not in sys.argv:
-        return
 
     EXPORT = True
     sys.argv.remove("--export")
 
     args = [arg for arg in sys.argv[1:] if not arg.startswith("--")]
-
-    if len(args) > 1:
-        animate_print(fore("Invalid usage. Example usage: ./periodica.sh --export H. Please run the script with the --info flag to get information.", RED))
-        abort_program("Export flag with too many arguments.")
-        sys.exit(1)
+    user_input = args[0] if args else None
 
     element = None
-    if args:
-        user_input = args[0]
+    if user_input:
         element, _ = process_isotope_input(user_input)
         if element is None:
             animate_print(fore("Could not find that element or isotope. Please enter one manually.", RED))
 
-    animate_print(f"Search for an element {italic("to export")} by name, symbol, or atomic number.")
+    if element is None:
+        animate_print(f"Search for an element {italic('to export')} by name, symbol, or atomic number.")
 
     while element is None:
         user_input = input("> ").strip()
@@ -214,65 +206,138 @@ def export():
 
 def compare():
     global full_data
-
     logging.info("User gave --compare flag; redirecting to another logic.")
-    user_factor = ""
 
     factors = [
         "protons",
         "electrons",
         "neutrons",
+        "mass_number",
+        "up_quarks",
+        "down_quarks"
     ]
 
-    result: dict[str, str] = {}
+    args = [arg for arg in sys.argv[1:] if not arg.startswith("--")]
+    factor_candidate = args[0] if args else None
 
     def match_input(data: dict[str, dict], factor):
-        match factor:
-            case "protons":
-                return data["nuclear"].get("protons", None)
-            case "electrons":
-                return data["nuclear"].get("electrons", None)
-            case "neutrons":
-                return data["nuclear"].get("neutrons", None)
-
-    animate_print(f"Please enter a factor to compare all the elements with. The valid factors are; \n  {', '.join(factors)}")
+        try:
+            match factor:
+                case "protons":
+                    return data["nuclear"]["protons"]
+                case "electrons":
+                    return data["nuclear"]["electrons"]
+                case "neutrons":
+                    return data["nuclear"]["neutrons"]
+                case "mass_number":
+                    return data["nuclear"]["protons"] + data["nuclear"]["neutrons"]
+                case "up_quarks":
+                    return (data["nuclear"]["protons"] * 2) + data["nuclear"]["neutrons"]
+                case "down_quarks":
+                    return data["nuclear"]["protons"] + (data["nuclear"]["neutrons"] * 2)
+        except (KeyError, ValueError):
+            return None
 
     while True:
-        user_factor = input("> ").strip().lower()
-
-        if user_factor in factors:
+        if factor_candidate and factor_candidate in factors:
+            user_factor = factor_candidate
             break
 
-        suggestion = difflib.get_close_matches(user_factor, factors, n=1, cutoff=0.6)
+        if factor_candidate:
+            suggestion = difflib.get_close_matches(factor_candidate, factors, n=1, cutoff=0.6)
+            if suggestion:
+                animate_print(fore(f"Not a valid factor. Did you mean \"{bold(suggestion[0])}\"?", YELLOW))
+            else:
+                animate_print(fore("Not a valid factor. Please provide one manually.", RED))
 
-        if suggestion:
-            animate_print(fore(f"Not a valid factor. Did you mean \"{bold(suggestion[0])}\"?", YELLOW))
-        else:
-            animate_print("Not a valid factor, try again.")
+        animate_print(f"Please enter a factor to compare all the elements with. The valid factors are:\n  {', '.join(factors)}")
+        factor_candidate = "_".join(input("> ").strip().lower().split(" "))
 
     animate_print(f"\nComparing all elements by factor {bold(user_factor)}...\n")
 
+    result: dict[str, str] = {}
     for (name, value) in full_data.items():
         result[name] = match_input(value, user_factor)
 
     result = dict(sorted(result.items(), key=lambda item: (item[1] is None, item[1])))
-
-    max_value = max((value for value in result.values() if isinstance(value, (int, float))), default=1)
+    max_value = max((v for v in result.values() if isinstance(v, (int, float))), default=1)
 
     for name, value in result.items():
         if value is not None:
             padding = 25
             bar_space = max(width - padding, 10)
             bar_length = int((value / max_value) * bar_space)
-
-            bar_inside = "█" * bar_length
-            bar = "[" + fore(bar_inside, CYAN) + "]"
-
+            bar = "[" + fore("█" * bar_length, CYAN) + "]"
             animate_print(f"{name:<12} {str(value):<4} {bar}")
 
     animate_print()
     sys.exit(0)
 
+def bond_type():
+    global full_data
+    logging.info("User gave --bond-type flag; redirecting to another logic.")
+
+    primary_element = None
+    secondary_element = None
+
+    animate_print(f"Search for the primary element {italic("to compare the bond type")} with by name, symbol, or atomic number.")
+    while True:
+        user_input = input("> ").strip().lower()
+        logging.info(f"User gave input for the primary element to compare the bond type with: \"{user_input}\"")
+
+        primary_element, element_suggestion = find_element(user_input)
+
+        if primary_element is not None:
+            break
+
+        message = "Not a valid element."
+        if element_suggestion:
+            message += f" Did you mean \"{bold(element_suggestion)}\"?"
+        animate_print(fore(message, YELLOW if element_suggestion else RED))
+
+    primary_element_name = primary_element["general"]["fullname"]
+    animate_print(f"Almost done! Please search for the secondary element {italic("to compare the bond type")} with {bold(primary_element_name)}.")
+
+    while True:
+        user_input = input("> ").strip().lower()
+        logging.info(f"User gave input for the secondary element to compare the bond type with: \"{user_input}\"")
+
+        secondary_element, element_suggestion = find_element(user_input)
+
+        if secondary_element is not None:
+            break
+
+        message = "Not a valid element."
+        if element_suggestion:
+            message += f" Did you mean \"{bold(element_suggestion)}\"?"
+        animate_print(fore(message, YELLOW if element_suggestion else RED))
+
+    secondary_element_name = secondary_element["general"]["fullname"]
+
+    primary_electroneg = primary_element["electronic"]["electronegativity"]
+    secondary_electroneg = secondary_element["electronic"]["electronegativity"]
+
+    if primary_electroneg is None or secondary_electroneg is None:
+        print(fore("Failed to fetch bond type; one or both elements do not have electronegativity values, which means it is inert can't be compared.", YELLOW))
+        sys.exit(0)
+
+    diff = abs(primary_electroneg - secondary_electroneg)
+
+    if diff < 0.4:
+        bond_type = fore("Nonpolar Covalent", BLUE) + " -"
+    elif diff < 1.7:
+        bond_type = fore("Polar Covalent", YELLOW) + " δ"
+    else:
+        bond_type = fore("Ionic", RED) + " →"
+
+    animate_print()
+    animate_print(f"Primary element ({primary_element_name})'s electronegativity: {bold(primary_electroneg)}")
+    animate_print(f"Secondary element ({secondary_element_name})'s electronegativity: {bold(secondary_electroneg)}")
+    animate_print(f"Difference: {primary_electroneg} - {secondary_electroneg} = ≈{bold(f"{diff:.3f}")}")
+    animate_print(f"Bond type: {bond_type} (According to Pauling's Electronegativity Method)")
+    animate_print()
+
+    sys.exit(0)
 
 def get_element_argument() -> str | None:
     return next((arg for arg in sys.argv[1:] if not arg.startswith("--")), None)
@@ -457,8 +522,10 @@ There are also other flags you can provide to this program.
 - {bold("--update")} - Check for updates
 - {bold("--table")} - View the periodic table
 - {bold("--export")} \"element\" | \"isotope\" - Export element or isotope to a .json file
+- {bold("--compare")} \"factor\" - Compare all elements with a factor of \"factor\"
+- {bold("--bond-type")} - Compare two elements and get their bond type
 
-{bold("Note: Giving a flag ignores any other arguments, except special ones marked with an asterisk.")}
+{bold("Note: Flags have a priority with an order of up -> down in this list, meaning if you run this script with both --info and --init flags, it will open up the information page.")}
 Anyways, I hope you enjoy this small program. {bold("Please read the README.md file for more information!")}
 """
 
@@ -519,7 +586,8 @@ if len(sys.argv) > 1:
         create_flag("--update", callable=check_for_update) or
         create_flag("--table", callable=view_table) or
         create_flag("--export", callable=export) or
-        create_flag("--compare", callable=compare)
+        create_flag("--compare", callable=compare) or
+        create_flag("--bond-type", callable=bond_type)
     )
 
     if not recognized_flag:
@@ -627,6 +695,7 @@ electrons = nuclear["electrons"]
 valence_electrons = nuclear["valence_electrons"]
 up_quarks = (protons * 2) + neutrons
 down_quarks = protons + (neutrons * 2)
+mass_number = protons + neutrons
 shells = electronic["shells"]
 subshells = electronic["subshells"]
 isotopes = nuclear["isotopes"]
@@ -789,10 +858,10 @@ animate_print(f" e{convert_superscripts("-")} - {fore("Electrons", YELLOW)}: {bo
 animate_print(f" nv - {fore("Valence Electrons", VALENCE_ELECTRONS_COL)}: {bold(valence_electrons)}")
 animate_print(f" u - {fore("Up Quarks", GREEN)}: ({fore(protons, RED)} * 2) + {fore(neutrons, BLUE)} = {bold(up_quarks)}")
 animate_print(f" d - {fore("Down Quarks", CYAN)}: ({fore(protons, RED)} + ({fore(neutrons, BLUE)} * 2) = {bold(down_quarks)}")
-animate_print(f" A - {bold("Mass Number")}: {fore(protons, RED)} + {fore(neutrons, BLUE)} = {bold(protons + neutrons)}")
+animate_print(f" A - {bold("Mass Number")}: {fore(protons, RED)} + {fore(neutrons, BLUE)} = {bold(mass_number)}")
 animate_print(f" ⚛️ - Shells {dim(f"(The electron in {fore("yellow", VALENCE_ELECTRONS_COL)} is the valence electron)")}:\n    {shell_result}")
 animate_print(f" 🌀 - Subshells: {subshell_result}")
-animate_print(f"      Breakdown:\n{subshell_visualisation}")
+animate_print(f"      Breakdown:\n\n{subshell_visualisation}\n")
 animate_print(f" 🪞 - Isotopes ({len(isotopes.keys())}): {dim(f"(Decay processes in {fore("red", RED)} need verification. Do not trust them!)")}:")
 
 for isotope, information in isotopes.items():
