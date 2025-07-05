@@ -1,6 +1,6 @@
 import tomllib, sys, subprocess, time, platform
 from pathlib import Path
-from utils import animate_print, bold, fore, RED, get_response, abort_program
+from utils import animate_print, bold, fore, RED, BLUE, get_response, abort_program
 from utils.loader import logging
 
 if __name__ == "__main__":
@@ -55,23 +55,23 @@ def update_main():
     animate_print(f"Latest version: {lts_version}")
 
     try:
-        local_version = version.parse(local_version)
-        lts_version = version.parse(lts_version)
+        parsed_local = version.parse(parsed_local)
+        parsed_lts = version.parse(parsed_lts)
     except Exception:
         animate_print(fore("Failed to parse version. Check if pyproject.toml is malformed.", RED))
         sys.exit(1)
 
-    if local_version == lts_version:
+    if parsed_local == parsed_lts:
         animate_print(bold("You are using the latest version."))
         sys.exit(0)
-    elif local_version > lts_version:
+    elif parsed_local > parsed_lts:
         animate_print(bold("You are using a newer or development version.") + " Just please make sure that you didn't modify the pyproject.toml file.")
         sys.exit(0)
 
     animate_print(bold(f"Update available: {lts_version}!"))
     animate_print(
         f"This will forcefully update the repo from GitHub.\n"
-        f"{fore('Warning! This will reset all local changes and delete your config.json file.', RED)}\n"
+        f"{fore('This won\'t delete your config.json, output.json, and any other files that are marked in .gitignore.', BLUE)}\n"
         "Do you want to continue? (Y/n)"
     )
 
