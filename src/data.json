@@ -1,5 +1,5 @@
 {
-    "hydrogen": {
+    "Hydrogen": {
         "general": {
             "fullname": "Hydrogen",
             "symbol": "H",
@@ -133,7 +133,7 @@
             "date": "1766 AD"
         }
     },
-    "helium": {
+    "Helium": {
         "general": {
             "fullname": "Helium",
             "symbol": "He",
@@ -325,7 +325,7 @@
             "date": "1868 AD"
         }
     },
-    "lithium": {
+    "Lithium": {
         "general": {
             "fullname": "Lithium",
             "symbol": "Li",
