@@ -3,11 +3,16 @@ from pathlib import Path
 from utils import animate_print, bold, fore, RED, get_response, abort_program
 from utils.loader import logging
 
+if __name__ == "__main__":
+    animate_print("Please refrain from running this script manually. Instead, please run the periodica.sh file with the --update flag.")
+    sys.exit(0)
+
 OS = platform.system()
 
 if OS not in ["Linux", "Darwin"]:
     animate_print("This program is only supported in Unix systems. If you are on Windows, please get them manually.")
     sys.exit(0)
+
 try:
     from packaging import version
 except ImportError:
@@ -60,7 +65,7 @@ def update_main():
         animate_print(bold("You are using the latest version."))
         sys.exit(0)
     elif local_version > lts_version:
-        animate_print(bold("You are using a newer or development version."))
+        animate_print(bold("You are using a newer or development version.") + " Just please make sure that you didn't modify the pyproject.toml file.")
         sys.exit(0)
 
     animate_print(bold(f"Update available: {lts_version}!"))
@@ -91,7 +96,3 @@ def update_main():
     except subprocess.CalledProcessError:
         animate_print(fore("Git fetch/reset or build failed. Ensure this is a valid Git repo.", RED))
         sys.exit(1)
-
-if __name__ == "__main__":
-    animate_print(fore("Please do not run this script directly. Use main.py with the --update flag.", RED))
-    sys.exit(0)

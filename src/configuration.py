@@ -2,6 +2,10 @@ import time, sys
 from utils import get_config, save_config, valid_formats, valid_animations, default_config, RED, GREEN, CYAN, fore, bold, dim, clear_screen, clear_line, animate_print
 from utils.loader import logging
 
+if __name__ == "__main__":
+    animate_print("Please refrain from running this script manually. Instead, please run the periodica.sh file with the --init flag.")
+    sys.exit(0)
+
 config = get_config()
 logging.info("Configuration program initialized.")
 
@@ -10,6 +14,7 @@ def fancy_abort():
         animate_print(f"Exiting program in {bold(i)}...", end="")
         time.sleep(1)
         clear_line()
+    sys.exit(0)
 
 def create_fn_event(input: str, function_no: int, callable):
     if input == function_no:
@@ -24,7 +29,7 @@ def toggle_superscript():
     superscripts = config["use_superscripts"]
     animate_print(f"The setting 'Use Superscripts' was changed to {bold(fore(superscripts, GREEN) if superscripts else fore(superscripts, RED))}.")
     logging.info(f"Setting 'Use Superscripts' changed from {not superscripts} to {superscripts}.")
-    time.sleep(2)
+    time.sleep(1)
 
 def toggle_truecolor():
     global config, truecolor
@@ -33,7 +38,7 @@ def toggle_truecolor():
     truecolor = config["truecolor"]
     animate_print(f"The setting 'Use Truecolor' was changed to {bold(fore(truecolor, GREEN) if truecolor else fore(truecolor, RED))}.")
     logging.info(f"Setting 'Use Truecolor' changed from {not truecolor} to {truecolor}.")
-    time.sleep(2)
+    time.sleep(1)
 
 def change_isotope_format():
     global config, isotope_format
@@ -57,7 +62,7 @@ def change_isotope_format():
             isotope_format = config["isotope_format"]
             animate_print(f"Successfully changed option 'Isotope Format' to {bold(isotope_format)}.")
             logging.info(f"Setting 'Isotope Format' changed to {isotope_format}.")
-            time.sleep(2)
+            time.sleep(1)
         except ValueError:
             if user_input not in valid_formats:
                 animate_print(f"{user_input} is neither a valid option name nor a valid option number. Please try again.")
@@ -66,7 +71,7 @@ def change_isotope_format():
             isotope_format = config["isotope_format"]
             animate_print(f"Successfully changed option 'Isotope Format' to {bold(isotope_format)}.")
             logging.info(f"Setting 'Isotope Format' changed to {isotope_format}.")
-            time.sleep(2)
+            time.sleep(1)
 
 def change_animation_type():
     global config, animation_type
@@ -115,7 +120,7 @@ def change_animation_delay():
             animation_delay = config["animation_delay"]
             animate_print(f"Successfully changed option 'Animation Delay' to {bold(animation_delay)} seconds.")
             logging.info(f"Setting 'Animation Delay' changed to {animation_delay} seconds.")
-            time.sleep(2)
+            time.sleep(1)
             break
         except ValueError:
             animate_print(f"{user_input} is not a valid float. Please try again.")
@@ -123,6 +128,8 @@ def change_animation_delay():
             continue
 
 def reset():
+    global config
+
     clear_screen()
     animate_print(fore(f"Are you sure? This action will reset all settings to the default settings. \n{bold("THIS ACTION IS IRREVERSIBLE.")} We highly recommend you to create backups before resetting the configuration.\n", RED))
     user_input = input(dim("Type '#' and press Enter to confirm the reset.") + "\n> ").lower().strip()
@@ -165,7 +172,7 @@ try:
         except ValueError:
             animate_print(fore(f"{user_input} is not a valid function number. Can you please try again?", RED))
             logging.warning(f"{user_input} was not a valid function number.")
-            time.sleep(2)
+            time.sleep(1)
             continue
 
         recognized_flag = (
@@ -185,5 +192,5 @@ try:
 except KeyboardInterrupt:
     animate_print("\nYou have pressed ^C while editing the settings. Please do not do so. Your data has been saved anyways. Have a nice day!")
     save_config()
-    logging.info("User force quit the program. Aborting...")
+    logging.info("User force quit the configuration program. Aborting...")
     sys.exit(0)

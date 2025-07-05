@@ -1,4 +1,4 @@
-import json, os, logging, time, sys
+import json, os, logging, time, sys, pathlib
 
 LOG_PATH = os.path.join(os.path.dirname(__file__), "../execution.log")
 
@@ -12,7 +12,8 @@ logging.basicConfig(
     format='%(asctime)s [%(levelname)s] %(message)s'
 )
 
-CONFIG_PATH = os.path.join(os.path.dirname(__file__), "../config.json")
+# utils -> src -> periodica, three parents
+PERIODICA_DIR = pathlib.Path(__file__).resolve().parent.parent.parent
 
 default_config = {
     "use_superscripts": True,
@@ -33,7 +34,7 @@ def get_config():
         return _config
 
     try:
-        with open(CONFIG_PATH, "r", encoding="utf-8") as file:
+        with open(PERIODICA_DIR / "src" / "config.json", "r", encoding="utf-8") as file:
             _config = json.load(file)
     except (json.JSONDecodeError, FileNotFoundError):
         _config = default_config.copy()
@@ -51,7 +52,7 @@ def get_config():
 
 def save_config():
     global _config
-    with open(CONFIG_PATH, "w", encoding="utf-8") as file:
+    with open(PERIODICA_DIR / "src" / "config.json", "w", encoding="utf-8") as file:
         json.dump(_config or default_config, file, indent=4)
 
 def abort_program(message):

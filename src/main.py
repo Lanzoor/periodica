@@ -1,9 +1,57 @@
 #!/usr/bin/env python3
 
-import logging, json, os, re, sys, difflib, random, typing
+import logging, json, os, re, sys, difflib, random, typing, pathlib
 from utils import get_config, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, B_BLACK, fore, bold, dim, italic, gradient, animate_print, clear_screen, abort_program, get_response
 
+# src -> periodica, two parents
+PERIODICA_DIR = pathlib.Path(__file__).resolve().parent.parent
+
+OUTPUT_FILE = PERIODICA_DIR / "src" / "output.json"
+CONFIG_FILE = PERIODICA_DIR / "src" / "config.json"
+DATA_FILE = PERIODICA_DIR / "src" / "data.json"
 EXPORT = False
+
+element_data = None
+element_suggestion = ""
+recognized_flag = False
+elementdata_malformed = False
+
+config = get_config()
+
+superscripts = config["use_superscripts"]
+truecolor = config["truecolor"]
+isotope_format = config["isotope_format"]
+animation_type = config["animation"]
+animation_delay = config["animation_delay"]
+
+if truecolor:
+    VALENCE_ELECTRONS_COL = (248, 255, 166)
+    MALE = (109, 214, 237)
+    FEMALE = (255, 133, 245)
+    MELT_COL = (52, 110, 235)
+    BOIL_COL = (189, 165, 117)
+    ORANGE = (245, 164, 66)
+    INDIGO = (94, 52, 235)
+else:
+    VALENCE_ELECTRONS_COL = YELLOW
+    MALE = CYAN
+    FEMALE = MAGENTA
+    MELT_COL = BLUE
+    BOIL_COL = YELLOW
+    ORANGE = YELLOW
+    INDIGO = BLUE
+
+cm3 = "cm³" if superscripts else "cm3"
+mm2 = "mm²" if superscripts else "mm2"
+full_data = {}
+
+types = {
+	"Reactive nonmetal": GREEN,
+	"Noble gas": YELLOW,
+	"Alkali metal": (176, 176, 176) if truecolor else B_BLACK,
+	"Alkali earth metal": ORANGE,
+	"Metalloid": CYAN
+}
 
 def celcius_to_kelvin(celsius):
 	return (celsius * 1e16 + 273.15 * 1e16) / 1e16
@@ -141,16 +189,14 @@ def export():
         if element is None:
             animate_print(fore("Could not find element or isotope to export. Please try again.", RED))
 
-    filename = "output.json"
-
     if "info" in element and "symbol" in element:
         name = f"{element['isotope']}"
     else:
         name = f"{element['general']['fullname'].capitalize()}"
 
-    animate_print(f"Saving data of {bold(name)} to {filename}...")
+    animate_print(f"Saving data of {bold(name)} to {OUTPUT_FILE}...")
 
-    with open(filename, "w", encoding="utf-8") as file:
+    with open(OUTPUT_FILE, "w", encoding="utf-8") as file:
         if "info" in element and "symbol" in element:
             json.dump({
                 "symbol": element["symbol"].capitalize(),
@@ -161,7 +207,7 @@ def export():
         else:
             json.dump(element, file, indent=4, ensure_ascii=False)
 
-    animate_print(fore(f"Successfully saved to {filename}.", GREEN))
+    animate_print(fore(f"Successfully saved to {OUTPUT_FILE}.", GREEN))
     sys.exit(0)
 
 def get_element_argument() -> str | None:
@@ -256,7 +302,7 @@ def format_isotope(norm_iso, fullname, *, metastable = ""):
             return f"{symbol}-{number}{metastable}"
 
 def find_isotope(symbol_or_name, mass_number, search_query):
-    for val in data.values():
+    for val in full_data.values():
         sym = val["general"]["symbol"].lower()
         name = val["general"]["fullname"].lower()
         if symbol_or_name.lower() in (sym, name):
@@ -286,7 +332,7 @@ def find_element(user_input) -> typing.Tuple[str | None, str | None]:
     user_input = user_input.lower()
     possible_names = []
 
-    for element_candidate in data.values():
+    for element_candidate in full_data.values():
         name = element_candidate["general"]["fullname"].lower()
         symbol = element_candidate["general"]["symbol"].lower()
         possible_names.extend([name, symbol])
@@ -306,7 +352,7 @@ def find_element(user_input) -> typing.Tuple[str | None, str | None]:
 def process_isotope_input(user_input):
     try:
         index = int(user_input) - 1
-        search_result = data[list(data.keys())[index]]
+        search_result = full_data[list(full_data.keys())[index]]
         return search_result, None
     except (ValueError, IndexError):
         symbol_or_name, mass_number = match_isotope_input(user_input)
@@ -317,48 +363,7 @@ def process_isotope_input(user_input):
             return None, None
         return find_element(user_input)
 
-config = get_config()
-
-superscripts = config["use_superscripts"]
-truecolor = config["truecolor"]
-isotope_format = config["isotope_format"]
-animation_type = config["animation"]
-animation_delay = config["animation_delay"]
-
-if truecolor:
-    VALENCE_ELECTRONS_COL = (248, 255, 166)
-    MALE = (109, 214, 237)
-    FEMALE = (255, 133, 245)
-    MELT_COL = (52, 110, 235)
-    BOIL_COL = (189, 165, 117)
-    ORANGE = (245, 164, 66)
-    INDIGO = (94, 52, 235)
-else:
-    VALENCE_ELECTRONS_COL = YELLOW
-    MALE = CYAN
-    FEMALE = MAGENTA
-    MELT_COL = BLUE
-    BOIL_COL = YELLOW
-    ORANGE = YELLOW
-    INDIGO = BLUE
-
-logging.info("Program initialized.")
-
-cm3 = "cm³" if superscripts else "cm3"
-mm2 = "mm²" if superscripts else "mm2"
-data = {}
-
-types = {
-	"Reactive nonmetal": GREEN,
-	"Noble gas": YELLOW,
-	"Alkali metal": (176, 176, 176) if truecolor else B_BLACK,
-	"Alkali earth metal": ORANGE,
-	"Metalloid": CYAN
-}
-
 # Other important functions / variables
-
-config_file = './config.json'
 
 match random.randint(0, 3):
     case 0:
@@ -392,13 +397,13 @@ There are also other flags you can provide to this program.
 {bold("Note: Giving a flag ignores any other arguments, except special ones marked with an asterisk.")}
 Anyways, I hope you enjoy this small program. {bold("Please read the README.md file for more information!")}
 """
+
 # Reading json file, and trying to get from GitHub if fails
 
-elementdata_malformed = False
-
+logging.info("Program initialized.")
 try:
-    with open("./data.json", 'r', encoding="utf-8") as file:
-        data = json.load(file)
+    with open(DATA_FILE, 'r', encoding="utf-8") as file:
+        full_data = json.load(file)
         logging.info("data.json file was successfully found.")
 except json.JSONDecodeError:
     abort_program("data.json file was modified, please do not do so no matter what.")
@@ -422,8 +427,8 @@ if elementdata_malformed:
 
     animate_print("Successfully got the data.json file! Replacing it...")
 
-    data = json.loads(response.text)
-    with open("./data.json", "w", encoding="utf-8") as file:
+    full_data = json.loads(response.text)
+    with open(DATA_FILE, "w", encoding="utf-8") as file:
         file.write(response.text)
 
     logging.info(f"Successfully got the data.json file from {url}.")
@@ -443,10 +448,6 @@ if width <= 80:
     animate_print(fore(f"You are running this program in a terminal that has a width of {bold(width)},\nwhich may be too compact to display and provide the information.\nPlease try resizing your terminal.", RED))
     logging.warning("Not enough width for terminal.")
 
-element = None
-suggestion = None
-recognized_flag = False
-
 if len(sys.argv) > 1:
     recognized_flag = (
         create_flag("--info", callable=get_information) or
@@ -464,39 +465,39 @@ if len(sys.argv) > 1:
             logging.warning("Argv missing valid content, fallback to interactive.")
         else:
             logging.info(f"User gave argv: \"{user_input}\"")
-            element, suggestion = process_isotope_input(user_input)
+            element_data, element_suggestion = process_isotope_input(user_input)
 
-            if element is None:
-                message = f"Invalid argv.{' Did you mean \"' + bold(suggestion) + '\"?' if suggestion else ' Falling back to interactive input.'}"
-                animate_print(fore(message, YELLOW if suggestion else RED))
+            if element_data is None:
+                message = f"Invalid argv.{' Did you mean \"' + bold(element_suggestion) + '\"?' if element_suggestion else ' Falling back to interactive input.'}"
+                animate_print(fore(message, YELLOW if element_suggestion else RED))
                 logging.warning("Argv invalid, fallback to interactive.")
 else:
     logging.warning("Argument not given, falling back to interactive input.")
 
-if element is None:
+if element_data is None:
     animate_print(f"Search for an element by name, symbol, or atomic number. {dim(tip)}")
     while True:
         user_input = input("> ").strip().lower()
         logging.info(f"User gave input: \"{user_input}\"")
 
-        element, suggestion = process_isotope_input(user_input)
+        element_data, element_suggestion = process_isotope_input(user_input)
 
-        if element is not None:
+        if element_data is not None:
             break
 
         message = "Not a valid element or isotope."
-        if suggestion:
-            message += f" Did you mean \"{bold(suggestion)}\"?"
-        animate_print(fore(message, YELLOW if suggestion else RED))
+        if element_suggestion:
+            message += f" Did you mean \"{bold(element_suggestion)}\"?"
+        animate_print(fore(message, YELLOW if element_suggestion else RED))
 
 # Dividing categories
 
-general = element["general"]
-historical = element["historical"]
-nuclear = element["nuclear"]
-electronic = element["electronic"]
-physical = element["physical"]
-measurements = element["measurements"]
+general = element_data["general"]
+historical = element_data["historical"]
+nuclear = element_data["nuclear"]
+electronic = element_data["electronic"]
+physical = element_data["physical"]
+measurements = element_data["measurements"]
 
 # General properties
 
