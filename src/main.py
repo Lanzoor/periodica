@@ -159,6 +159,8 @@ def view_table():
     sys.exit(0)
 
 def export():
+    logging.info("User gave --export flag; redirecting to another logic.")
+
     global EXPORT
 
     if "--export" not in sys.argv:
@@ -210,6 +212,68 @@ def export():
     animate_print(fore(f"Successfully saved to {OUTPUT_FILE}.", GREEN))
     sys.exit(0)
 
+def compare():
+    global full_data
+
+    logging.info("User gave --compare flag; redirecting to another logic.")
+    user_factor = ""
+
+    factors = [
+        "protons",
+        "electrons",
+        "neutrons",
+    ]
+
+    result: dict[str, str] = {}
+
+    def match_input(data: dict[str, dict], factor):
+        match factor:
+            case "protons":
+                return data["nuclear"].get("protons", None)
+            case "electrons":
+                return data["nuclear"].get("electrons", None)
+            case "neutrons":
+                return data["nuclear"].get("neutrons", None)
+
+    animate_print(f"Please enter a factor to compare all the elements with. The valid factors are; \n  {', '.join(factors)}")
+
+    while True:
+        user_factor = input("> ").strip().lower()
+
+        if user_factor in factors:
+            break
+
+        suggestion = difflib.get_close_matches(user_factor, factors, n=1, cutoff=0.6)
+
+        if suggestion:
+            animate_print(fore(f"Not a valid factor. Did you mean \"{bold(suggestion[0])}\"?", YELLOW))
+        else:
+            animate_print("Not a valid factor, try again.")
+
+    animate_print(f"\nComparing all elements by factor {bold(user_factor)}...\n")
+
+    for (name, value) in full_data.items():
+        result[name] = match_input(value, user_factor)
+
+    result = dict(sorted(result.items(), key=lambda item: (item[1] is None, item[1])))
+
+    max_value = max((value for value in result.values() if isinstance(value, (int, float))), default=1)
+
+    for name, value in result.items():
+        if value is not None:
+            padding = 25
+            bar_space = max(width - padding, 10)
+            bar_length = int((value / max_value) * bar_space)
+
+            bar_inside = "█" * bar_length
+            bar = "[" + fore(bar_inside, CYAN) + "]"
+
+            animate_print(f"{name:<12} {str(value):<4} {bar}")
+
+    animate_print()
+    sys.exit(0)
+
+
 def get_element_argument() -> str | None:
     return next((arg for arg in sys.argv[1:] if not arg.startswith("--")), None)
 
@@ -259,7 +323,7 @@ def print_isotope(norm_iso, info, fullname):
             products = branch.get("product", [])
             if not isinstance(products, list): products = [str(products)]
             out = ", ".join(bold(format_isotope(p, fullname)) for p in products)
-            animate_print(f"{padding}{bold(display_name)} -> {bold(mode)} -> {out} {chance}")
+            animate_print(f"{padding}{bold(display_name)} -> {bold(mode)} {"->" if products != [] else ""} {out} {chance}")
 
     if isinstance(info.get("decay"), list):
         animate_print("      ⛓️ - Possible Decays:")
@@ -454,7 +518,8 @@ if len(sys.argv) > 1:
         create_flag("--init", callable=configurate) or
         create_flag("--update", callable=check_for_update) or
         create_flag("--table", callable=view_table) or
-        create_flag("--export", callable=export)
+        create_flag("--export", callable=export) or
+        create_flag("--compare", callable=compare)
     )
 
     if not recognized_flag:
@@ -592,6 +657,44 @@ for subshell in subshells:
 
 subshell_result = subshell_result.rstrip(", ")
 
+orbital_capacity_map = {"s": 1, "p": 3, "d": 5, "f": 7}
+formatted_lines = []
+
+pattern = re.compile(r"(\d+)([spdf])(\d+)")
+
+for subshell_string in subshells:
+    match = pattern.fullmatch(subshell_string)
+    if not match:
+        continue
+    energy_level, orbital_type, electron_count = match.groups()
+    electron_count = int(electron_count)
+    number_of_orbitals = orbital_capacity_map[orbital_type]
+    orbitals = [""] * number_of_orbitals
+    for index in range(min(electron_count, number_of_orbitals)):
+        orbitals[index] = "↑"
+    remaining_electrons = electron_count - number_of_orbitals
+    for index in range(number_of_orbitals):
+        if remaining_electrons <= 0:
+            break
+        orbitals[index] += "↓"
+        remaining_electrons -= 1
+
+    orbital_boxes = []
+    for orbital in orbitals:
+        if orbital == "":
+            orbital_boxes.append("[  ]")
+        else:
+            spins_colored = "".join(
+                fore("↑", GREEN) if spin == "↑" else fore("↓", RED)
+                for spin in orbital
+            )
+            orbital_boxes.append(f"[{spins_colored}]")
+
+    formatted_line = f"{energy_level + orbital_type:<4} {' '.join(orbital_boxes)}"
+    formatted_lines.append(formatted_line)
+
+subshell_visualisation = "\n".join(formatted_lines)
+
 # Physical properties
 
 melting_point = physical["melt"]
@@ -686,8 +789,10 @@ animate_print(f" e{convert_superscripts("-")} - {fore("Electrons", YELLOW)}: {bo
 animate_print(f" nv - {fore("Valence Electrons", VALENCE_ELECTRONS_COL)}: {bold(valence_electrons)}")
 animate_print(f" u - {fore("Up Quarks", GREEN)}: ({fore(protons, RED)} * 2) + {fore(neutrons, BLUE)} = {bold(up_quarks)}")
 animate_print(f" d - {fore("Down Quarks", CYAN)}: ({fore(protons, RED)} + ({fore(neutrons, BLUE)} * 2) = {bold(down_quarks)}")
+animate_print(f" A - {bold("Mass Number")}: {fore(protons, RED)} + {fore(neutrons, BLUE)} = {bold(protons + neutrons)}")
 animate_print(f" ⚛️ - Shells {dim(f"(The electron in {fore("yellow", VALENCE_ELECTRONS_COL)} is the valence electron)")}:\n    {shell_result}")
 animate_print(f" 🌀 - Subshells: {subshell_result}")
+animate_print(f"      Breakdown:\n{subshell_visualisation}")
 animate_print(f" 🪞 - Isotopes ({len(isotopes.keys())}): {dim(f"(Decay processes in {fore("red", RED)} need verification. Do not trust them!)")}:")
 
 for isotope, information in isotopes.items():
