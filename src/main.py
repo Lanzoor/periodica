@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import logging, json, os, re, sys, difflib, random, typing, pathlib
+import logging, json, os, re, sys, difflib, random, typing, pathlib, textwrap
 from utils import get_config, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, B_BLACK, fore, bold, dim, italic, gradient, animate_print, clear_screen, abort_program, get_response
 
 # src -> periodica, two parents
@@ -15,6 +15,7 @@ element_data = None
 element_suggestion = ""
 recognized_flag = False
 elementdata_malformed = False
+greek_symbols = ["α", "β", "γ", "δ", "ε", "ζ", "η", "θ", "ι", "κ", "λ", "μ", "ν", "ξ", "ο", "π", "ρ", "σ", "τ", "υ", "φ", "χ", "ψ", "ω"]
 
 config = get_config()
 
@@ -26,6 +27,7 @@ animation_delay = config["animation_delay"]
 
 if truecolor:
     VALENCE_ELECTRONS_COL = (248, 255, 166)
+    ELECTRONEG_COL = (131, 122, 255)
     MALE = (109, 214, 237)
     FEMALE = (255, 133, 245)
     MELT_COL = (52, 110, 235)
@@ -34,6 +36,7 @@ if truecolor:
     INDIGO = (94, 52, 235)
 else:
     VALENCE_ELECTRONS_COL = YELLOW
+    ELECTRONEG_COL = BLUE
     MALE = CYAN
     FEMALE = MAGENTA
     MELT_COL = BLUE
@@ -42,13 +45,14 @@ else:
     INDIGO = BLUE
 
 cm3 = "cm³" if superscripts else "cm3"
+m3 = "m³" if superscripts else "m3"
 mm2 = "mm²" if superscripts else "mm2"
 full_data = {}
 
 types = {
 	"Reactive nonmetal": GREEN,
 	"Noble gas": YELLOW,
-	"Alkali metal": (176, 176, 176) if truecolor else B_BLACK,
+	"Alkali metal": (215, 215, 215) if truecolor else B_BLACK,
 	"Alkali earth metal": ORANGE,
 	"Metalloid": CYAN
 }
@@ -63,12 +67,12 @@ def eV_to_kJpermol(eV):
     return eV * 96.485
 
 def print_header(title):
-    dashes = "-" * (width - len(title) - 2)
+    dashes = "-" * (TERMINAL_WIDTH - len(title) - 2)
     print(f"--{bold(title)}{dashes}")
 
 def print_separator():
     print()
-    print("-" * width)
+    print("-" * TERMINAL_WIDTH)
     print()
 
 def convert_superscripts(string: str) -> str:
@@ -142,12 +146,12 @@ def view_table():
 
     COLUMNS = 18 * 4
     ROWS = 7 * 3
-    if width < COLUMNS:
+    if TERMINAL_WIDTH < COLUMNS:
         animate_print(f"Well, the terminal is way too small to display the table. Please run this on a larger window.\n{bold(f"At least a terminal size of {COLUMNS} x {ROWS} is required to display the content.")}")
         abort_program("Terminal too small to display the table.")
         sys.exit(0)
 
-    if height < ROWS:
+    if TERMINAL_HEIGHT < ROWS:
         animate_print(f"Well, the terminal is way too small to display the table. Please run this on a larger window.\n{bold(f"At least a terminal size of {COLUMNS} x {ROWS} is required to display the content.")}")
         abort_program("Terminal too small to display the table.")
         sys.exit(0)
@@ -158,48 +162,59 @@ def view_table():
 
     sys.exit(0)
 
+# Fetch arguments that are not flags (removes --export, --compare, etc.)
+def get_positional_args() -> list[str]:
+    return [arg for arg in sys.argv[1:] if not arg.startswith("--")]
+
 def export():
     logging.info("User gave --export flag; redirecting to export logic.")
     global EXPORT
-
     EXPORT = True
     sys.argv.remove("--export")
 
-    args = [arg for arg in sys.argv[1:] if not arg.startswith("--")]
+    args = get_positional_args()
     user_input = args[0] if args else None
 
     element = None
     if user_input:
-        element, _ = process_isotope_input(user_input)
-        if element is None:
+        element, suggestion = process_isotope_input(user_input)
+        if element is None and not suggestion:
             animate_print(fore("Could not find that element or isotope. Please enter one manually.", RED))
+        else:
+            animate_print(fore(f"Could not find that element or isotope. Did you mean {suggestion}?", YELLOW))
 
     if element is None:
         animate_print(f"Search for an element {italic('to export')} by name, symbol, or atomic number.")
+        while element is None:
+            user_input = input("> ").strip()
+            element, suggestion = process_isotope_input(user_input)
+            if element is None and not suggestion:
+                animate_print(fore("Could not find that element or isotope. Please enter one manually.", RED))
+            else:
+                animate_print(fore(f"Could not find that element or isotope. Did you mean {suggestion}?", YELLOW))
 
-    while element is None:
-        user_input = input("> ").strip()
-        element, _ = process_isotope_input(user_input)
-        if element is None:
-            animate_print(fore("Could not find element or isotope to export. Please try again.", RED))
 
-    if "info" in element and "symbol" in element:
-        name = f"{element['isotope']}"
+    is_isotope = "info" in element and "symbol" in element
+
+    if is_isotope:
+        name = element["isotope"]
     else:
-        name = f"{element['general']['fullname'].capitalize()}"
+        name = element["general"]["fullname"].capitalize()
 
     animate_print(f"Saving data of {bold(name)} to {OUTPUT_FILE}...")
 
     with open(OUTPUT_FILE, "w", encoding="utf-8") as file:
-        if "info" in element and "symbol" in element:
-            json.dump({
+        json.dump(
+            {
                 "symbol": element["symbol"].capitalize(),
-                "fullname": element["fullname"],
-                "isotope": element["isotope"],
-                "data": element["info"]
-            }, file, indent=4, ensure_ascii=False)
-        else:
-            json.dump(element, file, indent=4, ensure_ascii=False)
+                "fullname": element.get("fullname"),
+                "isotope": element.get("isotope"),
+                "data": element.get("info"),
+            } if is_isotope else element,
+            file,
+            indent=4,
+            ensure_ascii=False
+        )
 
     animate_print(fore(f"Successfully saved to {OUTPUT_FILE}.", GREEN))
     sys.exit(0)
@@ -217,7 +232,7 @@ def compare():
         "down_quarks"
     ]
 
-    args = [arg for arg in sys.argv[1:] if not arg.startswith("--")]
+    args = get_positional_args()
     factor_candidate = args[0] if args else None
 
     def match_input(data: dict[str, dict], factor):
@@ -238,6 +253,7 @@ def compare():
         except (KeyError, ValueError):
             return None
 
+    animate_print()
     while True:
         if factor_candidate and factor_candidate in factors:
             user_factor = factor_candidate
@@ -253,90 +269,97 @@ def compare():
         animate_print(f"Please enter a factor to compare all the elements with. The valid factors are:\n  {', '.join(factors)}")
         factor_candidate = "_".join(input("> ").strip().lower().split(" "))
 
-    animate_print(f"\nComparing all elements by factor {bold(user_factor)}...\n")
+    animate_print(f"\nComparing all elements by factor {bold(user_factor)}... {dim("(Please note that elements may be missing.)")}\n")
 
     result: dict[str, str] = {}
     for (name, value) in full_data.items():
         result[name] = match_input(value, user_factor)
 
     result = dict(sorted(result.items(), key=lambda item: (item[1] is None, item[1])))
-    max_value = max((v for v in result.values() if isinstance(v, (int, float))), default=1)
+    max_value = max(filter(lambda value: isinstance(value, (int, float)), result.values()), default=1)
 
-    for name, value in result.items():
+    for (name, value) in result.items():
         if value is not None:
             padding = 25
-            bar_space = max(width - padding, 10)
+            bar_space = max(TERMINAL_WIDTH - padding, 10)
             bar_length = int((value / max_value) * bar_space)
-            bar = "[" + fore("█" * bar_length, CYAN) + "]"
-            animate_print(f"{name:<12} {str(value):<4} {bar}")
+            bar = fore("█" * bar_length, CYAN)
+            animate_print(f"{name:<12} {str(value):<4} [{bar}]")
 
     animate_print()
     sys.exit(0)
 
 def bond_type():
     global full_data
-    logging.info("User gave --bond-type flag; redirecting to another logic.")
+    logging.info("User gave --bond-type flag; redirecting to bond type logic.")
 
+    args = get_positional_args()
     primary_element = None
     secondary_element = None
 
-    animate_print(f"Search for the primary element {italic("to compare the bond type")} with by name, symbol, or atomic number.")
-    while True:
-        user_input = input("> ").strip().lower()
-        logging.info(f"User gave input for the primary element to compare the bond type with: \"{user_input}\"")
+    if len(args) >= 2:
+        primary_element, _ = find_element(args[0])
+        secondary_element, _ = find_element(args[1])
 
-        primary_element, element_suggestion = find_element(user_input)
+        if primary_element is None or secondary_element is None:
+            animate_print(fore("One or both elements could not be resolved from the arguments. Please provide them manually.", YELLOW))
+            primary_element = None
+            secondary_element = None
+        else:
+            logging.info(f"Resolved both elements from CLI args: {args[0]}, {args[1]}")
 
-        if primary_element is not None:
-            break
-
-        message = "Not a valid element."
-        if element_suggestion:
-            message += f" Did you mean \"{bold(element_suggestion)}\"?"
-        animate_print(fore(message, YELLOW if element_suggestion else RED))
+    if primary_element is None:
+        animate_print()
+        animate_print(f"Search for the primary element {italic('to compare the bond type')} with by name, symbol, or atomic number.")
+        while True:
+            user_input = input("> ").strip().lower()
+            logging.info(f"Primary input: \"{user_input}\"")
+            primary_element, suggestion = find_element(user_input)
+            if primary_element:
+                break
+            if suggestion:
+                animate_print(fore(f"Not a valid element. Did you mean \"{bold(suggestion)}\"?", YELLOW))
+            else:
+                animate_print(fore(f"Not a valid element.", RED))
 
     primary_element_name = primary_element["general"]["fullname"]
-    animate_print(f"Almost done! Please search for the secondary element {italic("to compare the bond type")} with {bold(primary_element_name)}.")
 
-    while True:
-        user_input = input("> ").strip().lower()
-        logging.info(f"User gave input for the secondary element to compare the bond type with: \"{user_input}\"")
-
-        secondary_element, element_suggestion = find_element(user_input)
-
-        if secondary_element is not None:
-            break
-
-        message = "Not a valid element."
-        if element_suggestion:
-            message += f" Did you mean \"{bold(element_suggestion)}\"?"
-        animate_print(fore(message, YELLOW if element_suggestion else RED))
+    if secondary_element is None:
+        animate_print()
+        animate_print(f"Now, please enter the secondary element {italic('to compare the bond type')} with {bold(primary_element_name)}.")
+        while True:
+            user_input = input("> ").strip().lower()
+            logging.info(f"Secondary input: \"{user_input}\"")
+            secondary_element, suggestion = find_element(user_input)
+            if secondary_element:
+                break
+            if suggestion:
+                animate_print(fore(f"Not a valid element. Did you mean \"{bold(suggestion)}\"?", YELLOW))
+            else:
+                animate_print(fore(f"Not a valid element.", RED))
 
     secondary_element_name = secondary_element["general"]["fullname"]
+    primary_en = primary_element["electronic"]["electronegativity"]
+    secondary_en = secondary_element["electronic"]["electronegativity"]
 
-    primary_electroneg = primary_element["electronic"]["electronegativity"]
-    secondary_electroneg = secondary_element["electronic"]["electronegativity"]
-
-    if primary_electroneg is None or secondary_electroneg is None:
-        print(fore("Failed to fetch bond type; one or both elements do not have electronegativity values, which means it is inert can't be compared.", YELLOW))
+    if primary_en is None or secondary_en is None:
+        animate_print(fore("Failed to fetch bond type; one or both elements lack electronegativity values (likely inert).", YELLOW))
         sys.exit(0)
 
-    diff = abs(primary_electroneg - secondary_electroneg)
-
+    diff = abs(primary_en - secondary_en)
     if diff < 0.4:
-        bond_type = fore("Nonpolar Covalent", BLUE) + " -"
+        bond_type_str = fore("Nonpolar Covalent", BLUE) + " -"
     elif diff < 1.7:
-        bond_type = fore("Polar Covalent", YELLOW) + " δ"
+        bond_type_str = fore("Polar Covalent", YELLOW) + " δ"
     else:
-        bond_type = fore("Ionic", RED) + " →"
+        bond_type_str = fore("Ionic", RED) + " →"
 
     animate_print()
-    animate_print(f"Primary element ({primary_element_name})'s electronegativity: {bold(primary_electroneg)}")
-    animate_print(f"Secondary element ({secondary_element_name})'s electronegativity: {bold(secondary_electroneg)}")
-    animate_print(f"Difference: {primary_electroneg} - {secondary_electroneg} = ≈{bold(f"{diff:.3f}")}")
-    animate_print(f"Bond type: {bond_type} (According to Pauling's Electronegativity Method)")
+    animate_print(f"Primary element ({primary_element_name})'s electronegativity: {bold(primary_en)}")
+    animate_print(f"Secondary element ({secondary_element_name})'s electronegativity: {bold(secondary_en)}")
+    animate_print(f"Difference: {primary_en} - {secondary_en} = ≈{bold(f'{diff:.3f}')}")
+    animate_print(f"Bond type: {bond_type_str} (According to Pauling's Electronegativity Method)")
     animate_print()
-
     sys.exit(0)
 
 def get_element_argument() -> str | None:
@@ -457,20 +480,18 @@ def find_isotope(symbol_or_name, mass_number, search_query):
                     return True
     return False
 
-def find_element(user_input) -> typing.Tuple[str | None, str | None]:
+def find_element(user_input) -> typing.Tuple[dict | None, str | None]:
     user_input = user_input.lower()
     possible_names = []
 
-    for element_candidate in full_data.values():
+    for _, element_candidate in enumerate(full_data.values()):
         name = element_candidate["general"]["fullname"].lower()
         symbol = element_candidate["general"]["symbol"].lower()
+        atomic_number = str(element_candidate["general"]["atomic_number"])
+
         possible_names.extend([name, symbol])
 
-        if user_input == name:
-            logging.info(f"Matched element full name: {user_input.capitalize()}")
-            return element_candidate, None
-        if user_input == symbol:
-            logging.info(f"Matched element symbol: {user_input.capitalize()} ({element_candidate['general']['fullname']})")
+        if user_input in (name, symbol, atomic_number):
             return element_candidate, None
 
     suggestion = difflib.get_close_matches(user_input, possible_names, n=1, cutoff=0.6)
@@ -538,7 +559,7 @@ try:
         logging.info("data.json file was successfully found.")
 except json.JSONDecodeError:
     abort_program("data.json file was modified, please do not do so no matter what.")
-    animate_print("The data.json file was modified and malformed. Please do not do so, no matter what.\nThis means you need a fresh new data.json file, is it okay for me to get the file for you on GitHub? (y/n)")
+    animate_print("The data.json file was modified and malformed. Please do not do so, no matter what.\nThis means you need a fresh new data.json file, is it okay for me to get the file for you on GitHub? (y/N)")
     elementdata_malformed = True
 except FileNotFoundError:
     logging.warning("data.json file was not found.")
@@ -567,16 +588,16 @@ if elementdata_malformed:
 # Getting element / isotope
 
 try:
-    width = os.get_terminal_size().columns
-    height = os.get_terminal_size().lines
+    TERMINAL_WIDTH = os.get_terminal_size().columns
+    TERMINAL_HEIGHT = os.get_terminal_size().lines
 except OSError:
     animate_print(bold("What?? So apparently, you aren't running this on a terminal, which is very weird. We will try to ignore this issue, and will determine your terminal width as 80. Please move on and ignore this message."))
     logging.warning("The script ran without a terminal, so failback to reasonable terminal width variable.")
-    width = 80
-    height = 40
+    TERMINAL_WIDTH = 80
+    TERMINAL_HEIGHT = 40
 
-if width <= 80:
-    animate_print(fore(f"You are running this program in a terminal that has a width of {bold(width)},\nwhich may be too compact to display and provide the information.\nPlease try resizing your terminal.", RED))
+if TERMINAL_WIDTH <= 80:
+    animate_print(fore(f"You are running this program in a terminal that has a width of {bold(TERMINAL_WIDTH)},\nwhich may be too compact to display and provide the information.\nPlease try resizing your terminal.", RED))
     logging.warning("Not enough width for terminal.")
 
 if len(sys.argv) > 1:
@@ -608,6 +629,7 @@ else:
     logging.warning("Argument not given, falling back to interactive input.")
 
 if element_data is None:
+    animate_print()
     animate_print(f"Search for an element by name, symbol, or atomic number. {dim(tip)}")
     while True:
         user_input = input("> ").strip().lower()
@@ -638,6 +660,12 @@ fullname = general["fullname"]
 symbol = general["symbol"]
 atomic_number = general["atomic_number"]
 description = general["description"]
+
+description = "\n\n" + "\n\n".join(
+    textwrap.fill(paragraph.strip(), width=TERMINAL_WIDTH, initial_indent="    ", subsequent_indent="")
+    for paragraph in description.strip().split("\n\n")
+)
+
 discoverers = historical["discoverers"]
 discovery_date = historical["date"]
 period = general["period"]
@@ -674,11 +702,11 @@ lanthanides_range = range(LANTHANUM, LUTHENIUM + 1)
 actinides_range = range(ACTINIUM, LAWRENCIUM + 1)
 
 if atomic_number in lanthanides_range:
-    lanthanides[atomic_number - LANTHANUM + 3] = fore("▪", GREEN)
+    lanthanides[atomic_number - LANTHANUM + 3] = fore("▪", types[element_type])
 elif atomic_number in actinides_range:
-    actinides[atomic_number - ACTINIUM + 3] = fore("▪", GREEN)
+    actinides[atomic_number - ACTINIUM + 3] = fore("▪", types[element_type])
 else:
-    periodic_table[period - 1][group - 1] = fore("▪", GREEN)
+    periodic_table[period - 1][group - 1] = fore("▪", types[element_type])
 
 entries = [
     bold(fore(name, MALE if gender == "male" else FEMALE))
@@ -771,7 +799,6 @@ boiling_point = physical["boil"]
 atomic_mass = physical["atomic_mass"]
 radioactive = general["radioactive"]
 half_life = general["half_life"]
-density = physical["density"]
 
 # Electronic properties
 electronegativity = electronic["electronegativity"]
@@ -809,6 +836,7 @@ conductivity_type = electronic["conductivity_type"]
 radius = measurements["radius"]
 hardness = measurements["hardness"]
 moduli = measurements["moduli"]
+density = measurements["density"]
 sound_transmission_speed = measurements["sound_transmission_speed"]
 
 logging.info("Starting output.")
@@ -819,7 +847,7 @@ animate_print()
 
 animate_print(f" 🔡 - Element Name: {bold(fullname)} ({bold(symbol)})")
 animate_print(f" Z - Atomic Number: {bold(atomic_number)}")
-animate_print(f" 📃 - Description:\n\n    {description}\n")
+animate_print(f" 📃 - Description: {description}\n")
 animate_print(f" 🔍 - Discoverer(s): {discoverers}")
 animate_print(f" 🔍 - Discovery Date: {bold(discovery_date)}")
 animate_print(f" ↔️ - Period (Row): {bold(period)}")
@@ -877,13 +905,12 @@ animate_print(f" A - Mass Number: {fore(protons, RED)} + {fore(neutrons, BLUE)} 
 animate_print(f" u - Atomic Mass: {bold(atomic_mass)}g/mol")
 animate_print(f" ☢️ - {fore("Radioactive", ORANGE)}: {fore("Yes", GREEN) if radioactive else fore("No", RED)}")
 animate_print(f" t1/2 - Half Life: {bold(half_life if not (half_life is None) else fore("Stable", CYAN))}")
-animate_print(f" ρ - Density: {bold(density)}g/{cm3}")
 
 animate_print()
 print_header("Electronic Properties")
 animate_print()
 
-animate_print(f" χ - Electronegativity: {bold(electronegativity)}")
+animate_print(f" χ - {fore("Electronegativity", ELECTRONEG_COL)}: {bold(electronegativity)}")
 animate_print(f" EA - Electron Affinity: {bold(electron_affinity)}eV = {bold(eV_to_kJpermol(electron_affinity))}kJ/mol")
 animate_print(f" IE - {fore("Ionization Energy", MAGENTA)}: {bold(ionization_energy)}eV = {bold(eV_to_kJpermol(ionization_energy))}kJ/mol")
 animate_print(f" ⚡️ - {fore("Oxidation States", YELLOW)} {dim(f"(Only the ones that have {fore("color", BLUE)} are activated)")}:\n{"   " + negatives_result}\n{"   " + positives_result}\n")
@@ -898,7 +925,7 @@ animate_print(f"   r_calc - Calculated: {bold(str(radius["calculated"])) + "pm" 
 animate_print(f"   r_emp - Empirical: {bold(str(radius["empirical"])) + "pm" if not (radius["empirical"] is None) else fore("N/A", CYAN)}")
 animate_print(f"   r_cov - Covalent: {bold(str(radius["covalent"])) + "pm" if not (radius["covalent"] is None) else fore("N/A", CYAN)}")
 animate_print(f"   rvdW - Van der Waals: {bold(str(radius["van_der_waals"])) + "pm" if not (radius["van_der_waals"] is None) else fore("N/A", CYAN)}\n")
-animate_print(" 🪨 - Hardness: ")
+animate_print(" H - Hardness: ")
 animate_print(f"   HB - Brinell: {bold(str(hardness["brinell"])) + f"kgf/{mm2}" if not (hardness["brinell"] is None) else fore("None", CYAN)}")
 animate_print(f"   H - Mohs: {bold(str(hardness["mohs"]) if not (hardness["mohs"] is None) else fore("None", CYAN))}")
 animate_print(f"   HV - Vickers: {bold(str(hardness["vickers"])) + f"kgf/{mm2}" if not (hardness["vickers"] is None) else fore("None", CYAN)}\n")
@@ -907,6 +934,9 @@ animate_print(f"   K - Bulk Modulus: {bold(str(moduli["bulk"])) + "GPa" if not (
 animate_print(f"   E - Young's Modulus: {bold(str(moduli['young'])) + "GPa" if moduli['young'] is not None else fore('None', CYAN)}")
 animate_print(f"   G - Shear Modulus: {bold(str(moduli["shear"])) + "GPa" if not (moduli['shear'] is None) else fore("None", CYAN)}")
 animate_print(f"   ν - Poisson's Ratio: {bold(str(moduli["poissons_ratio"])) if not (moduli["poissons_ratio"] is None) else fore("None", CYAN)}\n")
+animate_print(" ρ - Density: ")
+animate_print(f"   STP Density: {bold(str(density["STP"])) + ("kg/" + m3) if not (density["STP"] is None) else fore("None", CYAN)}")
+animate_print(f"   Liquid Density: {bold(str(density["liquid"])) + ("kg/" + m3) if density["liquid"] is not None else fore('None', CYAN)}\n")
 animate_print(f" 📢 - Speed of Sound Transmission: {bold(sound_transmission_speed)}m/s = {bold(sound_transmission_speed / 1000)}km/s")
 
 print_separator()
