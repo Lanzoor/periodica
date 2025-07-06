@@ -49,12 +49,19 @@ m3 = "m³" if superscripts else "m3"
 mm2 = "mm²" if superscripts else "mm2"
 full_data = {}
 
-types = {
+type_colors = {
 	"Reactive nonmetal": GREEN,
 	"Noble gas": YELLOW,
 	"Alkali metal": (215, 215, 215) if truecolor else B_BLACK,
 	"Alkali earth metal": ORANGE,
 	"Metalloid": CYAN
+}
+
+subshell_colors = {
+    's': RED,
+    'p': GREEN,
+    'd': CYAN,
+    'f': MAGENTA
 }
 
 def celcius_to_kelvin(celsius):
@@ -702,11 +709,11 @@ lanthanides_range = range(LANTHANUM, LUTHENIUM + 1)
 actinides_range = range(ACTINIUM, LAWRENCIUM + 1)
 
 if atomic_number in lanthanides_range:
-    lanthanides[atomic_number - LANTHANUM + 3] = fore("▪", types[element_type])
+    lanthanides[atomic_number - LANTHANUM + 3] = fore("▪", type_colors[element_type])
 elif atomic_number in actinides_range:
-    actinides[atomic_number - ACTINIUM + 3] = fore("▪", types[element_type])
+    actinides[atomic_number - ACTINIUM + 3] = fore("▪", type_colors[element_type])
 else:
-    periodic_table[period - 1][group - 1] = fore("▪", types[element_type])
+    periodic_table[period - 1][group - 1] = fore("▪", type_colors[element_type])
 
 entries = [
     bold(fore(name, MALE if gender == "male" else FEMALE))
@@ -739,21 +746,26 @@ for index, electron in enumerate(shells):
 
 subshell_capacities = {'s': 2, 'p': 6, 'd': 10, 'f': 14}
 subshell_result = ""
+
 for subshell in subshells:
     if len(subshell) < 3 or not subshell[-1].isdigit():
         logging.warning(f"To the developers, a malformed subshell was detected in {fullname.capitalize()}. Issue: {subshell}")
         continue
-    subshell = subshell[:-1] + (convert_superscripts(subshell[-1]) if superscripts else subshell[-1])
+
+    formatted_subshell = subshell[:-1] + (convert_superscripts(subshell[-1]) if superscripts else subshell[-1])
     match = re.match(r"(\d)([spdf])(\d+)", subshell)
+
     if match:
         _, subshell_type, electron_count = match.groups()
         max_capacity = subshell_capacities[subshell_type]
-        subshell_result += f"{bold(subshell)} ({electron_count}/{max_capacity}), "
+        colored_subshell = fore(formatted_subshell, subshell_colors.get(subshell_type, (255, 255, 255)))
+        subshell_result += f"{bold(colored_subshell)} ({electron_count}/{max_capacity}), "
     else:
-        subshell_result += f"{bold(subshell)}, "
+        subshell_type = subshell[1] if len(subshell) > 1 else 's'
+        colored_subshell = fore(formatted_subshell, subshell_colors.get(subshell_type, (255, 255, 255)))
+        subshell_result += f"{bold(colored_subshell)}, "
 
 subshell_result = subshell_result.rstrip(", ")
-
 orbital_capacity_map = {"s": 1, "p": 3, "d": 5, "f": 7}
 formatted_lines = []
 
@@ -852,7 +864,7 @@ animate_print(f" 🔍 - Discoverer(s): {discoverers}")
 animate_print(f" 🔍 - Discovery Date: {bold(discovery_date)}")
 animate_print(f" ↔️ - Period (Row): {bold(period)}")
 animate_print(f" ↕️ - Group (Column): {bold(group)}")
-animate_print(f" 🎨 - Type: {fore(element_type, types[element_type])}")
+animate_print(f" 🎨 - Type: {fore(element_type, type_colors[element_type])}")
 animate_print(f" 🧱 - Block: {bold(block)}")
 animate_print(f" 📇 - CAS Number: {bold(cas_number)}")
 
@@ -888,8 +900,8 @@ animate_print(f" u - {fore("Up Quarks", GREEN)}: ({fore(protons, RED)} * 2) + {f
 animate_print(f" d - {fore("Down Quarks", CYAN)}: ({fore(protons, RED)} + ({fore(neutrons, BLUE)} * 2) = {bold(down_quarks)}")
 animate_print(f" A - {bold("Mass Number")}: {fore(protons, RED)} + {fore(neutrons, BLUE)} = {bold(mass_number)}")
 animate_print(f" ⚛️ - Shells {dim(f"(The electron in {fore("yellow", VALENCE_ELECTRONS_COL)} is the valence electron)")}:\n    {shell_result}")
-animate_print(f" 🌀 - Subshells: {subshell_result}")
-animate_print(f"      Breakdown:\n\n{subshell_visualisation}\n")
+animate_print(f" 🌀 - Subshells:\n    {subshell_result}")
+animate_print(f"      Breakdown:\n{subshell_visualisation}")
 animate_print(f" 🪞 - Isotopes ({len(isotopes.keys())}): {dim(f"(Decay processes in {fore("red", RED)} need verification. Do not trust them!)")}:")
 
 for isotope, information in isotopes.items():
