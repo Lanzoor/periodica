@@ -69,7 +69,7 @@ def update_main():
         sys.exit(0)
     elif parsed_local > parsed_lts:
         animate_print(bold("You are using a newer or development version.") + " Just please make sure that you didn't modify the pyproject.toml file.")
-        log.warning("Scripts are in the development version. Please make sure to not tweak the pyproject.toml file if possible.")
+        log.warn("Scripts are in the development version. Please make sure to not tweak the pyproject.toml file if possible.")
         sys.exit(0)
 
     animate_print(bold(f"Update available: {lts_version}!"))
