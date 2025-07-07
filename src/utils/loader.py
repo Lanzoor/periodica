@@ -1,4 +1,4 @@
-import json, os, logging, time, sys, pathlib
+import json, logging, time, sys, pathlib
 
 # utils -> src -> periodica, three parents
 PERIODICA_DIR = pathlib.Path(__file__).resolve().parent.parent.parent
@@ -15,6 +15,41 @@ logging.basicConfig(
     force=True
 )
 
+class Logger():
+    def __init__(self, *, debug=False):
+        self.debug = debug
+
+    def info(self, message):
+        from .terminal import animate_print, fore, GREEN
+        logging.info(message)
+        if self.debug:
+            animate_print(fore("INFO: " + message, GREEN))
+
+    def warn(self, message):
+        from .terminal import animate_print, fore, YELLOW
+        logging.warning(message)
+        if self.debug:
+            animate_print(fore("WARNING: " + message, YELLOW))
+
+    def error(self, message):
+        from .terminal import animate_print, fore, RED
+        logging.error(message)
+        if self.debug:
+            animate_print(fore("ERROR: " + message, RED))
+
+    def fatal(self, message):
+        from .terminal import animate_print, fore, BLUE
+        logging.fatal(message)
+        if self.debug:
+            animate_print(fore("FATAL: " + message, BLUE))
+
+    def abort(self, message):
+        self.error(message)
+        time.sleep(1)
+        self.fatal("Program terminated.")
+        sys.exit(1)
+
+log = Logger(debug=False)
 default_config = {
     "use_superscripts": True,
     "truecolor": True,
@@ -55,20 +90,13 @@ def save_config():
     with open(PERIODICA_DIR / "src" / "config.json", "w", encoding="utf-8") as file:
         json.dump(_config or default_config, file, indent=4)
 
-def abort_program(message):
-    logging.error(message)
-
-    time.sleep(1)
-    logging.fatal("Program terminated.")
-    sys.exit(1)
-
 def get_response(url: str):
     from .terminal import animate_print
     try:
         import requests
     except ImportError:
         animate_print("Whoopsies, the requests module was not found in your environment! Please read the README.md file for more information.")
-        abort_program("Couldn't proceed; the requests library was not found in the environment.")
+        log.abort("Couldn't proceed; the requests library was not found in the environment.")
     try:
         response = requests.get(url)
         response.raise_for_status()
@@ -76,7 +104,7 @@ def get_response(url: str):
         return response
     except requests.exceptions.ConnectionError:
         animate_print("Whoops! There was a network connection error. Please check your network connection, and try again later.")
-        abort_program("Couldn't proceed; failed to connect to page.")
+        log.abort("Couldn't proceed; failed to connect to page.")
     except requests.exceptions.HTTPError:
         animate_print(f"Failed to download data! HTTP status code: {response.status_code}")
-        abort_program(f"Failed to fetch data. Status code: {response.status_code}.")
+        log.abort(f"Failed to fetch data. Status code: {response.status_code}.")

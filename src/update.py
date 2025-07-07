@@ -1,7 +1,10 @@
-import tomllib, sys, subprocess, time, platform
+import tomllib, sys, subprocess, time, platform, pathlib
 from pathlib import Path
-from utils import animate_print, bold, fore, RED, BLUE, get_response, abort_program
-from utils.loader import logging
+from utils.terminal import animate_print, bold, fore, RED, BLUE
+from utils.loader import Logger, get_response
+
+PERIODICA_DIR = pathlib.Path(__file__).resolve().parent.parent
+log = Logger(debug=False)
 
 if __name__ == "__main__":
     animate_print("Please refrain from running this script manually. Instead, please run the periodica.sh file with the --update flag.")
@@ -17,16 +20,15 @@ try:
     from packaging import version
 except ImportError:
     animate_print("Whoopsies, the packaging module was not found in your environment! Please read the README.md file for more information.")
-    abort_program("Couldn't proceed; the packaging library was not found in the environment.")
+    log.abort("Couldn't proceed; the packaging library was not found in the environment.")
 
 def update_main():
-    logging.info("Update program initialized.")
+    log.info("Update program initialized.")
 
-    project_root = Path(__file__).resolve().parent.parent
-    pyproject_path = project_root / "pyproject.toml"
+    PYPROJECT_FILE = PERIODICA_DIR / "pyproject.toml"
 
     try:
-        with open(pyproject_path, "rb") as f:
+        with open(PYPROJECT_FILE, "rb") as f:
             toml_data = tomllib.load(f)
     except PermissionError:
         animate_print("Permission denied while reading pyproject.toml.")
@@ -49,10 +51,11 @@ def update_main():
 
     if not lts_version:
         animate_print("Failed to get latest version info.")
-        sys.exit(1)
+        log.abort("Failed to get latest version info.")
 
     animate_print(f"Local version: {local_version}")
     animate_print(f"Latest version: {lts_version}")
+    log.info(f"Local: {local_version}, latest: {lts_version}")
 
     try:
         parsed_local = version.parse(parsed_local)
@@ -63,12 +66,16 @@ def update_main():
 
     if parsed_local == parsed_lts:
         animate_print(bold("You are using the latest version."))
+        log.info("Scripts are up-to-date.")
         sys.exit(0)
     elif parsed_local > parsed_lts:
         animate_print(bold("You are using a newer or development version.") + " Just please make sure that you didn't modify the pyproject.toml file.")
+        log.warning("Scripts are in the development version. Please make sure to not tweak the pyproject.toml file if possible.")
         sys.exit(0)
 
     animate_print(bold(f"Update available: {lts_version}!"))
+    log.info(f"An update is avaliable; {lts_version}")
+
     animate_print(
         f"This will forcefully update the repo from GitHub.\n"
         f"{fore('This won\'t delete your config.json, output.json, and any other files that are marked in .gitignore.', BLUE)}\n"
@@ -78,17 +85,17 @@ def update_main():
     confirmation = input("> ").strip().lower()
     if confirmation not in ["y", "yes", ""]:
         animate_print("Update canceled.")
-        sys.exit(0)
+        log.abort("User canceled update confirmation.")
 
     try:
-        subprocess.run(["git", "fetch"], cwd=project_root, check=True)
-        subprocess.run(["git", "reset", "--hard", "origin/main"], cwd=project_root, check=True)
+        subprocess.run(["git", "fetch"], cwd=PERIODICA_DIR, check=True)
+        subprocess.run(["git", "reset", "--hard", "origin/main"], cwd=PERIODICA_DIR, check=True)
         animate_print(bold("Successfully pulled the latest changes. Let's build it up for you once again..."))
         time.sleep(2)
 
-        build_script = project_root / "build.py"
+        BUILD_FILE = PERIODICA_DIR / "build.py"
         animate_print("Running build.py to reinitialize environment...")
-        subprocess.run([sys.executable, str(build_script)], check=True)
+        subprocess.run([sys.executable, str(BUILD_FILE)], check=True)
 
         animate_print(bold("Update complete."))
         sys.exit(0)
