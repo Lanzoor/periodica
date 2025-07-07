@@ -1,4 +1,4 @@
-import time, sys
+import time, sys, importlib
 from utils import get_config, save_config, valid_formats, valid_animations, default_config, RED, GREEN, CYAN, fore, bold, dim, clear_screen, clear_line, animate_print
 from utils.loader import logging
 
@@ -63,15 +63,18 @@ def change_isotope_format():
             animate_print(f"Successfully changed option 'Isotope Format' to {bold(isotope_format)}.")
             logging.info(f"Setting 'Isotope Format' changed to {isotope_format}.")
             time.sleep(1)
+            break
         except ValueError:
             if user_input not in valid_formats:
                 animate_print(f"{user_input} is neither a valid option name nor a valid option number. Please try again.")
                 logging.warning(f"{user_input} was neither a valid option name nor a valid option number.")
+                continue
             config['isotope_format'] = user_input
             isotope_format = config["isotope_format"]
             animate_print(f"Successfully changed option 'Isotope Format' to {bold(isotope_format)}.")
             logging.info(f"Setting 'Isotope Format' changed to {isotope_format}.")
             time.sleep(1)
+            break
 
 def change_animation_type():
     global config, animation_type
@@ -94,14 +97,17 @@ def change_animation_type():
             animation_type = config["animation"]
             animate_print(f"Successfully changed option 'Animation Type' to {bold(animation_type)}.")
             logging.info(f"Setting 'Animation Type' changed to {animation_type}.")
+            break
         except ValueError:
             if user_input not in valid_animations:
                 animate_print(f"{user_input} is neither a valid option name nor a valid option number. Please try again.")
                 logging.warning(f"{user_input} was neither a valid option name nor a valid option number.")
+                continue
             config['animation'] = user_input
             animation_type = config["animation"]
             animate_print(f"Successfully changed option 'Animation Type' to {bold(animation_type)}.")
             logging.info(f"Setting 'Animation Type' changed to {animation_type}.")
+            break
 
 def change_animation_delay():
     global config, animation_delay
@@ -159,7 +165,7 @@ try:
         animate_print(f"5. Animation Delay: Determines the delay between lines / characters based on animation type, does not work when animation is set to 'none' (Set to {bold(fore(animation_delay, CYAN))})")
         animate_print(f"6. Reset Data: {bold("Overwrites all settings to the default settings.")}\n")
 
-        animate_print(f"To change a setting, please input the corresponding function name. To exit, please enter the {bold('q')} key.")
+        animate_print(f"To change a setting, please input the corresponding function name.\nTo exit, please enter the {bold('q')} key.")
         user_input = input("> ").lower().strip()
 
         try:

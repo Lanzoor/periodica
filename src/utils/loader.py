@@ -1,19 +1,19 @@
 import json, os, logging, time, sys, pathlib
 
-LOG_PATH = os.path.join(os.path.dirname(__file__), "../execution.log")
+# utils -> src -> periodica, three parents
+PERIODICA_DIR = pathlib.Path(__file__).resolve().parent.parent.parent
+LOGGING_FILE = PERIODICA_DIR / "src" / "execution.log"
 
-with open(LOG_PATH, 'w', encoding="utf-8"):
+with open(LOGGING_FILE, 'w', encoding="utf-8"):
     pass
 
 logging.basicConfig(
-    filename=LOG_PATH,
+    filename=LOGGING_FILE,
     filemode='w',
     level=logging.INFO,
-    format='%(asctime)s [%(levelname)s] %(message)s'
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    force=True
 )
-
-# utils -> src -> periodica, three parents
-PERIODICA_DIR = pathlib.Path(__file__).resolve().parent.parent.parent
 
 default_config = {
     "use_superscripts": True,

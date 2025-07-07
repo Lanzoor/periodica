@@ -9,6 +9,7 @@ PERIODICA_DIR = pathlib.Path(__file__).resolve().parent.parent
 OUTPUT_FILE = PERIODICA_DIR / "src" / "output.json"
 CONFIG_FILE = PERIODICA_DIR / "src" / "config.json"
 DATA_FILE = PERIODICA_DIR / "src" / "data.json"
+
 EXPORT = False
 
 element_data = None
@@ -47,6 +48,7 @@ else:
 cm3 = "cm³" if superscripts else "cm3"
 m3 = "m³" if superscripts else "m3"
 mm2 = "mm²" if superscripts else "mm2"
+
 full_data = {}
 
 type_colors = {
@@ -261,6 +263,8 @@ def compare():
             return None
 
     animate_print()
+    animate_print(f"Please enter a factor to compare all the elements with. The valid factors are:\n  {', '.join(factors)}")
+
     while True:
         if factor_candidate and factor_candidate in factors:
             user_factor = factor_candidate
@@ -273,7 +277,6 @@ def compare():
             else:
                 animate_print(fore("Not a valid factor. Please provide one manually.", RED))
 
-        animate_print(f"Please enter a factor to compare all the elements with. The valid factors are:\n  {', '.join(factors)}")
         factor_candidate = "_".join(input("> ").strip().lower().split(" "))
 
     animate_print(f"\nComparing all elements by factor {bold(user_factor)}... {dim("(Please note that elements may be missing.)")}\n")
@@ -368,6 +371,16 @@ def bond_type():
     animate_print(f"Bond type: {bond_type_str} (According to Pauling's Electronegativity Method)")
     animate_print()
     sys.exit(0)
+
+def pick_random():
+    global element_data
+    animate_print()
+    animate_print("Picking a random element...")
+    logging.info("Picking a random element...")
+
+    element_data = random.choice(list(full_data.values()))
+    animate_print(f"I pick {bold(element_data["general"]["fullname"])} for you!")
+    logging.info(f"Picked {element_data["general"]["fullname"]} as a random element.")
 
 def get_element_argument() -> str | None:
     return next((arg for arg in sys.argv[1:] if not arg.startswith("--")), None)
@@ -552,6 +565,7 @@ There are also other flags you can provide to this program.
 - {bold("--export")} \"element\" | \"isotope\" - Export element or isotope to a .json file
 - {bold("--compare")} \"factor\" - Compare all elements with a factor of \"factor\"
 - {bold("--bond-type")} - Compare two elements and get their bond type
+- {bold("--random")} - Pick a random element
 
 {bold("Note: Flags have a priority with an order of up -> down in this list, meaning if you run this script with both --info and --init flags, it will open up the information page.")}
 Anyways, I hope you enjoy this small program. {bold("Please read the README.md file for more information!")}
@@ -560,6 +574,7 @@ Anyways, I hope you enjoy this small program. {bold("Please read the README.md f
 # Reading json file, and trying to get from GitHub if fails
 
 logging.info("Program initialized.")
+
 try:
     with open(DATA_FILE, 'r', encoding="utf-8") as file:
         full_data = json.load(file)
@@ -615,7 +630,8 @@ if len(sys.argv) > 1:
         create_flag("--table", callable=view_table) or
         create_flag("--export", callable=export) or
         create_flag("--compare", callable=compare) or
-        create_flag("--bond-type", callable=bond_type)
+        create_flag("--bond-type", callable=bond_type) or
+        create_flag("--random", callable=pick_random)
     )
 
     if not recognized_flag:
