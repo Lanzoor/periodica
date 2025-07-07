@@ -1,5 +1,4 @@
 import tomllib, sys, subprocess, time, platform, pathlib
-from pathlib import Path
 from utils.terminal import animate_print, bold, fore, RED, BLUE
 from utils.loader import Logger, get_response
 
@@ -58,8 +57,8 @@ def update_main():
     log.info(f"Local: {local_version}, latest: {lts_version}")
 
     try:
-        parsed_local = version.parse(parsed_local)
-        parsed_lts = version.parse(parsed_lts)
+        parsed_local = version.parse(local_version)
+        parsed_lts = version.parse(lts_version)
     except Exception:
         animate_print(fore("Failed to parse version. Check if pyproject.toml is malformed.", RED))
         sys.exit(1)
