@@ -39,16 +39,11 @@ else:
     print("Neither requirements.txt nor pyproject.toml found. Aborting...")
     sys.exit(1)
 
-print("GAR")
 bin_path = Path.home() / ".local" / "bin"
 bin_path.mkdir(parents=True, exist_ok=True)
 
 sh_script = script_dir / "periodica.sh"
 symlink_target = bin_path / "periodica"
-
-print(f"sh_script exists: {sh_script.exists()}")
-print(f"symlink_target exists: {symlink_target.exists()}")
-print(f"symlink_target is_symlink: {symlink_target.is_symlink()}")
 
 try:
     if not sh_script.exists():
