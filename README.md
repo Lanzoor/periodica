@@ -10,18 +10,21 @@ However, for most cases, I recommend you run the following methods;
 > Make sure that you have the latest version of Python in your machine! It usually comes with Linux, but just be sure.
 
 ```bash
-# This gets the GitHub repository, and adds it into the opt folder.
-git clone https://github.com/Lanzoor/periodica.git ~/.local/bin/periodica
+# Clone the GitHub repository into a proper workspace directory.
+git clone https://github.com/Lanzoor/periodica.git ~/dev/periodica
 
-# This will create a venv, and install required packages. READ THE SCRIPT FIRST! DO NOT TRUST SOURCES FROM ONLINE.
-python3 ~/.local/bin/periodica/build.py
-# Run the command above with sudo if it gives a permission error.
+# This will create a virtual environment and install required packages.
+# READ THE SCRIPT BEFORE RUNNING IT. DO NOT TRUST FILES FROM ONLINE BY DEFAULT.
+python3 ~/dev/periodica/build.py
 
-# Run the commands below if ~/.local/bin/ is not in PATH.
+# Just in case, ensure the launch script is executable.
+chmod +x ~/dev/periodica/periodica.sh
+
+# Run the commands below if ~/.local/bin/ is not already in PATH.
 # echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
 # source ~/.bashrc
 
-# Now let's test it!
+# Now test it:
 periodica
 ```
 

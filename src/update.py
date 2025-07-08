@@ -15,7 +15,7 @@ if __name__ == "__main__":
 OS = platform.system()
 
 if OS not in ["Linux", "Darwin"]:
-    animate_print("This program is only supported in Unix systems. If you are on Windows, please get them manually.")
+    animate_print("This tool is for Unix-based systems only. If you are on Windows, please get them manually.")
     sys.exit(0)
 
 try:
