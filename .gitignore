@@ -1,8 +1,7 @@
-venv/
-src/execution.log
+**/venv/
+**/*.log
 src/config.json
-src/__pycache__
-src/utils/__pycache__
 src/output.json
-.ropeproject
-TODO.md
+**/TODO.md
+**/__pycache__/
+**/.ropeproject/
