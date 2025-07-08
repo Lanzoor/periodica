@@ -2,7 +2,7 @@
 
 import json, os, re, sys, difflib, random, typing, pathlib, textwrap
 from utils.loader import get_config, get_response, Logger
-from utils.terminal import RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, B_BLACK, fore, bold, dim, italic, gradient, animate_print, clear_screen
+from utils.terminal import RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, B_BLACK, B_GREEN, fore, bold, dim, italic, gradient, animate_print, clear_screen
 from pprint import pprint
 
 # src -> periodica, two parents
@@ -39,6 +39,7 @@ if truecolor:
     BOIL_COL = (189, 165, 117)
     ORANGE = (245, 164, 66)
     INDIGO = (94, 52, 235)
+    NULL = (115, 255, 225)
 else:
     VALENCE_ELECTRONS_COL = YELLOW
     ELECTRONEG_COL = BLUE
@@ -48,6 +49,7 @@ else:
     BOIL_COL = YELLOW
     ORANGE = YELLOW
     INDIGO = BLUE
+    NULL = CYAN
 
 cm3 = "cm³" if superscripts else "cm3"
 m3 = "m³" if superscripts else "m3"
@@ -56,7 +58,7 @@ mm2 = "mm²" if superscripts else "mm2"
 full_data = {}
 
 type_colors = {
-	"Reactive nonmetal": GREEN,
+	"Reactive nonmetal": (130, 255, 151) if truecolor else B_GREEN,
 	"Noble gas": YELLOW,
 	"Alkali metal": (215, 215, 215) if truecolor else B_BLACK,
 	"Alkali earth metal": ORANGE,
@@ -428,7 +430,7 @@ def print_isotope(norm_iso, info, fullname):
     animate_print(f"      d - {fore('Down Quarks', CYAN)}: {fore(protons, RED)} + ({fore(neutrons, BLUE)} * 2) = {bold(down_quarks)}")
 
     half_life = info.get('half_life')
-    animate_print(f"      t1/2 - Half Life: {bold(half_life) if half_life else fore('Stable', CYAN)}")
+    animate_print(f"      t1/2 - Half Life: {bold(half_life) if half_life else fore('Stable', NULL)}")
     animate_print(f"      u - Isotope Weight: {bold(info['isotope_weight'])}g/mol")
 
     def show_decay(decays, indent=12):
@@ -558,6 +560,11 @@ def process_isotope_input(user_input):
             return None, None
         return find_element(user_input)
 
+def safe_format(value, measurement, placeholder = "None"):
+    if value is not None:
+        return bold(str(value)) + measurement
+
+    return fore(placeholder, NULL)
 # Other important functions / variables
 
 match random.randint(0, 3):
@@ -791,9 +798,11 @@ for index, electron in enumerate(shells):
     else:
         shell_result += f"{bold(fore(electron, VALENCE_ELECTRONS_COL) + fore(possible_shells[index], VALENCE_ELECTRONS_COL))} ({electron}/{max_capacity})"
 
-subshell_capacities = {'s': 2, 'p': 6, 'd': 10, 'f': 14}
-subshell_result = ""
+unpaired_electrons = 0
+subshell_capacities = {"s": 2, "p": 6, "d": 10, "f": 14}
+orbital_capacity_map = {"s": 1, "p": 3, "d": 5, "f": 7}
 
+subshell_result = ""
 for subshell in subshells:
     if len(subshell) < 3 or not subshell[-1].isdigit():
         log.warn(f"To the developers, a malformed subshell was detected in {fullname.capitalize()}. Issue: {subshell}")
@@ -811,11 +820,9 @@ for subshell in subshells:
         subshell_type = subshell[1] if len(subshell) > 1 else 's'
         colored_subshell = fore(formatted_subshell, subshell_colors.get(subshell_type, (255, 255, 255)))
         subshell_result += f"{bold(colored_subshell)}, "
-
 subshell_result = subshell_result.rstrip(", ")
-orbital_capacity_map = {"s": 1, "p": 3, "d": 5, "f": 7}
-formatted_lines = []
 
+formatted_lines = []
 pattern = re.compile(r"(\d+)([spdf])(\d+)")
 
 for subshell_string in subshells:
@@ -848,8 +855,12 @@ for subshell_string in subshells:
 
     formatted_line = f"{energy_level + orbital_type:<4} {' '.join(orbital_boxes)}"
     formatted_lines.append(formatted_line)
+    current_unpaired_electrons = sum(1 for orbital in orbitals if orbital == "↑" or orbital == "↓")
+    unpaired_electrons += current_unpaired_electrons
 
 subshell_visualisation = "\n".join(formatted_lines)
+subshell_examples = "".join([fore(orbital, subshell_colors[orbital]) for orbital in list("spdf")])
+pair_determiner = fore("Diamagnetic", YELLOW) if unpaired_electrons == 0 else fore("Paramagnetic", ELECTRONEG_COL)
 
 # Physical properties
 
@@ -860,6 +871,7 @@ radioactive = general["radioactive"]
 half_life = general["half_life"]
 
 # Electronic properties
+
 electronegativity = electronic["electronegativity"]
 electron_affinity = electronic["electron_affinity"]
 ionization_energy = electronic["ionization_energy"]
@@ -945,10 +957,12 @@ animate_print(f" e{convert_superscripts("-")} - {fore("Electrons", YELLOW)}: {bo
 animate_print(f" nv - {fore("Valence Electrons", VALENCE_ELECTRONS_COL)}: {bold(valence_electrons)}")
 animate_print(f" u - {fore("Up Quarks", GREEN)}: ({fore(protons, RED)} * 2) + {fore(neutrons, BLUE)} = {bold(up_quarks)}")
 animate_print(f" d - {fore("Down Quarks", CYAN)}: ({fore(protons, RED)} + ({fore(neutrons, BLUE)} * 2) = {bold(down_quarks)}")
-animate_print(f" A - {bold("Mass Number")}: {fore(protons, RED)} + {fore(neutrons, BLUE)} = {bold(mass_number)}")
+animate_print(f" A - \"Mass Number\": {fore(protons, RED)} + {fore(neutrons, BLUE)} = {bold(mass_number)}")
 animate_print(f" ⚛️ - Shells {dim(f"(The electron in {fore("yellow", VALENCE_ELECTRONS_COL)} is the valence electron)")}:\n    {shell_result}")
-animate_print(f" 🌀 - Subshells:\n    {subshell_result}")
+animate_print(f" 🌀 - Subshells {dim(f"(Subshells are colored by their type. {subshell_examples})")}:\n    {subshell_result}")
 animate_print(f"      Breakdown:\n{subshell_visualisation}")
+animate_print(f"      Total unpaired electrons: {unpaired_electrons}, {pair_determiner}")
+animate_print(f"      Spin: {unpaired_electrons} * 0.5 = {unpaired_electrons * 0.5}")
 animate_print(f" 🪞 - Isotopes ({len(isotopes.keys())}): {dim(f"(Decay processes in {fore("red", RED)} need verification. Do not trust them!)")}:")
 
 for isotope, information in isotopes.items():
@@ -980,22 +994,23 @@ print_header("Measurements")
 animate_print()
 
 animate_print(" r - Radius: ")
-animate_print(f"   r_calc - Calculated: {bold(str(radius["calculated"])) + "pm" if not (radius["calculated"] is None) else fore("N/A", CYAN)}")
-animate_print(f"   r_emp - Empirical: {bold(str(radius["empirical"])) + "pm" if not (radius["empirical"] is None) else fore("N/A", CYAN)}")
-animate_print(f"   r_cov - Covalent: {bold(str(radius["covalent"])) + "pm" if not (radius["covalent"] is None) else fore("N/A", CYAN)}")
-animate_print(f"   rvdW - Van der Waals: {bold(str(radius["van_der_waals"])) + "pm" if not (radius["van_der_waals"] is None) else fore("N/A", CYAN)}\n")
+animate_print(f"   r_calc - Calculated: {safe_format(radius['calculated'], 'pm', 'N/A')}")
+animate_print(f"   r_emp - Empirical: {safe_format(radius['empirical'], 'pm', 'N/A')}")
+animate_print(f"   r_cov - Covalent: {safe_format(radius['covalent'], 'pm', 'N/A')}")
+animate_print(f"   rvdW - Van der Waals: {safe_format(radius['van_der_waals'], 'pm', 'N/A')}\n")
 animate_print(" H - Hardness: ")
-animate_print(f"   HB - Brinell: {bold(str(hardness["brinell"])) + f"kgf/{mm2}" if not (hardness["brinell"] is None) else fore("None", CYAN)}")
-animate_print(f"   H - Mohs: {bold(str(hardness["mohs"]) if not (hardness["mohs"] is None) else fore("None", CYAN))}")
-animate_print(f"   HV - Vickers: {bold(str(hardness["vickers"])) + f"kgf/{mm2}" if not (hardness["vickers"] is None) else fore("None", CYAN)}\n")
+animate_print(f"   HB - Brinell: {safe_format(hardness['brinell'], f'kgf/{mm2}')}")
+animate_print(f"   H - Mohs: {safe_format(hardness['mohs'], '')}")
+animate_print(f"   HV - Vickers: {safe_format(hardness['vickers'], f'kgf/{mm2}')}\n")
 animate_print(" 🔃 - Moduli: ")
-animate_print(f"   K - Bulk Modulus: {bold(str(moduli["bulk"])) + "GPa" if not (moduli["bulk"] is None) else fore("None", CYAN)}")
-animate_print(f"   E - Young's Modulus: {bold(str(moduli['young'])) + "GPa" if moduli['young'] is not None else fore('None', CYAN)}")
-animate_print(f"   G - Shear Modulus: {bold(str(moduli["shear"])) + "GPa" if not (moduli['shear'] is None) else fore("None", CYAN)}")
-animate_print(f"   ν - Poisson's Ratio: {bold(str(moduli["poissons_ratio"])) if not (moduli["poissons_ratio"] is None) else fore("None", CYAN)}\n")
+animate_print(f"   K - Bulk Modulus: {safe_format(moduli['bulk'], 'GPa')}")
+animate_print(f"   E - Young's Modulus: {safe_format(moduli['young'], 'GPa')}")
+animate_print(f"   G - Shear Modulus: {safe_format(moduli['shear'], 'GPa')}")
+animate_print(f"   ν - Poisson's Ratio: {safe_format(moduli['poissons_ratio'], '')}\n")
 animate_print(" ρ - Density: ")
-animate_print(f"   STP Density: {bold(str(density["STP"])) + ("kg/" + m3) if not (density["STP"] is None) else fore("None", CYAN)}")
-animate_print(f"   Liquid Density: {bold(str(density["liquid"])) + ("kg/" + m3) if density["liquid"] is not None else fore('None', CYAN)}\n")
+animate_print(f"   STP Density: {safe_format(density['STP'], f'kg/{m3}')}")
+animate_print(f"   Liquid Density: {safe_format(density['liquid'], f'kg/{m3}')}\n")
+
 animate_print(f" 📢 - Speed of Sound Transmission: {bold(sound_transmission_speed)}m/s = {bold(sound_transmission_speed / 1000)}km/s")
 
 print_separator()

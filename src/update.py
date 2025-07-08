@@ -3,6 +3,9 @@ from utils.terminal import animate_print, bold, fore, RED, BLUE
 from utils.loader import Logger, get_response
 
 PERIODICA_DIR = pathlib.Path(__file__).resolve().parent.parent
+PYPROJECT_FILE = PERIODICA_DIR / "pyproject.toml"
+BUILD_FILE = PERIODICA_DIR / "build.py"
+
 log = Logger(debug=False)
 
 if __name__ == "__main__":
@@ -23,8 +26,6 @@ except ImportError:
 
 def update_main():
     log.info("Update program initialized.")
-
-    PYPROJECT_FILE = PERIODICA_DIR / "pyproject.toml"
 
     try:
         with open(PYPROJECT_FILE, "rb") as f:
@@ -92,7 +93,6 @@ def update_main():
         animate_print(bold("Successfully pulled the latest changes. Let's build it up for you once again..."))
         time.sleep(2)
 
-        BUILD_FILE = PERIODICA_DIR / "build.py"
         animate_print("Running build.py to reinitialize environment...")
         subprocess.run([sys.executable, str(BUILD_FILE)], check=True)
 
@@ -100,5 +100,5 @@ def update_main():
         sys.exit(0)
 
     except subprocess.CalledProcessError:
-        animate_print(fore("Git fetch/reset or build failed. Ensure this is a valid Git repo.", RED))
-        sys.exit(1)
+        animate_print(fore("Git fetch/reset or build failed. Please ensure this is a valid Git repository.", RED))
+        log.abort("Failed to fetch and/or reset. Ensure this is a valid Git repository.")
