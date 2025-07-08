@@ -93,6 +93,10 @@ def update_main():
         animate_print(bold("Successfully pulled the latest changes. Let's build it up for you once again..."))
         time.sleep(2)
 
+        if not BUILD_FILE.exists():
+            animate_print("build.py not found. Aborting...")
+            sys.exit(1)
+
         animate_print("Running build.py to reinitialize environment...")
         subprocess.run([sys.executable, str(BUILD_FILE)], check=True)
 
