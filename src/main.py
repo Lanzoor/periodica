@@ -450,17 +450,27 @@ def print_isotope(norm_iso, info, fullname):
 
     def show_decay(decays, indent=12):
         padding = " " * indent
-        for branch in decays:
+
+        verified = [decay for decay in decays if "chance" in decay]
+        unverified = [decay for decay in decays if "chance" not in decay]
+
+        verified.sort(key=lambda decay: decay["chance"], reverse=True)
+
+        for branch in verified + unverified:
             mode = branch.get("mode", "???")
             if mode.endswith("?"):
                 mode = fore(mode, RED)
-            chance = f"({branch['chance']}%)" if 'chance' in branch and branch['chance'] != 100 else ""
-            if 'chance' not in branch:
+            if "chance" in branch:
+                chance = f"({branch['chance']}%)" if branch["chance"] != 100 else ""
+            else:
                 chance = fore("(Not proven)", RED)
             products = branch.get("product", [])
-            if not isinstance(products, list): products = [str(products)]
-            out = ", ".join(bold(format_isotope(p, fullname)) for p in products)
-            animate_print(f"{padding}{bold(display_name)} -> {bold(mode)} {"->" if products != [] else ""} {out} {chance}")
+            if not isinstance(products, list):
+                products = [str(products)]
+            out = ", ".join(bold(format_isotope(product, fullname)) for product in products)
+            arrow = "->" if products else ""
+
+            animate_print(f"{padding}{bold(display_name)} -> {bold(mode)} {arrow} {out} {chance}")
 
     if isinstance(info.get("decay"), list):
         animate_print("      ⛓️ - Possible Decays:")
@@ -749,6 +759,10 @@ if element_data is None:
         if element_suggestion:
             message += f" Did you mean \"{bold(element_suggestion)}\"?"
         animate_print(fore(message, YELLOW if element_suggestion else RED))
+
+if DEBUG:
+    animate_print("Printing data...")
+    pprint(element_data, indent = 2, width=TERMINAL_WIDTH, sort_dicts=False, underscore_numbers=True, depth=float("inf"))
 
 # Dividing categories
 
