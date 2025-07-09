@@ -24,9 +24,7 @@ except ImportError:
     animate_print("Whoopsies, the packaging module was not found in your environment! Please read the README.md file for more information.")
     log.abort("Couldn't proceed; the packaging library was not found in the environment.")
 
-def update_main():
-    log.info("Update program initialized.")
-
+def fetch_toml():
     try:
         with open(PYPROJECT_FILE, "rb") as f:
             toml_data = tomllib.load(f)
@@ -42,6 +40,12 @@ def update_main():
         animate_print("Could not determine local version.")
         sys.exit(1)
 
+    return local_version
+
+def update_main():
+    log.info("Update program initialized.")
+
+    local_version = fetch_toml()
     url = "https://raw.githubusercontent.com/Lanzoor/periodictable/main/pyproject.toml"
     animate_print(f"Getting content from {url}...")
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import json, os, re, sys, difflib, random, typing, pathlib, textwrap
+import json, os, re, sys, difflib, random, typing, pathlib, textwrap, platform
 from utils.loader import get_config, get_response, Logger
 from utils.terminal import RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, B_BLACK, B_GREEN, fore, bold, dim, italic, gradient, animate_print, clear_screen
 from pprint import pprint
@@ -11,6 +11,7 @@ PERIODICA_DIR = pathlib.Path(__file__).resolve().parent.parent
 OUTPUT_FILE = PERIODICA_DIR / "src" / "output.json"
 CONFIG_FILE = PERIODICA_DIR / "src" / "config.json"
 DATA_FILE = PERIODICA_DIR / "src" / "data.json"
+PYPROJECT_FILE = PERIODICA_DIR / "pyproject.toml"
 
 EXPORT = False
 DEBUG = False
@@ -71,6 +72,16 @@ subshell_colors = {
     'd': CYAN,
     'f': MAGENTA
 }
+
+# Fetch arguments that are not flags (removes --export, --compare, etc.)
+def get_positional_args() -> list[str]:
+    return [arg for arg in sys.argv[1:] if not arg.startswith("--")]
+
+def get_flags() -> list[str]:
+    return [arg for arg in sys.argv[1:] if arg.startswith("--")]
+
+flag_arguments = [arg.strip().lower() for arg in get_flags()]
+positional_arguments = [arg.strip().lower() for arg in get_positional_args()]
 
 def celcius_to_kelvin(celsius):
 	return (celsius * 1e16 + 273.15 * 1e16) / 1e16
@@ -177,18 +188,14 @@ def view_table():
 
     sys.exit(0)
 
-# Fetch arguments that are not flags (removes --export, --compare, etc.)
-def get_positional_args() -> list[str]:
-    return [arg for arg in sys.argv[1:] if not arg.startswith("--")]
-
 def export():
+    global EXPORT, positional_arguments
+
     log.info("User gave --export flag; redirecting to export logic.")
-    global EXPORT
     EXPORT = True
     sys.argv.remove("--export")
 
-    args = get_positional_args()
-    user_input = args[0] if args else None
+    user_input = positional_arguments[0] if positional_arguments else None
 
     element = None
     if user_input:
@@ -233,9 +240,8 @@ def export():
 
     animate_print(fore(f"Successfully saved to {OUTPUT_FILE}.", GREEN))
     sys.exit(0)
-
 def compare():
-    global full_data
+    global full_data, positional_arguments
     log.info("User gave --compare flag; redirecting to another logic.")
 
     factors = [
@@ -247,8 +253,7 @@ def compare():
         "down_quarks"
     ]
 
-    args = get_positional_args()
-    factor_candidate = args[0] if args else None
+    factor_candidate = positional_arguments[0] if positional_arguments else None
 
     def match_input(data: dict[str, dict], factor):
         try:
@@ -306,23 +311,22 @@ def compare():
     sys.exit(0)
 
 def bond_type():
-    global full_data
+    global full_data, positional_arguments
     log.info("User gave --bond-type flag; redirecting to bond type logic.")
 
-    args = get_positional_args()
     primary_element = None
     secondary_element = None
 
-    if len(args) >= 2:
-        primary_element, _ = find_element(args[0])
-        secondary_element, _ = find_element(args[1])
+    if len(positional_arguments) >= 2:
+        primary_element, _ = find_element(positional_arguments[0])
+        secondary_element, _ = find_element(positional_arguments[1])
 
         if primary_element is None or secondary_element is None:
             animate_print(fore("One or both elements could not be resolved from the arguments. Please provide them manually.", YELLOW))
             primary_element = None
             secondary_element = None
         else:
-            log.info(f"Resolved both elements from CLI args: {args[0]}, {args[1]}")
+            log.info(f"Resolved both elements from CLI args: {positional_arguments[0]}, {positional_arguments[1]}")
 
     if primary_element is None:
         animate_print()
@@ -396,8 +400,18 @@ def debug():
     log = Logger(debug=DEBUG)
     log.info("Enabled debug mode.")
 
-def get_element_argument() -> str | None:
-    return next((arg for arg in sys.argv[1:] if not arg.startswith("--")), None)
+def fetch_version():
+    global PYPROJECT_FILE
+    from update import fetch_toml
+
+    log.info("User gave --version flag; showing version information.")
+
+    local_version = fetch_toml()
+
+    animate_print(f"Version: {local_version}")
+    animate_print(f"Python Interpreter: {".".join(platform.python_version_tuple())}")
+
+    sys.exit(0)
 
 def match_isotope_input(user_input) -> typing.Tuple[str | None, str | None]:
     match = re.match(r"^(\d+)([A-Za-z]+)$", user_input)
@@ -565,6 +579,7 @@ def safe_format(value, measurement, placeholder = "None"):
         return bold(str(value)) + measurement
 
     return fore(placeholder, NULL)
+
 # Other important functions / variables
 
 match random.randint(0, 3):
@@ -590,17 +605,18 @@ The vibrant colors and visuals were done with the help of {italic(bold("ANSI esc
 {dim("(You can disable this anytime in the config.json file, or using the --init flag.)")}
 There are also other flags you can provide to this CLI.
 
-- {bold("--debug")} - Enable debug mode for testing
+- {bold("--debug")} - Enable debug mode for testing (always the first priority)
 - {bold("--info")} - Give this information message
+- {bold("--version")} - Check the version
 - {bold("--init")} - Edit the settings
 - {bold("--update")} - Check for updates
 - {bold("--table")} - View the periodic table
-- {bold("--export")} \"element\" | \"isotope\" - Export element or isotope to a .json file
-- {bold("--compare")} \"factor\" - Compare all elements with a factor of \"factor\"
+- {bold("--export")} {fore("element", BLUE)},
+  {bold("--export")} {fore("isotope", GREEN)} - Export {fore("element", BLUE)} or {fore("isotope", GREEN)} to a .json file
+- {bold("--compare")} {fore("factor", RED)} - Compare all elements with a factor of {fore("factor", RED)}
 - {bold("--bond-type")} - Compare two elements and get their bond type
 - {bold("--random")} - Pick a random element
 
-{bold(f"Note: Flags have a priority with an order of up -> down in this list, meaning if you run this script with both --info and --init flags, it will open up the information page. {italic("The --debug flag is an exception.")}")}
 Also, for flags that import other scripts, debug mode does not apply. Sorry!
 
 Anyways, I hope you enjoy this small CLI. {bold("Please read the README.md file for more information!")}
@@ -658,8 +674,27 @@ if TERMINAL_WIDTH <= 80:
     log.warn("Not enough width for terminal.")
 
 if len(sys.argv) > 1:
-    if "--debug" in sys.argv:
-        sys.argv.remove("--debug")
+    valid_flags = [
+        "debug", "info", "init", "update", "table", "export", "compare", "bond-type", "random", "version"
+    ]
+
+    position_required_flags = [
+        "export", "compare", "bond-type"
+    ]
+
+    valid_flags = ["--" + flag for flag in valid_flags]
+
+    primary_flags = [flag for flag in flag_arguments if flag != "--debug"]
+
+    if len(primary_flags) != 1 or any(flag not in valid_flags for flag in primary_flags):
+        animate_print("Malformed flags structure. Run the script with the --info flag for more information.")
+        log.abort("Unrecognizable or multiple main flags detected.")
+
+    if primary_flags[0] not in position_required_flags and len(sys.argv[1:]) > len(flag_arguments):
+        animate_print("Unexpected positional argument. Refer to --info.")
+        log.abort("Unexpected additional arguments.")
+
+    if "--debug" in get_flags():
         debug()
 
     recognized_flag = (
@@ -670,11 +705,13 @@ if len(sys.argv) > 1:
         create_flag("--export", callable=export) or
         create_flag("--compare", callable=compare) or
         create_flag("--bond-type", callable=bond_type) or
-        create_flag("--random", callable=pick_random)
+        create_flag("--random", callable=pick_random) or
+        create_flag("--version", callable=fetch_version)
     )
 
     if not recognized_flag:
-        user_input = get_element_argument()
+        positional_arguments = get_positional_args()
+        user_input = positional_arguments[0] if positional_arguments else None
 
         if not user_input:
             animate_print(fore("No valid element or isotope provided. Falling back to interactive input.", RED))
