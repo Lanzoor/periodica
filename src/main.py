@@ -1,12 +1,42 @@
 #!/usr/bin/env python3
 
-import json, os, re, sys, difflib, random, typing, pathlib, textwrap, platform
+import platform, pathlib, subprocess, sys
+
+version_tuple = tuple(map(int, platform.python_version_tuple()))
+PERIODICA_DIR = pathlib.Path(__file__).resolve().parent.parent
+BUILD_FILE = PERIODICA_DIR / "build.py"
+
+if version_tuple < (3, 11, 0):
+    print("You are running this script with an outdated Python interpreter. Please update your Python interpreter if needed.")
+    sys.exit(0)
+
+VENV_DIR = PERIODICA_DIR / "venv"
+
+if not VENV_DIR.is_dir():
+    print("The virtual environment was not found. Should I run the build script for you? (Y/n)")
+
+    confirmation = input("> ").strip().lower()
+    if confirmation not in ["y", "yes", ""]:
+        print("You denied the file execution. Please run the build script yourself.")
+        sys.exit(0)
+    if BUILD_FILE.is_file():
+        subprocess.run([sys.executable, str(BUILD_FILE)], check=True)
+        sys.exit(0)
+    else:
+        print("The build script was not found. Please read the README.md for more information. (If that exists, that is.")
+
+import json, os, re, difflib, random, typing, textwrap
+
+try:
+    import utils
+except ImportError:
+    print("The utils helper library was not found. Please make sure you have the right files.")
+    sys.exit(1)
+
 from utils.loader import get_config, get_response, Logger
-from utils.terminal import RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, B_BLACK, B_GREEN, fore, bold, dim, italic, gradient, animate_print, clear_screen
+from utils.terminal import RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, BRIGHT_BLACK, BRIGHT_GREEN, fore, bold, dim, italic, gradient, animate_print, clear_screen
 from pprint import pprint
 
-# src -> periodica, two parents
-PERIODICA_DIR = pathlib.Path(__file__).resolve().parent.parent
 
 OUTPUT_FILE = PERIODICA_DIR / "src" / "output.json"
 CONFIG_FILE = PERIODICA_DIR / "src" / "config.json"
@@ -41,6 +71,8 @@ if truecolor:
     ORANGE = (245, 164, 66)
     INDIGO = (94, 52, 235)
     NULL = (115, 255, 225)
+    EXCITED = (185, 255, 128)
+    PERIWINKLE = (87, 89, 212)
 else:
     VALENCE_ELECTRONS_COL = YELLOW
     ELECTRONEG_COL = BLUE
@@ -51,6 +83,8 @@ else:
     ORANGE = YELLOW
     INDIGO = BLUE
     NULL = CYAN
+    EXCITED = GREEN
+    PERIWINKLE = CYAN
 
 cm3 = "cm³" if superscripts else "cm3"
 m3 = "m³" if superscripts else "m3"
@@ -59,9 +93,9 @@ mm2 = "mm²" if superscripts else "mm2"
 full_data = {}
 
 type_colors = {
-	"Reactive nonmetal": (130, 255, 151) if truecolor else B_GREEN,
+	"Reactive nonmetal": (130, 255, 151) if truecolor else BRIGHT_GREEN,
 	"Noble gas": YELLOW,
-	"Alkali metal": (215, 215, 215) if truecolor else B_BLACK,
+	"Alkali metal": (215, 215, 215) if truecolor else BRIGHT_BLACK,
 	"Alkali earth metal": ORANGE,
 	"Metalloid": CYAN
 }
@@ -477,7 +511,7 @@ def print_isotope(norm_iso, info, fullname):
         show_decay(info["decay"])
 
     if isinstance(info.get("metastable"), dict):
-        animate_print("      m - Metastable Isotopes:")
+        animate_print(f"      m - {fore("Metastable Isotopes", EXCITED)}:")
         for state, data in info["metastable"].items():
             display_meta = format_isotope(norm_iso, fullname, metastable=state)
             animate_print(f"        {bold(display_meta)}:")
@@ -918,7 +952,7 @@ for subshell_string in subshells:
 
 subshell_visualisation = "\n".join(formatted_lines)
 subshell_examples = "".join([fore(orbital, subshell_colors[orbital]) for orbital in list("spdf")])
-pair_determiner = fore("Diamagnetic", YELLOW) if unpaired_electrons == 0 else fore("Paramagnetic", ELECTRONEG_COL)
+pair_determiner = fore("Diamagnetic", VALENCE_ELECTRONS_COL) if unpaired_electrons == 0 else fore("Paramagnetic", ELECTRONEG_COL)
 
 # Physical properties
 
@@ -1015,12 +1049,11 @@ animate_print(f" e{convert_superscripts("-")} - {fore("Electrons", YELLOW)}: {bo
 animate_print(f" nv - {fore("Valence Electrons", VALENCE_ELECTRONS_COL)}: {bold(valence_electrons)}")
 animate_print(f" u - {fore("Up Quarks", GREEN)}: ({fore(protons, RED)} * 2) + {fore(neutrons, BLUE)} = {bold(up_quarks)}")
 animate_print(f" d - {fore("Down Quarks", CYAN)}: ({fore(protons, RED)} + ({fore(neutrons, BLUE)} * 2) = {bold(down_quarks)}")
-animate_print(f" A - \"Mass Number\": {fore(protons, RED)} + {fore(neutrons, BLUE)} = {bold(mass_number)}")
-animate_print(f" ⚛️ - Shells {dim(f"(The electron in {fore("yellow", VALENCE_ELECTRONS_COL)} is the valence electron)")}:\n    {shell_result}")
-animate_print(f" 🌀 - Subshells {dim(f"(Subshells are colored by their type. {subshell_examples})")}:\n    {subshell_result}")
+animate_print(f" ⚛️ - {fore("Shells", EXCITED)} {dim(f"(The electron in {fore("yellow", VALENCE_ELECTRONS_COL)} is the valence electron)")}:\n    {shell_result}")
+animate_print(f" 🌀 - {fore("Subshells", PERIWINKLE)} {dim(f"(Subshells are colored by their type. {subshell_examples})")}:\n    {subshell_result}")
 animate_print(f"      Breakdown:\n{subshell_visualisation}")
-animate_print(f"      Total unpaired electrons: {unpaired_electrons}, {pair_determiner}")
-animate_print(f"      Spin: {unpaired_electrons} * 0.5 = {unpaired_electrons * 0.5}")
+animate_print(f"      Total unpaired electrons: {bold(unpaired_electrons)}, {pair_determiner}")
+animate_print(f"      Spin: {unpaired_electrons} * 0.5 = {bold(unpaired_electrons * 0.5)}")
 animate_print(f" 🪞 - Isotopes ({len(isotopes.keys())}): {dim(f"(Decay processes in {fore("red", RED)} need verification. Do not trust them!)")}:")
 
 for isotope, information in isotopes.items():
@@ -1043,9 +1076,9 @@ animate_print()
 
 animate_print(f" χ - {fore("Electronegativity", ELECTRONEG_COL)}: {bold(electronegativity)}")
 animate_print(f" EA - Electron Affinity: {bold(electron_affinity)}eV = {bold(eV_to_kJpermol(electron_affinity))}kJ/mol")
-animate_print(f" IE - {fore("Ionization Energy", MAGENTA)}: {bold(ionization_energy)}eV = {bold(eV_to_kJpermol(ionization_energy))}kJ/mol")
+animate_print(f" IE - {fore("Ionization Energy", FEMALE)}: {bold(ionization_energy)}eV = {bold(eV_to_kJpermol(ionization_energy))}kJ/mol")
 animate_print(f" ⚡️ - {fore("Oxidation States", YELLOW)} {dim(f"(Only the ones that have {fore("color", BLUE)} are activated)")}:\n{"   " + negatives_result}\n{"   " + positives_result}\n")
-animate_print(f" ⚡️ - Conductivity Type: {bold(conductivity_type)}")
+animate_print(f" ⚡️ - {fore("Conductivity Type", BRIGHT_BLACK)}: {bold(conductivity_type)}")
 
 animate_print()
 print_header("Measurements")
@@ -1056,11 +1089,11 @@ animate_print(f"   r_calc - Calculated: {safe_format(radius['calculated'], 'pm',
 animate_print(f"   r_emp - Empirical: {safe_format(radius['empirical'], 'pm', 'N/A')}")
 animate_print(f"   r_cov - Covalent: {safe_format(radius['covalent'], 'pm', 'N/A')}")
 animate_print(f"   rvdW - Van der Waals: {safe_format(radius['van_der_waals'], 'pm', 'N/A')}\n")
-animate_print(" H - Hardness: ")
+animate_print(f" H - {fore("Hardness", PERIWINKLE)}: ")
 animate_print(f"   HB - Brinell: {safe_format(hardness['brinell'], f'kgf/{mm2}')}")
 animate_print(f"   H - Mohs: {safe_format(hardness['mohs'], '')}")
 animate_print(f"   HV - Vickers: {safe_format(hardness['vickers'], f'kgf/{mm2}')}\n")
-animate_print(" 🔃 - Moduli: ")
+animate_print(f" 🔃 - {fore("Moduli", EXCITED)}: ")
 animate_print(f"   K - Bulk Modulus: {safe_format(moduli['bulk'], 'GPa')}")
 animate_print(f"   E - Young's Modulus: {safe_format(moduli['young'], 'GPa')}")
 animate_print(f"   G - Shear Modulus: {safe_format(moduli['shear'], 'GPa')}")

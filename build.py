@@ -10,7 +10,7 @@ OS = platform.system()
 venv_path = script_dir / "venv"
 
 if OS not in ["Linux", "Darwin"]:
-    print(f"This tool is for Unix-based systems only. Please follow the README.md instructions, instead of this script. Unsupported OS: {OS}")
+    print(f"This tool is for Unix-based systems only. Please follow the README.md instructions if running on Windows, instead of this script. Unsupported OS: {OS}")
     sys.exit(1)
 
 py_cmd = "python3"

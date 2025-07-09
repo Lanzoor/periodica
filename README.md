@@ -28,8 +28,6 @@ chmod +x ~/dev/periodica/periodica.sh
 periodica
 ```
 
-> ⚠️ Absolutely DO NOT run or use the `periodica.bat` file on Linux! It just won't work, and even if it does, you probably won't be able to access the `main.py` file with `periodica`.
-
 ## 🪟 Windows
 
 ### 1. Install Python
@@ -73,24 +71,9 @@ py src/main.py
 
 Or open the folder and double-click `main.py` — then select the Python interpreter to open it.
 
-### 5. (Optional) Add the App on your PATH
-
-1. Press the shortcut `Win + R`, and in the input box, type `sysdm.cpl` carefully. Hit `Enter`.
-2. You will see a window named `System Properties`. Navigate to the `Advanced` tab.
-3. Click `Environment Variables...` at the bottom.
-4. Under `User variables`, select `Path` and click `Edit`.
-5. Click `New`, and paste the full absolute path to the folder containing your `periodica.bat` file.
-6. Now make sure to apply and confirm your edits. Exit all tabs.
-
-Now, you can just do this in a fresh terminal;
-
-```ps1
-periodica
-```
-
-And the project will automatically be runned once you type it.
-
 > ⚠️ **Absolutely DO NOT run the `periodica.sh` or `build.py` scripts on Windows! They're only made for Linux/macOS and can (and will) cause problems on Windows.**
+
+> **Please do not complain about the Windows installation process.** This program was built with Linux in mind.
 
 ## 🎉 You're Done!
 

@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# Determine where the script is being runned
 SOURCE="${BASH_SOURCE[0]}"
 while [ -L "$SOURCE" ]; do
   DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
@@ -10,11 +11,15 @@ SCRIPT_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
 
 cd "$SCRIPT_DIR" || exit 1
 
-if [ ! -d venv ]; then
-  echo "Virtual environment not found. Please run the build.py file."
-  exit 1
+# Activate the venv (that is, if it exists)
+if [ -d "$SCRIPT_DIR/venv" ]; then
+  source "$SCRIPT_DIR/venv/bin/activate"
 fi
 
-source "$SCRIPT_DIR/venv/bin/activate"
+# Run the main script
 python3 "$SCRIPT_DIR/src/main.py" "$@"
-deactivate
+
+# Deactivate it (again, only if it exists)
+if [ -n "$VIRTUAL_ENV" ]; then
+  deactivate
+fi

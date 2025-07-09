@@ -5,6 +5,7 @@ config = get_config()
 animation_type = config["animation"]
 animation_delay = config["animation_delay"]
 
+# Default supported terminal colors
 BLACK = 0
 RED = 1
 GREEN = 2
@@ -15,13 +16,13 @@ CYAN = 6
 WHITE = 7
 DEFAULT_COLOR = 9
 
-B_BLACK = 0 + 60
-B_RED = 1 + 60
-B_GREEN = 2 + 60
-B_YELLOW = 3 + 60
-B_BLUE = 4 + 60
-B_MAGENTA = 5 + 60
-B_CYAN = 6 + 60
+BRIGHT_BLACK = 0 + 60
+BRIGHT_RED = 1 + 60
+BRIGHT_GREEN = 2 + 60
+BRIGHT_YELLOW = 3 + 60
+BRIGHT_BLUE = 4 + 60
+BRIGHT_MAGENTA = 5 + 60
+BRIGHT_CYAN = 6 + 60
 
 def fore(string, color: int | list[int] | tuple[int, int, int]) -> str:
     if isinstance(color, int):
