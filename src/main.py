@@ -240,6 +240,7 @@ def export():
 
     animate_print(fore(f"Successfully saved to {OUTPUT_FILE}.", GREEN))
     sys.exit(0)
+
 def compare():
     global full_data, positional_arguments
     log.info("User gave --compare flag; redirecting to another logic.")
@@ -594,7 +595,7 @@ match random.randint(0, 3):
     case _:
         tip = ""
 
-periodica = bold(gradient("periodica", (156, 140, 255), (140, 255, 245)) if config['truecolor'] else fore("periodica", BLUE))
+periodica = bold(gradient("Periodica", (156, 140, 255), (140, 255, 245)) if config['truecolor'] else fore("periodica", BLUE))
 
 program_information = f"""
 Welcome to {periodica}!
@@ -674,27 +675,36 @@ if TERMINAL_WIDTH <= 80:
     log.warn("Not enough width for terminal.")
 
 if len(sys.argv) > 1:
-    valid_flags = [
-        "debug", "info", "init", "update", "table", "export", "compare", "bond-type", "random", "version"
+    valid_flag_names = [
+        "debug", "info", "init", "update", "table", "export",
+        "compare", "bond-type", "random", "version"
     ]
 
-    position_required_flags = [
+    flags_that_require_position_argument = [
         "export", "compare", "bond-type"
     ]
 
-    valid_flags = ["--" + flag for flag in valid_flags]
+    valid_flags = ["--" + flag for flag in valid_flag_names]
 
+    flag_arguments = get_flags()
+    positional_arguments = get_positional_args()
     primary_flags = [flag for flag in flag_arguments if flag != "--debug"]
 
-    if len(primary_flags) != 1 or any(flag not in valid_flags for flag in primary_flags):
+    user_input = None
+
+    if len(primary_flags) == 0:
+        # No flags provided — treat as standalone element/isotope lookup
+        user_input = positional_arguments[0] if positional_arguments else None
+    elif len(primary_flags) != 1 or any(flag not in valid_flags for flag in primary_flags):
         animate_print("Malformed flags structure. Run the script with the --info flag for more information.")
         log.abort("Unrecognizable or multiple main flags detected.")
+    else:
+        primary_flag = primary_flags[0]
+        if primary_flag.replace("--", "") not in flags_that_require_position_argument and len(positional_arguments) > 0:
+            animate_print("Unexpected positional argument. Refer to --info.")
+            log.abort("Unexpected additional arguments.")
 
-    if primary_flags[0] not in position_required_flags and len(sys.argv[1:]) > len(flag_arguments):
-        animate_print("Unexpected positional argument. Refer to --info.")
-        log.abort("Unexpected additional arguments.")
-
-    if "--debug" in get_flags():
+    if "--debug" in flag_arguments:
         debug()
 
     recognized_flag = (
@@ -710,9 +720,6 @@ if len(sys.argv) > 1:
     )
 
     if not recognized_flag:
-        positional_arguments = get_positional_args()
-        user_input = positional_arguments[0] if positional_arguments else None
-
         if not user_input:
             animate_print(fore("No valid element or isotope provided. Falling back to interactive input.", RED))
             log.warn("Argv missing valid content, fallback to interactive.")
