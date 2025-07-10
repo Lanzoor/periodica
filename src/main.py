@@ -25,7 +25,7 @@ if not VENV_DIR.is_dir():
     else:
         print("The build script was not found. Please read the README.md for more information. (If that exists, that is.")
 
-import json, os, re, difflib, random, typing, textwrap
+import json, os, re, difflib, random, typing, textwrap, math
 
 try:
     import utils
@@ -73,6 +73,7 @@ if truecolor:
     NULL = (115, 255, 225)
     EXCITED = (185, 255, 128)
     PERIWINKLE = (87, 89, 212)
+    GOLD = (255, 209, 102)
 else:
     VALENCE_ELECTRONS_COL = YELLOW
     ELECTRONEG_COL = BLUE
@@ -85,6 +86,7 @@ else:
     NULL = CYAN
     EXCITED = GREEN
     PERIWINKLE = CYAN
+    GOLD = YELLOW
 
 cm3 = "cm³" if superscripts else "cm3"
 m3 = "m³" if superscripts else "m3"
@@ -134,6 +136,99 @@ def print_separator():
     print()
     print("-" * TERMINAL_WIDTH)
     print()
+
+def ordinal(number):
+    if 10 <= number % 100 <= 20:
+        suffix = "th"
+    else:
+        suffix = {1: "st", 2: "nd", 3: "rd"}.get(number % 10, "th")
+    return f"{number}{suffix}"
+
+subshell_types = {
+    "s": 0,
+    "p": 1,
+    "d": 2,
+    "f": 3
+}
+subshell_types = {
+    "s": 0,
+    "p": 1,
+    "d": 2,
+    "f": 3
+}
+
+def parse_configuration(subshells):
+    config = []
+    pattern = re.compile(r"(\d+)([spdf])(\d+)")
+    for subshell in subshells:
+        match = pattern.fullmatch(subshell)
+        if match:
+            n, l, count = match.groups()
+            config.append((int(n), l, int(count)))
+    return config
+
+def slaters_shielding(config, remove_subshell):
+    shielding = 0.0
+    n_target, l_target = int(remove_subshell[0]), remove_subshell[1]
+    group_type = subshell_types[l_target]
+
+    for n, l, count in config:
+        if n == n_target:
+            if group_type in (0, 1):
+                shielding += 0.35 * (count - 1 if l == l_target else count)
+            else:
+                shielding += 0.35 * (count - 1 if l == l_target else count)
+        elif n == n_target - 1:
+            if group_type in (0, 1):
+                shielding += 0.85 * count
+            else:
+                shielding += 1.00 * count
+        elif n < n_target - 1:
+            shielding += 1.00 * count
+
+    return shielding
+
+def calculate_ionization_series(subshells: list[str], atomic_number: int, ionization_energy: float) -> str:
+    lines = []
+    config = parse_configuration(subshells)
+    RY = 13.6
+
+    for index in range(atomic_number):
+        last_filled = None
+        for idx in range(len(config) - 1, -1, -1):
+            n, l, c = config[idx]
+            if c > 0:
+                last_filled = (n, l)
+                break
+
+        if last_filled is None:
+            break
+
+        subshell_str = f"{last_filled[0]}{last_filled[1]}"
+        n_target = last_filled[0]
+        sigma = slaters_shielding(config, subshell_str)
+        Z_eff = atomic_number - sigma
+
+        if index == 0:
+            IE = ionization_energy
+        else:
+            IE = RY * (Z_eff ** 2) / (n_target ** 2)
+
+        lines.append(
+            f"  - {bold(ordinal(index + 1))} Ionization:\n"
+            f"    {fore('Removed', RED)} = {subshell_str}\n"
+            f"    σ       = {sigma:.2f}\n"
+            f"    Z_eff   = {Z_eff:.2f}\n"
+            f"    {fore('IE', FEMALE)}      = {bold(f'{IE:.3f}')}{"±30 eV" if index != 0 else ""}\n"
+        )
+
+        for idx in range(len(config) - 1, -1, -1):
+            n, l, c = config[idx]
+            if (n, l) == last_filled and c > 0:
+                config[idx] = (n, l, c - 1)
+                break
+
+    return "\n".join(lines)
 
 def convert_superscripts(string: str) -> str:
     superscript_map = {
@@ -889,22 +984,24 @@ for index, electron in enumerate(shells):
         shell_result += f"{bold(str(electron) + str(possible_shells[index]))} ({electron}/{max_capacity}), "
     else:
         shell_result += f"{bold(fore(electron, VALENCE_ELECTRONS_COL) + fore(possible_shells[index], VALENCE_ELECTRONS_COL))} ({electron}/{max_capacity})"
-
 unpaired_electrons = 0
 subshell_capacities = {"s": 2, "p": 6, "d": 10, "f": 14}
 orbital_capacity_map = {"s": 1, "p": 3, "d": 5, "f": 7}
 
 subshell_result = ""
+pattern = re.compile(r"(\d)([spdf])(\d+)")
+
 for subshell in subshells:
     if len(subshell) < 3 or not subshell[-1].isdigit():
         log.warn(f"To the developers, a malformed subshell was detected in {fullname.capitalize()}. Issue: {subshell}")
         continue
 
     formatted_subshell = subshell[:-1] + (convert_superscripts(subshell[-1]) if superscripts else subshell[-1])
-    match = re.match(r"(\d)([spdf])(\d+)", subshell)
+    match = pattern.match(subshell)
 
     if match:
-        _, subshell_type, electron_count = match.groups()
+        energy_level, subshell_type, electron_count = match.groups()
+        electron_count = int(electron_count)
         max_capacity = subshell_capacities[subshell_type]
         colored_subshell = fore(formatted_subshell, subshell_colors.get(subshell_type, (255, 255, 255)))
         subshell_result += f"{bold(colored_subshell)} ({electron_count}/{max_capacity}), "
@@ -912,19 +1009,20 @@ for subshell in subshells:
         subshell_type = subshell[1] if len(subshell) > 1 else 's'
         colored_subshell = fore(formatted_subshell, subshell_colors.get(subshell_type, (255, 255, 255)))
         subshell_result += f"{bold(colored_subshell)}, "
+
 subshell_result = subshell_result.rstrip(", ")
 
 formatted_lines = []
-pattern = re.compile(r"(\d+)([spdf])(\d+)")
-
 for subshell_string in subshells:
     match = pattern.fullmatch(subshell_string)
     if not match:
         continue
+
     energy_level, orbital_type, electron_count = match.groups()
     electron_count = int(electron_count)
     number_of_orbitals = orbital_capacity_map[orbital_type]
     orbitals = [""] * number_of_orbitals
+
     for index in range(min(electron_count, number_of_orbitals)):
         orbitals[index] = "↑"
     remaining_electrons = electron_count - number_of_orbitals
@@ -940,7 +1038,7 @@ for subshell_string in subshells:
             orbital_boxes.append("[  ]")
         else:
             spins_colored = "".join(
-                fore("↑", GREEN) if spin == "↑" else fore("↓", RED)
+                fore("\u2191", GREEN) if spin == "↑" else fore("\u2193", RED)
                 for spin in orbital
             )
             orbital_boxes.append(f"[{spins_colored}]")
@@ -1065,7 +1163,7 @@ animate_print()
 
 animate_print(f" 💧 - {fore("Melting Point", MELT_COL)}: {bold(melting_point)}°C = {bold(celcius_to_fahrenheit(melting_point))}°F = {bold(celcius_to_kelvin(melting_point))}K")
 animate_print(f" 💨 - {fore("Boiling Point", BOIL_COL)}: {bold(boiling_point)}°C = {bold(celcius_to_fahrenheit(boiling_point))}°F = {bold(celcius_to_kelvin(boiling_point))}K")
-animate_print(f" A - Mass Number: {fore(protons, RED)} + {fore(neutrons, BLUE)} = {bold(protons + neutrons)}")
+animate_print(f" A - {fore("Mass Number", GOLD)}: {fore(protons, RED)} + {fore(neutrons, BLUE)} = {bold(protons + neutrons)}")
 animate_print(f" u - Atomic Mass: {bold(atomic_mass)}g/mol")
 animate_print(f" ☢️ - {fore("Radioactive", ORANGE)}: {fore("Yes", GREEN) if radioactive else fore("No", RED)}")
 animate_print(f" t1/2 - Half Life: {bold(half_life if not (half_life is None) else fore("Stable", CYAN))}")
@@ -1077,6 +1175,9 @@ animate_print()
 animate_print(f" χ - {fore("Electronegativity", ELECTRONEG_COL)}: {bold(electronegativity)}")
 animate_print(f" EA - Electron Affinity: {bold(electron_affinity)}eV = {bold(eV_to_kJpermol(electron_affinity))}kJ/mol")
 animate_print(f" IE - {fore("Ionization Energy", FEMALE)}: {bold(ionization_energy)}eV = {bold(eV_to_kJpermol(ionization_energy))}kJ/mol")
+animate_print(f"      {bold("ESTIMATED")} Ionization Energy Series {bold("(THIS IS A VERY HUGE SIMPLIFICATION. Do not rely on them.")}: ")
+animate_print(f"\n{calculate_ionization_series(subshells, atomic_number, ionization_energy)}\n")
+
 animate_print(f" ⚡️ - {fore("Oxidation States", YELLOW)} {dim(f"(Only the ones that have {fore("color", BLUE)} are activated)")}:\n{"   " + negatives_result}\n{"   " + positives_result}\n")
 animate_print(f" ⚡️ - {fore("Conductivity Type", BRIGHT_BLACK)}: {bold(conductivity_type)}")
 
@@ -1084,7 +1185,7 @@ animate_print()
 print_header("Measurements")
 animate_print()
 
-animate_print(" r - Radius: ")
+animate_print(f" r - {fore("Radius", FEMALE)}: ")
 animate_print(f"   r_calc - Calculated: {safe_format(radius['calculated'], 'pm', 'N/A')}")
 animate_print(f"   r_emp - Empirical: {safe_format(radius['empirical'], 'pm', 'N/A')}")
 animate_print(f"   r_cov - Covalent: {safe_format(radius['covalent'], 'pm', 'N/A')}")
