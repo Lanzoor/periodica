@@ -43,6 +43,15 @@ def toggle_truecolor():
     logging.info(f"Setting 'Use Truecolor' changed from {not truecolor} to {truecolor}.")
     time.sleep(1)
 
+def toggle_debugging():
+    global config, constant_debugging
+
+    config['constant_debugging'] = not config['constant_debugging']
+    constant_debugging = config["constant_debugging"]
+    print(f"The setting 'Debug Constantly' was changed to {bold(fore(constant_debugging, GREEN) if constant_debugging else fore(constant_debugging, RED))}.")
+    logging.info(f"Setting 'Debug Constantly' changed from {not constant_debugging} to {constant_debugging}.")
+    time.sleep(1)
+
 def change_isotope_format():
     global config, isotope_format
 
@@ -158,16 +167,18 @@ try:
         isotope_format = config["isotope_format"]
         animation_type = config["animation"]
         animation_delay = config["animation_delay"]
+        constant_debugging = config["constant_debugging"]
 
         clear_screen()
         print("NOTE: This program intentionally does not respect your animation settings. Please understand.\n")
         print("Here are all available options that you can change in your config file.\n")
         print(f"1. Use Superscripts: Determines whether to use superscripts (Set to {bold(fore(superscripts, GREEN) if superscripts else fore(superscripts, RED))})")
         print(f"2. Use Truecolor: Determines whether to use RGB-accurate coloring in terminal (Set to {bold(fore(truecolor, GREEN) if truecolor else fore(truecolor, RED))})")
-        print("3. Isotope Display Format: Determines how isotopes are formatted")
-        print(f"4. Print Animation: Determines the print animation (Set to {bold(animation_type.capitalize())})")
-        print(f"5. Animation Delay: Determines the delay between lines / characters based on animation type, does not work when animation is set to 'none' (Set to {bold(fore(animation_delay, CYAN))})")
-        print(f"6. Reset Data: {bold("Overwrites all settings to the default settings.")}\n")
+        print(f"3. Debug Constantly: Determines whether to log data constantly. Usually, you need the --debug flag to do it, but this constantly enables debug mode. (Set to {bold(fore(constant_debugging, GREEN) if constant_debugging else fore(constant_debugging, RED))})")
+        print("4. Isotope Display Format: Determines how isotopes are formatted")
+        print(f"5. Print Animation: Determines the print animation (Set to {bold(animation_type.capitalize())})")
+        print(f"6. Animation Delay: Determines the delay between lines / characters based on animation type, does not work when animation is set to 'none' (Set to {bold(fore(animation_delay, CYAN))})")
+        print(f"7. Reset Data: {bold("Overwrites all settings to the default settings.")}\n")
 
         print(f"To change a setting, please input the corresponding function name. To exit, please enter the {bold('q')} key.\nTo return to the main program, please enter the {bold('r')} key with optional arguments.")
         user_input = input("> ").lower().strip()
@@ -195,10 +206,11 @@ try:
         recognized_flag = (
             create_fn_event(user_input, 1, toggle_superscript) or
             create_fn_event(user_input, 2, toggle_truecolor) or
-            create_fn_event(user_input, 3, change_isotope_format) or
-            create_fn_event(user_input, 4, change_animation_type) or
-            create_fn_event(user_input, 5, change_animation_delay) or
-            create_fn_event(user_input, 6, reset)
+            create_fn_event(user_input, 3, toggle_debugging) or
+            create_fn_event(user_input, 4, change_isotope_format) or
+            create_fn_event(user_input, 5, change_animation_type) or
+            create_fn_event(user_input, 6, change_animation_delay) or
+            create_fn_event(user_input, 7, reset)
         )
 
         if not recognized_flag:

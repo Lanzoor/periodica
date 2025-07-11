@@ -20,28 +20,28 @@ class Logger():
         self.debug = debug
 
     def info(self, message):
-        from .terminal import animate_print, fore, GREEN
+        from .terminal import fore, GREEN
         logging.info(message)
         if self.debug:
-            animate_print(fore("INFO: " + message, GREEN))
+            print(fore("INFO: " + message, GREEN))
 
     def warn(self, message):
-        from .terminal import animate_print, fore, YELLOW
+        from .terminal import fore, YELLOW
         logging.warning(message)
         if self.debug:
-            animate_print(fore("WARNING: " + message, YELLOW))
+            print(fore("WARNING: " + message, YELLOW))
 
     def error(self, message):
-        from .terminal import animate_print, fore, RED
+        from .terminal import fore, RED
         logging.error(message)
         if self.debug:
-            animate_print(fore("ERROR: " + message, RED))
+            print(fore("ERROR: " + message, RED))
 
     def fatal(self, message):
-        from .terminal import animate_print, fore, BLUE
+        from .terminal import fore, BLUE
         logging.fatal(message)
         if self.debug:
-            animate_print(fore("FATAL: " + message, BLUE))
+            print(fore("FATAL: " + message, BLUE))
 
     def abort(self, message):
         self.error(message)
@@ -55,7 +55,8 @@ default_config = {
     "truecolor": True,
     "isotope_format": "fullname-number",
     "animation": "none",
-    "animation_delay": 0.0005
+    "animation_delay": 0.0005,
+    "constant_debugging": False
 }
 
 valid_formats = ["fullname-number", "symbol-number", "numbersymbol", "number-symbol"]
@@ -91,20 +92,19 @@ def save_config():
         json.dump(_config or default_config, file, indent=4)
 
 def get_response(url: str):
-    from .terminal import animate_print
     try:
         import requests
     except ImportError:
-        animate_print("Whoopsies, the requests module was not found in your environment! Please read the README.md file for more information.")
+        print("Whoopsies, the requests module was not found in your environment! Please read the README.md file for more information.")
         log.abort("Couldn't proceed; the requests library was not found in the environment.")
     try:
         response = requests.get(url)
         response.raise_for_status()
-        animate_print(f"HTTP status code: {response.status_code} (pass)")
+        print(f"HTTP status code: {response.status_code} (pass)")
         return response
     except requests.exceptions.ConnectionError:
-        animate_print("Whoops! There was a network connection error. Please check your network connection, and try again later.")
+        print("Whoops! There was a network connection error. Please check your network connection, and try again later.")
         log.abort("Couldn't proceed; failed to connect to page.")
     except requests.exceptions.HTTPError:
-        animate_print(f"Failed to download data! HTTP status code: {response.status_code}")
+        print(f"Failed to download data! HTTP status code: {response.status_code}")
         log.abort(f"Failed to fetch data. Status code: {response.status_code}.")

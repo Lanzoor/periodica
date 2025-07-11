@@ -35,8 +35,8 @@ def fore(string, color: int | list[int] | tuple[int, int, int]) -> str:
             return processed
     else:
         processed = str(string)
-        r, g, b = color
-        return f"\033[38;2;{r};{g};{b}m{processed}\033[39m"
+        red, green, blue = color
+        return f"\033[38;2;{red};{green};{blue}m{processed}\033[39m"
 
 def bold(string) -> str:
     return f"\033[1m{string}\033[22m"
@@ -59,24 +59,33 @@ def blink(string) -> str:
 def inverse_color(string) -> str:
     return f"\033[7m{string}\033[27m"
 
-def gradient(string, start_rgb: list[int] | tuple[int, int, int], end_rgb: list[int] | tuple[int, int, int]):
-    processed = str(string)
-    start_h, start_l, start_s = colorsys.rgb_to_hls(start_rgb[0] / 255, start_rgb[1] / 255, start_rgb[2] / 255)
-    end_h, end_l, end_s = colorsys.rgb_to_hls(end_rgb[0] / 255, end_rgb[1] / 255, end_rgb[2] / 255)
-    processed = [char for char in processed if char != " "]
-    length = len(processed)
-    res = list(processed)
-    processed_index = 0
-    for index, char in enumerate(res):
-        if char == " ":
-            continue
-        interpolated_h = start_h + (end_h - start_h) * (processed_index / length)
-        interpolated_l = start_l + (end_l - start_l) * (processed_index / length)
-        interpolated_s = start_s + (end_s - start_s) * (processed_index / length)
-        new_r, new_g, new_b = [int(element * 255) for element in colorsys.hls_to_rgb(interpolated_h, interpolated_l, interpolated_s)]
-        res[index] = fore(char, (new_r, new_g, new_b))
-        processed_index += 1
-    return "".join(res)
+def gradient(message, start_rgb: list[int] | tuple[int, int, int], end_rgb: list[int] | tuple[int, int, int]):
+    start_hue, start_lightness, start_saturation = colorsys.rgb_to_hls(
+        start_rgb[0] / 255, start_rgb[1] / 255, start_rgb[2] / 255
+    )
+    end_hue, end_lightness, end_saturation = colorsys.rgb_to_hls(
+        end_rgb[0] / 255, end_rgb[1] / 255, end_rgb[2] / 255
+    )
+
+    string_length = len(message)
+    if string_length == 0:
+        return ""
+
+    result_characters = list(message)
+
+    for index, character in enumerate(result_characters):
+        interpolation_factor = index / (string_length - 1) if string_length > 1 else 0
+        interpolated_hue = start_hue + (end_hue - start_hue) * interpolation_factor
+        interpolated_lightness = start_lightness + (end_lightness - start_lightness) * interpolation_factor
+        interpolated_saturation = start_saturation + (end_saturation - start_saturation) * interpolation_factor
+
+        red, green, blue = [
+            int(value * 255)
+            for value in colorsys.hls_to_rgb(interpolated_hue, interpolated_lightness, interpolated_saturation)
+        ]
+
+        result_characters[index] = fore(character, (red, green, blue))
+    return "".join(result_characters)
 
 def clear_screen():
     print("\r\033[2J\033[H", end='', flush=True)
