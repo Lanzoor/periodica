@@ -1,12 +1,12 @@
 import tomllib, sys, subprocess, time, platform, pathlib
 from utils.terminal import bold, fore, RED, BLUE
-from utils.loader import Logger, get_response
+from utils.loader import Logger, get_response, failsafe
 
 PERIODICA_DIR = pathlib.Path(__file__).resolve().parent.parent
 PYPROJECT_FILE = PERIODICA_DIR / "pyproject.toml"
 BUILD_FILE = PERIODICA_DIR / "build.py"
 
-log = Logger(debug=False)
+log = Logger(enable_debugging=False)
 
 if __name__ == "__main__":
     print("Please refrain from running this script manually. Instead, please run the periodica.sh file with the --update flag.")
@@ -21,8 +21,7 @@ if OS not in ["Linux", "Darwin"]:
 try:
     from packaging import version
 except ImportError:
-    print("Whoopsies, the packaging module was not found in your environment! Please read the README.md file for more information.")
-    log.abort("Couldn't proceed; the packaging library was not found in the environment.")
+    failsafe()
 
 def fetch_toml():
     try:

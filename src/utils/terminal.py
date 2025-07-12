@@ -2,7 +2,7 @@ from utils.loader import get_config, logging
 import re, sys, time, colorsys
 
 config = get_config()
-animation_type = config["animation"]
+animation_type = config["animation_type"]
 animation_delay = config["animation_delay"]
 
 # Default supported terminal colors

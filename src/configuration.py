@@ -1,6 +1,6 @@
 import time, sys, pathlib, subprocess
 from utils.terminal import  RED, GREEN, CYAN, fore, bold, dim, clear_screen, clear_line
-from utils.loader import logging,get_config, save_config, valid_formats, valid_animations, default_config
+from utils.loader import logging,get_config, save_config, valid_formats, valid_animation_types, default_config
 
 if __name__ == "__main__":
     print("Please refrain from running this script manually. Instead, please run the periodica.sh file with the --init flag.")
@@ -26,21 +26,21 @@ def create_fn_event(input: str, function_no: int, callable):
     return False
 
 def toggle_superscript():
-    global config, superscripts
+    global config, use_superscripts
 
     config['use_superscripts'] = not config['use_superscripts']
-    superscripts = config["use_superscripts"]
-    print(f"The setting 'Use Superscripts' was changed to {bold(fore(superscripts, GREEN) if superscripts else fore(superscripts, RED))}.")
-    logging.info(f"Setting 'Use Superscripts' changed from {not superscripts} to {superscripts}.")
+    use_superscripts = config["use_superscripts"]
+    print(f"The setting 'Use Superscripts' was changed to {bold(fore(use_superscripts, GREEN) if use_superscripts else fore(use_superscripts, RED))}.")
+    logging.info(f"Setting 'Use Superscripts' changed from {not use_superscripts} to {use_superscripts}.")
     time.sleep(1)
 
 def toggle_truecolor():
-    global config, truecolor
+    global config, support_truecolor
 
     config['truecolor'] = not config['truecolor']
-    truecolor = config["truecolor"]
-    print(f"The setting 'Use Truecolor' was changed to {bold(fore(truecolor, GREEN) if truecolor else fore(truecolor, RED))}.")
-    logging.info(f"Setting 'Use Truecolor' changed from {not truecolor} to {truecolor}.")
+    support_truecolor = config["truecolor"]
+    print(f"The setting 'Use Truecolor' was changed to {bold(fore(support_truecolor, GREEN) if support_truecolor else fore(support_truecolor, RED))}.")
+    logging.info(f"Setting 'Use Truecolor' changed from {not support_truecolor} to {support_truecolor}.")
     time.sleep(1)
 
 def toggle_debugging():
@@ -92,7 +92,7 @@ def change_animation_type():
     global config, animation_type
 
     user_input = ""
-    while user_input not in valid_animations:
+    while user_input not in valid_animation_types:
         clear_screen()
         print("You are about to change the animation type. Here are all valid options;\n")
 
@@ -105,18 +105,18 @@ def change_animation_type():
 
         try:
             user_input = int(user_input)
-            config['animation'] = valid_animations[user_input - 1]
-            animation_type = config["animation"]
+            config['animation'] = valid_animation_types[user_input - 1]
+            animation_type = config["animation_type"]
             print(f"Successfully changed option 'Animation Type' to {bold(animation_type)}.")
             logging.info(f"Setting 'Animation Type' changed to {animation_type}.")
             break
         except ValueError:
-            if user_input not in valid_animations:
+            if user_input not in valid_animation_types:
                 print(f"{user_input} is neither a valid option name nor a valid option number. Please try again.")
                 logging.warning(f"{user_input} was neither a valid option name nor a valid option number.")
                 continue
             config['animation'] = user_input
-            animation_type = config["animation"]
+            animation_type = config["animation_type"]
             print(f"Successfully changed option 'Animation Type' to {bold(animation_type)}.")
             logging.info(f"Setting 'Animation Type' changed to {animation_type}.")
             break
@@ -162,18 +162,18 @@ def reset():
 
 try:
     while True:
-        superscripts = config["use_superscripts"]
-        truecolor = config["truecolor"]
+        use_superscripts = config["use_superscripts"]
+        support_truecolor = config["truecolor"]
         isotope_format = config["isotope_format"]
-        animation_type = config["animation"]
+        animation_type = config["animation_type"]
         animation_delay = config["animation_delay"]
         constant_debugging = config["constant_debugging"]
 
         clear_screen()
         print("NOTE: This program intentionally does not respect your animation settings. Please understand.\n")
         print("Here are all available options that you can change in your config file.\n")
-        print(f"1. Use Superscripts: Determines whether to use superscripts (Set to {bold(fore(superscripts, GREEN) if superscripts else fore(superscripts, RED))})")
-        print(f"2. Use Truecolor: Determines whether to use RGB-accurate coloring in terminal (Set to {bold(fore(truecolor, GREEN) if truecolor else fore(truecolor, RED))})")
+        print(f"1. Use Superscripts: Determines whether to use superscripts (Set to {bold(fore(use_superscripts, GREEN) if use_superscripts else fore(use_superscripts, RED))})")
+        print(f"2. Use Truecolor: Determines whether to use RGB-accurate coloring in terminal (Set to {bold(fore(support_truecolor, GREEN) if support_truecolor else fore(support_truecolor, RED))})")
         print(f"3. Debug Constantly: Determines whether to log data constantly. Usually, you need the --debug flag to do it, but this constantly enables debug mode. (Set to {bold(fore(constant_debugging, GREEN) if constant_debugging else fore(constant_debugging, RED))})")
         print("4. Isotope Display Format: Determines how isotopes are formatted")
         print(f"5. Print Animation: Determines the print animation (Set to {bold(animation_type.capitalize())})")

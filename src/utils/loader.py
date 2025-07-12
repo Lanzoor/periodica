@@ -1,8 +1,10 @@
-import json, logging, time, sys, pathlib
+import json, logging, time, sys, pathlib, subprocess
 
 # utils -> src -> periodica, three parents
 PERIODICA_DIR = pathlib.Path(__file__).resolve().parent.parent.parent
 LOGGING_FILE = PERIODICA_DIR / "src" / "execution.log"
+VENV_DIR = PERIODICA_DIR / "venv"
+BUILD_FILE = PERIODICA_DIR / "build.py"
 
 with open(LOGGING_FILE, 'w', encoding="utf-8"):
     pass
@@ -16,31 +18,37 @@ logging.basicConfig(
 )
 
 class Logger():
-    def __init__(self, *, debug=False):
-        self.debug = debug
+    def __init__(self, *, enable_debugging=False):
+        self.enable_debugging = enable_debugging
+
+    def debug(self, message):
+        from .terminal import bold
+        logging.debug(message)
+        if self.enable_debugging:
+            print(bold("DEBUG: " + message))
 
     def info(self, message):
         from .terminal import fore, GREEN
         logging.info(message)
-        if self.debug:
+        if self.enable_debugging:
             print(fore("INFO: " + message, GREEN))
 
     def warn(self, message):
         from .terminal import fore, YELLOW
         logging.warning(message)
-        if self.debug:
+        if self.enable_debugging:
             print(fore("WARNING: " + message, YELLOW))
 
     def error(self, message):
         from .terminal import fore, RED
         logging.error(message)
-        if self.debug:
+        if self.enable_debugging:
             print(fore("ERROR: " + message, RED))
 
     def fatal(self, message):
         from .terminal import fore, BLUE
         logging.fatal(message)
-        if self.debug:
+        if self.enable_debugging:
             print(fore("FATAL: " + message, BLUE))
 
     def abort(self, message):
@@ -49,18 +57,19 @@ class Logger():
         self.fatal("Program terminated.")
         sys.exit(1)
 
-log = Logger(debug=False)
+log = Logger(enable_debugging=False)
+
 default_config = {
     "use_superscripts": True,
     "truecolor": True,
     "isotope_format": "fullname-number",
-    "animation": "none",
+    "animation_type": "none",
     "animation_delay": 0.0005,
     "constant_debugging": False
 }
 
 valid_formats = ["fullname-number", "symbol-number", "numbersymbol", "number-symbol"]
-valid_animations = ["char", "line", "none"]
+valid_animation_types = ["char", "line", "none"]
 
 _config = None
 
@@ -79,7 +88,7 @@ def get_config():
     for key, default in default_config.items():
         if key == "isotope_format" and _config.get(key) not in valid_formats:
             _config[key] = default
-        elif key == "animation" and _config.get(key) not in valid_animations:
+        elif key == "animation_type" and _config.get(key) not in valid_animation_types:
             _config[key] = default
         else:
             _config.setdefault(key, default)
@@ -95,8 +104,7 @@ def get_response(url: str):
     try:
         import requests
     except ImportError:
-        print("Whoopsies, the requests module was not found in your environment! Please read the README.md file for more information.")
-        log.abort("Couldn't proceed; the requests library was not found in the environment.")
+        failsafe()
     try:
         response = requests.get(url)
         response.raise_for_status()
@@ -108,3 +116,19 @@ def get_response(url: str):
     except requests.exceptions.HTTPError:
         print(f"Failed to download data! HTTP status code: {response.status_code}")
         log.abort(f"Failed to fetch data. Status code: {response.status_code}.")
+
+def failsafe():
+    if not VENV_DIR.is_dir():
+        print("The virtual environment was not found. Should I run the build script for you? (Y/n)")
+
+        confirmation = input("> ").strip().lower()
+        if confirmation not in ["y", "yes", ""]:
+            print("You denied the file execution. Please run the build script yourself.")
+            sys.exit(1)
+        if BUILD_FILE.is_file():
+            subprocess.run([sys.executable, str(BUILD_FILE)], check=True)
+            sys.exit(0)
+        else:
+            print("The build script was not found. Please read the README.md for more information. (If that even exists, that is.)")
+            sys.exit(1)
+

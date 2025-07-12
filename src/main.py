@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import platform, pathlib, subprocess, sys, json, os, re, difflib, random, typing, textwrap
+import platform, pathlib, sys, json, os, re, difflib, random, typing, textwrap
 
 try:
     import utils
@@ -8,24 +8,26 @@ except ImportError:
     print("The utils helper library was not found. Please ensure all required files are present.")
     sys.exit(1)
 
-from utils.loader import get_config, get_response, Logger
+from utils.loader import get_config, get_response, Logger, failsafe
 from utils.terminal import RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, BRIGHT_BLACK, BRIGHT_GREEN
 from utils.terminal import fore, bold, dim, italic, animate_print, clear_screen, gradient
 from pprint import pprint
 
+# Just in case when the venv does not exist
+failsafe()
+
 # Directory paths and variables
-VERSION_TUPLE = tuple(map(int, platform.python_version_tuple()))
 PERIODICA_DIR = pathlib.Path(__file__).resolve().parent.parent
 BUILD_FILE = PERIODICA_DIR / "build.py"
 OUTPUT_FILE = PERIODICA_DIR / "src" / "output.json"
 CONFIG_FILE = PERIODICA_DIR / "src" / "config.json"
 DATA_FILE = PERIODICA_DIR / "src" / "data.json"
 PYPROJECT_FILE = PERIODICA_DIR / "pyproject.toml"
-VENV_DIR = PERIODICA_DIR / "venv"
+
 
 EXPORT_ENABLED = False
 DEBUG_MODE = False
-logger = Logger(debug=DEBUG_MODE)
+logger = Logger(enable_debugging=DEBUG_MODE)
 
 element_data = None
 element_suggestion = ""
@@ -36,15 +38,15 @@ elementdata_malformed = False
 # Get configuration
 config = get_config()
 
-superscripts = config["use_superscripts"]
-truecolor = config["truecolor"]
+use_superscripts = config["use_superscripts"]
+support_truecolor = config["truecolor"]
 isotope_format = config["isotope_format"]
-animation_type = config["animation"]
+animation_type = config["animation_type"]
 animation_delay = config["animation_delay"]
 constant_debugging = config["constant_debugging"]
 
 # Defining custom colors (if truecolor is enabled)
-if truecolor:
+if support_truecolor:
     VALENCE_ELECTRONS_COL = (248, 255, 166)
     ELECTRONEG_COL = (131, 122, 255)
     MALE = (109, 214, 237)
@@ -71,16 +73,16 @@ else:
     PERIWINKLE = CYAN
     GOLD = YELLOW
 
-CUBIC_CENTIMETER = "cm³" if superscripts else "cm3"
-CUBIC_METER = "m³" if superscripts else "m3"
-SQUARE_MILLIMETER = "mm²" if superscripts else "mm2"
+CUBIC_CENTIMETER = "cm³" if use_superscripts else "cm3"
+CUBIC_METER = "m³" if use_superscripts else "m3"
+SQUARE_MILLIMETER = "mm²" if use_superscripts else "mm2"
 
 full_data = {}
 
 ELEMENT_TYPE_COLORS = {
-	"Reactive nonmetal": (130, 255, 151) if truecolor else BRIGHT_GREEN,
+	"Reactive nonmetal": (130, 255, 151) if support_truecolor else BRIGHT_GREEN,
 	"Noble gas": YELLOW,
-	"Alkali metal": (215, 215, 215) if truecolor else BRIGHT_BLACK,
+	"Alkali metal": (215, 215, 215) if support_truecolor else BRIGHT_BLACK,
 	"Alkali earth metal": ORANGE,
 	"Metalloid": CYAN
 }
@@ -138,7 +140,11 @@ def ordinal(number):
         suffix = {1: "st", 2: "nd", 3: "rd"}.get(number % 10, "th")
     return f"{number}{suffix}"
 
-def parse_electron_configuration(subshells):
+def parse_electron_configuration(subshells: list[str]) -> list[tuple[int, str, int]]:
+    logger.debug(f"Parsing subshells: {subshells}")
+    if not isinstance(subshells, list) or not all(isinstance(s, str) for s in subshells):
+        logger.error(f"Expected list[str], got {type(subshells)}: {subshells}")
+        return []
     config = []
     pattern = re.compile(r"(\d+)([spdf])(\d+)")
     for subshell in subshells:
@@ -146,14 +152,32 @@ def parse_electron_configuration(subshells):
         if match:
             quantum_no, azimuthal_no, count = match.groups()
             config.append((int(quantum_no), azimuthal_no, int(count)))
+        else:
+            logger.warn(f"Malformed subshell detected: {subshell}")
     return config
 
 def calculate_shielding_constant(subshell_list: list[str], target_subshell: str) -> float:
-    shielding_constant = 0.0
-    target_principal_quantum_number, target_subshell_type = int(target_subshell[0]), target_subshell[1]
-    target_azimuthal_quantum_number = SUBSHELL_AZIMUTHALS[target_subshell_type]
-    configuration = parse_electron_configuration(subshell_list)
+    logger.debug(f"Calculating shielding for target: {target_subshell}, subshells: {subshell_list}")
+    if not isinstance(subshell_list, list) or not all(isinstance(s, str) for s in subshell_list):
+        logger.error(f"Expected list[str], got {type(subshell_list)}: {subshell_list}")
+        return 0.0
+    if not isinstance(target_subshell, str) or len(target_subshell) < 2:
+        logger.error(f"Invalid target subshell: {target_subshell}")
+        return 0.0
 
+    try:
+        target_principal_quantum_number, target_subshell_type = int(target_subshell[0]), target_subshell[1]
+        target_azimuthal_quantum_number = {"s": 0, "p": 1, "d": 2, "f": 3}[target_subshell_type]
+    except (IndexError, KeyError, ValueError):
+        logger.warn(f"Invalid target subshell format: {target_subshell}")
+        return 0.0
+
+    configuration = parse_electron_configuration(subshell_list)
+    if not configuration:
+        logger.warn(f"No valid configuration for subshell list: {subshell_list}")
+        return 0.0
+
+    shielding_constant = 0.0
     for principal_quantum_number, subshell_type, electron_count in configuration:
         if principal_quantum_number == target_principal_quantum_number:
             contribution = 0.30 if subshell_type == "s" and principal_quantum_number == 1 else 0.35
@@ -168,17 +192,25 @@ def calculate_shielding_constant(subshell_list: list[str], target_subshell: str)
 
     return shielding_constant
 
-def calculate_ionization_series(subshells: list[str], atomic_number: int, ionization_energy: float) -> str:
+def calculate_ionization_series(subshells: list[str], atomic_number: int, ionization_energy: float | None) -> str:
+    import copy
+    logger.debug(f"Calculating ionization series for subshells: {subshells}, Z={atomic_number}")
     lines = []
     config = parse_electron_configuration(subshells)
+    if not config:
+        return fore("No valid subshell data for ionization series.", YELLOW)
+
     RYDBERG_CONSTANT = 13.6
 
+    current_config = copy.deepcopy(config)
     for index in range(atomic_number):
         last_filled = None
-        for idx in range(len(config) - 1, -1, -1):
-            quantum_no, azimuthal_no, count = config[idx]
+        last_idx = None
+        for idx in range(len(current_config) - 1, -1, -1):
+            quantum_no, azimuthal_no, count = current_config[idx]
             if count > 0:
                 last_filled = (quantum_no, azimuthal_no)
+                last_idx = idx
                 break
 
         if last_filled is None:
@@ -186,27 +218,31 @@ def calculate_ionization_series(subshells: list[str], atomic_number: int, ioniza
 
         subshell_str = f"{last_filled[0]}{last_filled[1]}"
         quantum_target = last_filled[0]
-        sigma = calculate_shielding_constant(config, subshell_str)
+        current_subshells = [f"{q}{a}{c}" for q, a, c in current_config if c > 0]
+        logger.debug(f"Ionization {index + 1}: Using config {current_subshells} for target {subshell_str}")
+        sigma = calculate_shielding_constant(current_subshells, subshell_str)
         Z_eff = atomic_number - sigma
 
-        if index == 0:
+        if index == 0 and ionization_energy is not None:
             current_IE = ionization_energy
+            uncertainty = "eV"
         else:
             current_IE = RYDBERG_CONSTANT * (Z_eff ** 2) / (quantum_target ** 2)
+            uncertainty = "±30eV"
 
+        formatted_subshell = f"{subshell_str}1"
+        formatted_subshell = formatted_subshell[:-1] + convert_superscripts(formatted_subshell[-1]) if use_superscripts else formatted_subshell
         lines.append(
             f"  - {bold(ordinal(index + 1))} Ionization:\n"
-            f"    {fore('Removed', RED)} = {subshell_str}\n"
+            f"    {fore('Removed', RED)} = {formatted_subshell}\n"
             f"    σ       = {sigma:.2f}\n"
             f"    Z_eff   = {Z_eff:.2f}\n"
-            f"    {fore('IE', FEMALE)}      = {bold(f'{current_IE:.3f}')}{"±30 eV" if index != 0 else "eV"}\n"
+            f"    {fore('IE', FEMALE)}      = {bold(f'{current_IE:.3f}')}{uncertainty}\n"
         )
 
-        for idx in range(len(config) - 1, -1, -1):
-            quantum_no, azimuthal_no, count = config[idx]
-            if (quantum_no, azimuthal_no) == last_filled and count > 0:
-                config[idx] = (quantum_no, azimuthal_no, count - 1)
-                break
+        if last_idx is not None:
+            quantum_no, azimuthal_no, count = current_config[last_idx]
+            current_config[last_idx] = (quantum_no, azimuthal_no, count - 1)
 
     return "\n".join(lines)
 
@@ -489,10 +525,10 @@ def enable_debugging():
     DEBUG_MODE = True
     animate_print(gradient("Debug mode enabled. Have fun...", ELECTRONEG_COL, NULL))
 
-    logger = Logger(debug=DEBUG_MODE)
+    logger = Logger(enable_debugging=DEBUG_MODE)
     logger.info("Enabled debug mode.")
 
-    logger.info(f"Configuration overview: superscripts={superscripts}, truecolor={truecolor}, "
+    logger.info(f"Configuration overview: superscripts={use_superscripts}, truecolor={support_truecolor}, "
                 f"isotope_format={isotope_format}, animation={animation_type}, "
                 f"animation_delay={animation_delay}s")
 
@@ -536,7 +572,7 @@ def print_isotope(norm_iso, info, fullname):
     protons = info['protons']
     neutrons = info['neutrons']
     animate_print(f"      p{convert_superscripts('+')}, e{convert_superscripts('-')} - {fore('Protons', RED)} and {fore('Electrons', YELLOW)}: {bold(protons)}")
-    animate_print(f"      n{'⁰' if superscripts else ''} - {fore('Neutrons', BLUE)}: {bold(neutrons)}")
+    animate_print(f"      n{'⁰' if use_superscripts else ''} - {fore('Neutrons', BLUE)}: {bold(neutrons)}")
 
     up_quarks = protons * 2 + neutrons
     down_quarks = protons + neutrons * 2
@@ -604,10 +640,10 @@ def format_isotope(norm_iso, fullname, *, metastable = ""):
         elif isotope_format == "symbol-number":
             return f"{symbol}-{number}{metastable}"
         elif isotope_format == "numbersymbol":
-            number = convert_superscripts(str(number)) if superscripts else number
+            number = convert_superscripts(str(number)) if use_superscripts else number
             return f"{number}{metastable}{symbol}"
         elif isotope_format == "number-symbol":
-            number = convert_superscripts(str(number)) if superscripts else number
+            number = convert_superscripts(str(number)) if use_superscripts else number
             return f"{number}{metastable}-{symbol}"
         else:
             return f"{symbol}-{number}{metastable}"
@@ -708,24 +744,6 @@ def safe_format(value, measurement, placeholder = "None"):
         return bold(str(value)) + measurement
 
     return fore(placeholder, NULL)
-
-# Virtual environment validation
-if VERSION_TUPLE < (3, 11, 0):
-    print("You are running this script with an outdated Python interpreter. Please update your Python interpreter if needed.")
-    sys.exit(0)
-
-if not VENV_DIR.is_dir():
-    print("The virtual environment was not found. Should I run the build script for you? (Y/n)")
-
-    confirmation = input("> ").strip().lower()
-    if confirmation not in ["y", "yes", ""]:
-        print("You denied the file execution. Please run the build script yourself.")
-        sys.exit(0)
-    if BUILD_FILE.is_file():
-        subprocess.run([sys.executable, str(BUILD_FILE)], check=True)
-        sys.exit(0)
-    else:
-        print("The build script was not found. Please read the README.md for more information. (If that exists, that is.)")
 
 # Other important variables and functions
 match random.randint(0, 3):
@@ -967,7 +985,7 @@ entries = [
 discoverers = join_with_conjunctions(entries)
 
 # Nuclear properties
-
+# Nuclear properties
 protons = nuclear["protons"]
 neutrons = nuclear["neutrons"]
 electrons = nuclear["electrons"]
@@ -986,11 +1004,11 @@ for index, electron in enumerate(shells):
     if index != len(shells) - 1:
         shell_result += f"{bold(str(electron) + str(possible_shells[index]))} ({electron}/{max_capacity}), "
     else:
-        shell_result += f"{bold(fore(electron, VALENCE_ELECTRONS_COL) + fore(possible_shells[index], VALENCE_ELECTRONS_COL))} ({electron}/{max_capacity})"
+        shell_result += f"{bold(fore(str(electron) + str(possible_shells[index]), VALENCE_ELECTRONS_COL))} ({electron}/{max_capacity})"
+
 unpaired_electrons = 0
 subshell_capacities = {"s": 2, "p": 6, "d": 10, "f": 14}
 orbital_capacity_map = {"s": 1, "p": 3, "d": 5, "f": 7}
-
 subshell_result = ""
 pattern = re.compile(r"(\d)([spdf])(\d+)")
 
@@ -999,9 +1017,8 @@ for subshell in subshells:
         logger.warn(f"To the developers, a malformed subshell was detected in {fullname.capitalize()}. Issue: {subshell}")
         continue
 
-    formatted_subshell = subshell[:-1] + (convert_superscripts(subshell[-1]) if superscripts else subshell[-1])
+    formatted_subshell = subshell[:-1] + (convert_superscripts(subshell[-1]) if use_superscripts else subshell[-1])
     match = pattern.match(subshell)
-
     if match:
         energy_level, subshell_type, electron_count = match.groups()
         electron_count = int(electron_count)
@@ -1020,7 +1037,6 @@ for subshell_string in subshells:
     match = pattern.fullmatch(subshell_string)
     if not match:
         continue
-
     energy_level, orbital_type, electron_count = match.groups()
     electron_count = int(electron_count)
     number_of_orbitals = orbital_capacity_map[orbital_type]
@@ -1054,6 +1070,32 @@ for subshell_string in subshells:
 subshell_visualisation = "\n".join(formatted_lines)
 subshell_examples = "".join([fore(orbital, SUBSHELL_COLORS[orbital]) for orbital in list("spdf")])
 pair_determiner = fore("Diamagnetic", VALENCE_ELECTRONS_COL) if unpaired_electrons == 0 else fore("Paramagnetic", ELECTRONEG_COL)
+
+if subshells:
+    last_subshell = subshells[-1]
+    match = pattern.match(last_subshell)
+    if match:
+        principal_quantum_number, subshell_type, electron_count = match.groups()
+        principal_quantum_number = int(principal_quantum_number)
+        electron_count = int(electron_count)
+        azimuthal_quantum_number = {"s": 0, "p": 1, "d": 2, "f": 3}[subshell_type]
+        magnetic_quantum_number = 0
+        spin_quantum_number = "+1/2" if unpaired_electrons % 2 == 1 else "-1/2"
+        shielding_constant = calculate_shielding_constant(subshells, last_subshell[:-1])
+
+        effective_nuclear_charge = atomic_number - shielding_constant
+
+        last_subshell_type = subshell[1] if len(subshell) > 1 else 's'
+        last_subshell = last_subshell[:-1] + convert_superscripts(last_subshell[-1]) if use_superscripts else last_subshell
+        last_subshell = fore(last_subshell, SUBSHELL_COLORS.get(last_subshell_type, (255, 255, 255)))
+
+        subshell_visualisation += f"\n\nValence Subshell ({last_subshell}):"
+        subshell_visualisation += f"\n  n - {fore('Principal', CYAN)}: {bold(principal_quantum_number)}"
+        subshell_visualisation += f"\n  l - {fore('Azimuthal', GREEN)}: {bold(azimuthal_quantum_number)} ({subshell_type} subshell)"
+        subshell_visualisation += f"\n  m_l - {fore('Magnetic', YELLOW)}: {bold(magnetic_quantum_number)} (approximated)"
+        subshell_visualisation += f"\n  m_s - {fore('Spin', MAGENTA)}: {bold(spin_quantum_number)} ({unpaired_electrons} unpaired electron{'s' if unpaired_electrons != 1 else ''}, {pair_determiner})"
+        subshell_visualisation += f"\n  σ - {fore('Shielding Constant', PERIWINKLE)}: {bold(f'{shielding_constant:.2f}')}"
+        subshell_visualisation += f"\n  Z_eff - {fore('Effective Nuclear Charge', GOLD)}: {bold(f'{effective_nuclear_charge:.2f}')}"
 
 # Physical properties
 
@@ -1144,17 +1186,16 @@ print()
 print_header("Nuclear Properties")
 print()
 
-animate_print(f" p{convert_superscripts("+")} - {fore("Protons", RED)}: {bold(protons)}")
-animate_print(f" n{"⁰" if superscripts else ""} - {fore("Neutrons", BLUE)}: {bold(neutrons)}")
-animate_print(f" e{convert_superscripts("-")} - {fore("Electrons", YELLOW)}: {bold(electrons)}")
-animate_print(f" nv - {fore("Valence Electrons", VALENCE_ELECTRONS_COL)}: {bold(valence_electrons)}")
-animate_print(f" u - {fore("Up Quarks", GREEN)}: ({fore(protons, RED)} * 2) + {fore(neutrons, BLUE)} = {bold(up_quarks)}")
-animate_print(f" d - {fore("Down Quarks", CYAN)}: ({fore(protons, RED)} + ({fore(neutrons, BLUE)} * 2) = {bold(down_quarks)}")
-animate_print(f" ⚛️ - {fore("Shells", EXCITED)} {dim(f"(The electron in {fore("yellow", VALENCE_ELECTRONS_COL)} is the valence electron)")}:\n    {shell_result}")
-animate_print(f" 🌀 - {fore("Subshells", PERIWINKLE)} {dim(f"(Subshells are colored by their type. {subshell_examples})")}:\n    {subshell_result}")
-animate_print(f"      Breakdown:\n{subshell_visualisation}")
-animate_print(f"      Total unpaired electrons: {bold(unpaired_electrons)}, {pair_determiner}")
-animate_print(f"      Spin: {unpaired_electrons} * 0.5 = {bold(unpaired_electrons * 0.5)}")
+animate_print(f" p⁺ - {fore('Protons', RED)}: {bold(protons)}")
+animate_print(f" n⁰ - {fore('Neutrons', BLUE)}: {bold(neutrons)}")
+animate_print(f" e⁻ - {fore('Electrons', YELLOW)}: {bold(electrons)}")
+animate_print(f" nv - {fore('Valence Electrons', VALENCE_ELECTRONS_COL)}: {bold(valence_electrons)}")
+animate_print(f" u - {fore('Up Quarks', GREEN)}: ({fore(protons, RED)} * 2) + {fore(neutrons, BLUE)} = {bold(up_quarks)}")
+animate_print(f" d - {fore('Down Quarks', CYAN)}: {fore(protons, RED)} + ({fore(neutrons, BLUE)} * 2) = {bold(down_quarks)}")
+animate_print(f" ⚛️ - {fore('Shells', EXCITED)} {dim(f'(Valence electrons in {fore('yellow', VALENCE_ELECTRONS_COL)})')}:\n    {shell_result}")
+animate_print(f" 🌀 - {fore('Subshells', PERIWINKLE)} {dim(f'(Colored by type: {subshell_examples})')}:\n    {subshell_result}")
+animate_print(f"      Breakdown:\n\n{subshell_visualisation}\n")
+
 animate_print(f" 🪞 - Isotopes ({len(isotopes.keys())}): {dim(f"(Decay processes in {fore("red", RED)} need verification. Do not trust them!)")}:")
 
 for isotope, information in isotopes.items():
