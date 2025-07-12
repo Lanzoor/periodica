@@ -1,6 +1,6 @@
 import time, sys, pathlib, subprocess
 from utils.terminal import  RED, GREEN, CYAN, fore, bold, dim, clear_screen, clear_line
-from utils.loader import logging,get_config, save_config, valid_formats, valid_animation_types, default_config
+from utils.loader import get_config, save_config, valid_formats, valid_animation_types, default_config, Logger
 
 if __name__ == "__main__":
     print("Please refrain from running this script manually. Instead, please run the periodica.sh file with the --init flag.")
@@ -8,9 +8,16 @@ if __name__ == "__main__":
 
 PERIODICA_DIR = pathlib.Path(__file__).resolve().parent.parent
 MAIN_FILE = PERIODICA_DIR / "src" / "main.py"
-
 config = get_config()
-logging.info("Configuration program initialized.")
+constant_debugging = config["constant_debugging"]
+
+if constant_debugging:
+    logger = Logger(enable_debugging=True)
+else:
+    logger = Logger()
+
+
+logger.info("Configuration program initialized.")
 
 def fancy_abort():
     for i in range(3, 0, -1):
@@ -31,7 +38,7 @@ def toggle_superscript():
     config['use_superscripts'] = not config['use_superscripts']
     use_superscripts = config["use_superscripts"]
     print(f"The setting 'Use Superscripts' was changed to {bold(fore(use_superscripts, GREEN) if use_superscripts else fore(use_superscripts, RED))}.")
-    logging.info(f"Setting 'Use Superscripts' changed from {not use_superscripts} to {use_superscripts}.")
+    logger.info(f"Setting 'Use Superscripts' changed from {not use_superscripts} to {use_superscripts}.")
     time.sleep(1)
 
 def toggle_truecolor():
@@ -40,7 +47,7 @@ def toggle_truecolor():
     config['truecolor'] = not config['truecolor']
     support_truecolor = config["truecolor"]
     print(f"The setting 'Use Truecolor' was changed to {bold(fore(support_truecolor, GREEN) if support_truecolor else fore(support_truecolor, RED))}.")
-    logging.info(f"Setting 'Use Truecolor' changed from {not support_truecolor} to {support_truecolor}.")
+    logger.info(f"Setting 'Use Truecolor' changed from {not support_truecolor} to {support_truecolor}.")
     time.sleep(1)
 
 def toggle_debugging():
@@ -49,7 +56,7 @@ def toggle_debugging():
     config['constant_debugging'] = not config['constant_debugging']
     constant_debugging = config["constant_debugging"]
     print(f"The setting 'Debug Constantly' was changed to {bold(fore(constant_debugging, GREEN) if constant_debugging else fore(constant_debugging, RED))}.")
-    logging.info(f"Setting 'Debug Constantly' changed from {not constant_debugging} to {constant_debugging}.")
+    logger.info(f"Setting 'Debug Constantly' changed from {not constant_debugging} to {constant_debugging}.")
     time.sleep(1)
 
 def change_isotope_format():
@@ -73,18 +80,18 @@ def change_isotope_format():
             config['isotope_format'] = valid_formats[user_input - 1]
             isotope_format = config["isotope_format"]
             print(f"Successfully changed option 'Isotope Format' to {bold(isotope_format)}.")
-            logging.info(f"Setting 'Isotope Format' changed to {isotope_format}.")
+            logger.info(f"Setting 'Isotope Format' changed to {isotope_format}.")
             time.sleep(1)
             break
         except ValueError:
             if user_input not in valid_formats:
                 print(f"{user_input} is neither a valid option name nor a valid option number. Please try again.")
-                logging.warning(f"{user_input} was neither a valid option name nor a valid option number.")
+                logger.warning(f"{user_input} was neither a valid option name nor a valid option number.")
                 continue
             config['isotope_format'] = user_input
             isotope_format = config["isotope_format"]
             print(f"Successfully changed option 'Isotope Format' to {bold(isotope_format)}.")
-            logging.info(f"Setting 'Isotope Format' changed to {isotope_format}.")
+            logger.info(f"Setting 'Isotope Format' changed to {isotope_format}.")
             time.sleep(1)
             break
 
@@ -108,17 +115,17 @@ def change_animation_type():
             config['animation'] = valid_animation_types[user_input - 1]
             animation_type = config["animation_type"]
             print(f"Successfully changed option 'Animation Type' to {bold(animation_type)}.")
-            logging.info(f"Setting 'Animation Type' changed to {animation_type}.")
+            logger.info(f"Setting 'Animation Type' changed to {animation_type}.")
             break
         except ValueError:
             if user_input not in valid_animation_types:
                 print(f"{user_input} is neither a valid option name nor a valid option number. Please try again.")
-                logging.warning(f"{user_input} was neither a valid option name nor a valid option number.")
+                logger.warning(f"{user_input} was neither a valid option name nor a valid option number.")
                 continue
             config['animation'] = user_input
             animation_type = config["animation_type"]
             print(f"Successfully changed option 'Animation Type' to {bold(animation_type)}.")
-            logging.info(f"Setting 'Animation Type' changed to {animation_type}.")
+            logger.info(f"Setting 'Animation Type' changed to {animation_type}.")
             break
 
 def change_animation_delay():
@@ -137,12 +144,12 @@ def change_animation_delay():
             config['animation_delay'] = user_input
             animation_delay = config["animation_delay"]
             print(f"Successfully changed option 'Animation Delay' to {bold(animation_delay)} seconds.")
-            logging.info(f"Setting 'Animation Delay' changed to {animation_delay} seconds.")
+            logger.info(f"Setting 'Animation Delay' changed to {animation_delay} seconds.")
             time.sleep(1)
             break
         except ValueError:
             print(f"{user_input} is not a valid float. Please try again.")
-            logging.warning(f"{user_input} was not a valid float.")
+            logger.warning(f"{user_input} was not a valid float.")
             continue
 
 def reset():
@@ -154,11 +161,11 @@ def reset():
     if user_input == "#":
         config = default_config.copy()
         save_config()
-        logging.info("User re-initialized the configuration. Restarting program...")
+        logger.info("User re-initialized the configuration. Restarting program...")
         print(bold("Your configuration has been reset. This program needs to restart in order to save the changes. Please run the script again."))
         fancy_abort()
     else:
-        logging.info("User canceled configuration reset.")
+        logger.info("User canceled configuration reset.")
 
 try:
     while True:
@@ -187,7 +194,7 @@ try:
             if user_input == "q":
                 fancy_abort()
                 save_config()
-                logging.info("User quit the program. Aborting...")
+                logger.info("User quit the program. Aborting...")
                 sys.exit(0)
             elif "r" in user_input.split(" "):
                 user_arguments = user_input.split(" ")
@@ -199,7 +206,7 @@ try:
             user_input = int(user_input)
         except ValueError:
             print(fore(f"{user_input} is not a valid function number. Can you please try again?", RED))
-            logging.warning(f"{user_input} was not a valid function number.")
+            logger.warning(f"{user_input} was not a valid function number.")
             time.sleep(1)
             continue
 
@@ -216,10 +223,10 @@ try:
         if not recognized_flag:
             print(fore(f"{user_input} is out of bounds. Can you please try again with a valid function number?", RED))
 
-            logging.warning(f"{user_input} was an invalid function number.")
+            logger.warning(f"{user_input} was an invalid function number.")
             time.sleep(1)
 except KeyboardInterrupt:
     print("\nYou have pressed ^C while editing the settings. Please do not do so. Your data has been saved anyways. Have a nice day!")
     save_config()
-    logging.info("User force quit the configuration program. Aborting...")
+    logger.info("User force quit the configuration program. Aborting...")
     sys.exit(0)

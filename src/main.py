@@ -24,7 +24,6 @@ CONFIG_FILE = PERIODICA_DIR / "src" / "config.json"
 DATA_FILE = PERIODICA_DIR / "src" / "data.json"
 PYPROJECT_FILE = PERIODICA_DIR / "pyproject.toml"
 
-
 EXPORT_ENABLED = False
 DEBUG_MODE = False
 logger = Logger(enable_debugging=DEBUG_MODE)
@@ -383,6 +382,15 @@ def compare_by_factor():
 
     factor_candidate = positional_arguments[0] if positional_arguments else None
 
+    if factor_candidate:
+        suggestion = difflib.get_close_matches(factor_candidate, factors, n=1, cutoff=0.6)
+        if suggestion:
+            animate_print(fore(f"Not a valid factor. Did you mean \"{bold(suggestion[0])}\"?", YELLOW))
+            logger.warn(f"No direct match found for '{factor_candidate}'. Found a close match; '{suggestion[0]}'?")
+        else:
+            animate_print(fore("Not a valid factor. Please provide one manually.", RED))
+            logger.warn(f"No direct match found for '{factor_candidate}'.")
+
     def match_input(data: dict[str, dict], factor):
         try:
             match factor:
@@ -398,36 +406,46 @@ def compare_by_factor():
                     return (data["nuclear"]["protons"] * 2) + data["nuclear"]["neutrons"]
                 case "down_quarks":
                     return data["nuclear"]["protons"] + (data["nuclear"]["neutrons"] * 2)
-        except (KeyError, ValueError):
+        except (KeyError, ValueError) as e:
+            logger.warn(f"Missing or invalid {factor} for {data['general']['fullname']}: {e}")
             return None
 
-    animate_print()
     animate_print(f"Please enter a factor to compare all the elements with. The valid factors are:\n  {', '.join(factors)}")
 
     while True:
         if factor_candidate and factor_candidate in factors:
-            user_factor = factor_candidate
+            factor = factor_candidate
+            logger.info(f"Found a direct factor match from user input; {factor}")
             break
 
         if factor_candidate:
             suggestion = difflib.get_close_matches(factor_candidate, factors, n=1, cutoff=0.6)
             if suggestion:
                 animate_print(fore(f"Not a valid factor. Did you mean \"{bold(suggestion[0])}\"?", YELLOW))
+                logger.warn(f"No direct match found for '{factor_candidate}'. Found a close match; '{suggestion[0]}'?")
             else:
-                animate_print(fore("Not a valid factor. Please provide one manually.", RED))
+                animate_print(fore("Not a valid factor. Please try again.", RED))
+                logger.warn(f"No direct match found for '{factor_candidate}'.")
 
         factor_candidate = "_".join(input("> ").strip().lower().split(" "))
 
-    animate_print(f"\nComparing all elements by factor {bold(user_factor)}... {dim("(Please note that elements may be missing.)")}\n")
+    animate_print(f"\nComparing all elements by factor {bold(factor)}... {dim('(Please note that elements may be missing.)')}\n")
+    logger.info(f"Comparing all elements by factor {factor}...")
 
-    result: dict[str, str] = {}
-    for (name, value) in full_data.items():
-        result[name] = match_input(value, user_factor)
+    result: dict[str, float | int | None] = {}
+    for name, value in full_data.items():
+        result[name] = match_input(value, factor)
 
-    result = dict(sorted(result.items(), key=lambda item: (item[1] is None, item[1])))
-    max_value = max(filter(lambda value: isinstance(value, (int, float)), result.values()), default=1)
+    valid_results = [(name, value) for name, value in result.items() if value is not None]
+    if not valid_results:
+        animate_print(fore(f"No valid data for {factor}", RED))
+        logger.error(f"No elements have valid {factor} data")
+        sys.exit(1)
 
-    for (name, value) in result.items():
+    sorted_results = sorted(result.items(), key=lambda item: (item[1] is None, item[1]))
+
+    max_value = max(value for _, value in valid_results) or 1
+    for name, value in sorted_results:
         if value is not None:
             padding = 25
             bar_space = max(TERMINAL_WIDTH - padding, 10)
@@ -435,7 +453,17 @@ def compare_by_factor():
             bar = fore("█" * bar_length, CYAN)
             animate_print(f"{name:<12} {str(value):<4} [{bar}]")
 
+    # Calculate stats
+    valid_values = [value for _, value in valid_results]
+    average = sum(valid_values) / len(valid_values) if valid_values else 0
+    highest_pair = max(valid_results, key=lambda item: item[1])
+    lowest_pair = min(valid_results, key=lambda item: item[1])
+
     animate_print()
+    animate_print(f"Average - {average:.2f}")
+    animate_print(f"Element with the highest {factor} is {highest_pair[0]}, with {highest_pair[1]}.")
+    animate_print(f"Element with the lowest {factor} is {lowest_pair[0]}, with {lowest_pair[1]}.")
+
     sys.exit(0)
 
 def compare_bond_type():
@@ -693,6 +721,7 @@ def search_isotope(isotopes, element_symbol, element_name, mass_number, search_q
             print_separator()
             return True
 
+    animate_print(fore(f"No isotope match found for mass number {mass_number} in element {element_name}. Please provide one manually.", YELLOW))
     logger.warn(f"No isotope match found for mass number {mass_number} in element {element_name}")
     return False
 
