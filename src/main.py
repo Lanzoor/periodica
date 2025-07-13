@@ -888,9 +888,9 @@ easter_eggs = [
     ("403", fore("Element access not granted", YELLOW)),
     ("404", fore("Element not found", YELLOW)),
     ("recursion", "See: recursion."),
-    ("your mom", "She's not on the periodic table, but she probably will crash the entire table if whe was."),
+    ("your mom", "She's not on the periodic table, but she probably will crash the entire table if she was."),
     ("sudo", "You don't need root access to learn chemistry. You need a brain."),
-    (["give me a list of easter eggs", "give me easter eggs"], "no")
+    ("carbonara", "Monsieur?? This isn't an italian restaurant. It's a restaurant made up of atoms. GET OUT!!")
 ]
 
 try:
@@ -1065,7 +1065,6 @@ entries = [
 
 discoverers = join_with_conjunctions(entries)
 
-# Nuclear properties
 # Nuclear properties
 protons = nuclear["protons"]
 neutrons = nuclear["neutrons"]

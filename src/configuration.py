@@ -86,7 +86,7 @@ def change_isotope_format():
         except ValueError:
             if user_input not in valid_formats:
                 print(f"{user_input} is neither a valid option name nor a valid option number. Please try again.")
-                logger.warning(f"{user_input} was neither a valid option name nor a valid option number.")
+                logger.warn(f"{user_input} was neither a valid option name nor a valid option number.")
                 continue
             config['isotope_format'] = user_input
             isotope_format = config["isotope_format"]
@@ -120,7 +120,7 @@ def change_animation_type():
         except ValueError:
             if user_input not in valid_animation_types:
                 print(f"{user_input} is neither a valid option name nor a valid option number. Please try again.")
-                logger.warning(f"{user_input} was neither a valid option name nor a valid option number.")
+                logger.warn(f"{user_input} was neither a valid option name nor a valid option number.")
                 continue
             config['animation'] = user_input
             animation_type = config["animation_type"]
@@ -149,7 +149,7 @@ def change_animation_delay():
             break
         except ValueError:
             print(f"{user_input} is not a valid float. Please try again.")
-            logger.warning(f"{user_input} was not a valid float.")
+            logger.warn(f"{user_input} was not a valid float.")
             continue
 
 def reset():
@@ -207,7 +207,7 @@ try:
             user_input = int(user_input)
         except ValueError:
             print(fore(f"{user_input} is not a valid function number. Can you please try again?", RED))
-            logger.warning(f"{user_input} was not a valid function number.")
+            logger.warn(f"{user_input} was not a valid function number.")
             time.sleep(1)
             continue
 
@@ -224,7 +224,7 @@ try:
         if not recognized_flag:
             print(fore(f"{user_input} is out of bounds. Can you please try again with a valid function number?", RED))
 
-            logger.warning(f"{user_input} was an invalid function number.")
+            logger.warn(f"{user_input} was an invalid function number.")
             time.sleep(1)
 except KeyboardInterrupt:
     print("\nYou have pressed ^C while editing the settings. Please do not do so. Your data has been saved anyways. Have a nice day!")
