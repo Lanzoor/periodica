@@ -226,10 +226,18 @@ def calculate_ionization_series(subshells: list[str], atomic_number: int, ioniza
 
         if index == 0 and ionization_energy is not None:
             current_IE = ionization_energy
-            uncertainty = "eV"
         else:
             current_IE = RYDBERG_CONSTANT * (Z_eff ** 2) / (quantum_target ** 2)
-            uncertainty = "±30eV"
+
+        if index == 0:
+            uncertainty = "eV"
+        elif index == 1:
+            uncertainty = "±75eV"
+        elif index < atomic_number // 2:
+            uncertainty = "±50eV"
+        elif index > atomic_number // 2:
+            current_IE = RYDBERG_CONSTANT * (Z_eff ** 2) / (quantum_target ** 2)
+            uncertainty = "±25eV"
 
         formatted_subshell = f"{subshell_str}1"
         formatted_subshell = formatted_subshell[:-1] + convert_superscripts(formatted_subshell[-1]) if use_superscripts else formatted_subshell
