@@ -1,4 +1,4 @@
-import time, sys, pathlib, subprocess
+import time, sys, pathlib, subprocess, json
 from utils.terminal import  RED, GREEN, CYAN, fore, bold, dim, clear_screen, clear_line
 from utils.loader import get_config, save_config, valid_formats, valid_animation_types, default_config, Logger
 
@@ -161,6 +161,8 @@ def reset():
     if user_input == "#":
         config = default_config.copy()
         save_config()
+        with open(PERIODICA_DIR / "src" / "config.json", "w", encoding="utf-8") as file:
+            pass
         logger.info("User re-initialized the configuration. Restarting program...")
         print(bold("Your configuration has been reset. This program needs to restart in order to save the changes. Please run the script again."))
         fancy_abort()
