@@ -17,13 +17,6 @@ git clone https://github.com/Lanzoor/periodica.git ~/dev/periodica
 # READ THE SCRIPT BEFORE RUNNING IT. DO NOT TRUST FILES FROM ONLINE BY DEFAULT.
 python3 ~/dev/periodica/build.py
 
-# Just in case, ensure the launch script is executable.
-chmod +x ~/dev/periodica/periodica.sh
-
-# Run the commands below if ~/.local/bin/ is not already in PATH.
-# echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
-# source ~/.bashrc
-
 # Now test it:
 periodica
 ```
