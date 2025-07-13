@@ -849,7 +849,10 @@ if elementdata_malformed:
     logger.info(f"Successfully got the data.json file from {url}.")
 
 # Getting element / isotope
-
+easter_eggs = {
+    "vibranium": "🦾 WAKANDA FOREVER",
+    "--info": "nice try bozo this isnt an argv"
+}
 try:
     TERMINAL_WIDTH = os.get_terminal_size().columns
     TERMINAL_HEIGHT = os.get_terminal_size().lines
@@ -929,8 +932,8 @@ if element_data is None:
         user_input = input("> ").strip().lower()
         logger.info(f"User gave input: \"{user_input}\"")
 
-        if user_input == "vibranium":
-            animate_print("🦾 WAKANDA FOREVER")
+        if user_input in easter_eggs:
+            print(easter_eggs[user_input])
             sys.exit(0)
 
         element_data, element_suggestion = process_isotope_input(user_input)
