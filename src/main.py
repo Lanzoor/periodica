@@ -26,6 +26,7 @@ PYPROJECT_FILE = PERIODICA_DIR / "pyproject.toml"
 
 EXPORT_ENABLED = False
 DEBUG_MODE = False
+ISOTOPE_LOGIC = False
 logger = Logger(enable_debugging=DEBUG_MODE)
 
 element_data = None
@@ -140,7 +141,6 @@ def ordinal(number):
     return f"{number}{suffix}"
 
 def parse_electron_configuration(subshells: list[str]) -> list[tuple[int, str, int]]:
-    logger.debug(f"Parsing subshells: {subshells}")
     if not isinstance(subshells, list) or not all(isinstance(s, str) for s in subshells):
         logger.error(f"Expected list[str], got {type(subshells)}: {subshells}")
         return []
@@ -156,7 +156,6 @@ def parse_electron_configuration(subshells: list[str]) -> list[tuple[int, str, i
     return config
 
 def calculate_shielding_constant(subshell_list: list[str], target_subshell: str) -> float:
-    logger.debug(f"Calculating shielding for target: {target_subshell}, subshells: {subshell_list}")
     if not isinstance(subshell_list, list) or not all(isinstance(s, str) for s in subshell_list):
         logger.error(f"Expected list[str], got {type(subshell_list)}: {subshell_list}")
         return 0.0
@@ -193,7 +192,6 @@ def calculate_shielding_constant(subshell_list: list[str], target_subshell: str)
 
 def calculate_ionization_series(subshells: list[str], atomic_number: int, ionization_energy: float | None) -> str:
     import copy
-    logger.debug(f"Calculating ionization series for subshells: {subshells}, Z={atomic_number}")
     lines = []
     config = parse_electron_configuration(subshells)
     if not config:
@@ -218,7 +216,6 @@ def calculate_ionization_series(subshells: list[str], atomic_number: int, ioniza
         subshell_str = f"{last_filled[0]}{last_filled[1]}"
         quantum_target = last_filled[0]
         current_subshells = [f"{q}{a}{c}" for q, a, c in current_config if c > 0]
-        logger.debug(f"Ionization {index + 1}: Using config {current_subshells} for target {subshell_str}")
         sigma = calculate_shielding_constant(current_subshells, subshell_str)
         Z_eff = atomic_number - sigma
 
@@ -485,7 +482,6 @@ def compare_bond_type():
             logger.info(f"Resolved both elements from CLI args: {positional_arguments[0]}, {positional_arguments[1]}")
 
     if primary_element is None:
-        animate_print()
         animate_print(f"Search for the primary element {italic('to compare the bond type')} with by name, symbol, or atomic number.")
         while True:
             user_input = input("> ").strip().lower()
@@ -501,7 +497,6 @@ def compare_bond_type():
     primary_element_name = primary_element["general"]["fullname"]
 
     if secondary_element is None:
-        animate_print()
         animate_print(f"Now, please enter the secondary element {italic('to compare the bond type')} with {bold(primary_element_name)}.")
         while True:
             user_input = input("> ").strip().lower()
@@ -540,8 +535,7 @@ def compare_bond_type():
 
 def select_random_element():
     global element_data
-    animate_print()
-    animate_print("Picking a random element...")
+    animate_print("Picking a random element for you...")
     logger.info("Picking a random element...")
 
     element_data = random.choice(list(full_data.values()))
@@ -552,13 +546,14 @@ def enable_debugging():
     global DEBUG_MODE, logger
     DEBUG_MODE = True
     animate_print(gradient("Debug mode enabled. Have fun...", ELECTRONEG_COL, NULL))
-
     logger = Logger(enable_debugging=DEBUG_MODE)
     logger.info("Enabled debug mode.")
+    if constant_debugging:
+        logger.info("Debug mode was enabled due to the constant_debugging configuration.")
 
     logger.info(f"Configuration overview: superscripts={use_superscripts}, truecolor={support_truecolor}, "
                 f"isotope_format={isotope_format}, animation={animation_type}, "
-                f"animation_delay={animation_delay}s")
+                f"animation_delay={animation_delay}s, constant_debugging={constant_debugging}")
 
 if "--debug" in flag_arguments or constant_debugging:
     enable_debugging()
@@ -589,7 +584,6 @@ def match_isotope_input(user_input: str) -> typing.Tuple[str | None, str | None]
 def print_isotope(norm_iso, info, fullname):
     global animation_delay
     animation_delay /= 4
-    animate_print()
 
     match = re.match(r"^(\d+)\s*([A-Za-z]+)$", remove_superscripts(norm_iso))
     display_name = format_isotope(norm_iso, fullname) if match else norm_iso
@@ -701,6 +695,8 @@ def find_isotope(element_identifier, mass_number, search_query):
     return False
 
 def search_isotope(isotopes, element_symbol, element_name, mass_number, search_query):
+    global ISOTOPE_LOGIC
+
     normalized_mass_symbol = f"{mass_number}{element_symbol}"
     normalized_symbol_mass = f"{element_symbol}{mass_number}"
 
@@ -716,6 +712,7 @@ def search_isotope(isotopes, element_symbol, element_name, mass_number, search_q
                     "fullname": element_name,
                     "info": isotope_info
                 }
+            ISOTOPE_LOGIC = True
             print_separator()
             print_isotope(isotope, isotope_info, element_name)
             print_separator()
@@ -885,7 +882,6 @@ if len(sys.argv) > 1:
     user_input = None
 
     if len(primary_flags) == 0:
-        # No flags provided — treat as standalone element/isotope lookup
         user_input = positional_arguments[0] if positional_arguments else None
     elif len(primary_flags) != 1 or any(flag not in valid_flags for flag in primary_flags):
         animate_print("Malformed flags structure. Run the script with the --info flag for more information.")
@@ -916,10 +912,14 @@ if len(sys.argv) > 1:
             logger.info(f"User gave argv: \"{user_input}\"")
             element_data, element_suggestion = process_isotope_input(user_input)
 
-            if element_data is None:
-                message = f"Invalid argv.{' Did you mean \"' + bold(element_suggestion) + '\"?' if element_suggestion else ' Falling back to interactive input.'}"
-                animate_print(fore(message, YELLOW if element_suggestion else RED))
-                logger.warn("Argv invalid, fallback to interactive.")
+        if ISOTOPE_LOGIC:
+            sys.exit(0)
+
+        if element_data is None:
+            message = f"Invalid argv.{' Did you mean \"' + bold(element_suggestion) + '\"?' if element_suggestion else ' Falling back to interactive input.'}"
+            animate_print(fore(message, YELLOW if element_suggestion else RED))
+            logger.warn("Argv invalid, fallback to interactive.")
+
 else:
     logger.warn("Argument not given, falling back to interactive input.")
 
@@ -929,7 +929,14 @@ if element_data is None:
         user_input = input("> ").strip().lower()
         logger.info(f"User gave input: \"{user_input}\"")
 
+        if user_input == "vibranium":
+            animate_print("🦾 WAKANDA FOREVER")
+            sys.exit(0)
+
         element_data, element_suggestion = process_isotope_input(user_input)
+
+        if ISOTOPE_LOGIC:
+            sys.exit(0)
 
         if element_data is not None:
             break
@@ -1228,6 +1235,7 @@ animate_print(f"      Breakdown:\n\n{subshell_visualisation}\n")
 animate_print(f" 🪞 - Isotopes ({len(isotopes.keys())}): {dim(f"(Decay processes in {fore("red", RED)} need verification. Do not trust them!)")}:")
 
 for isotope, information in isotopes.items():
+    animate_print()
     print_isotope(isotope, information, fullname)
 
 animate_print()
