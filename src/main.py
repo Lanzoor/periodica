@@ -875,8 +875,14 @@ easter_eggs = [
     ("--info", "this isn't a flag input field"),
     ("lanzoor", fore("do not try to find me, please try to find my sanity", ELECTRONEG_COL)),
     ("periodica", "Hey, that's me! Why are you trying to search me from myself? That's me! Why are you trying to search from myself?\nWhat? That's me... why are you trying to search myself whilst in myself? Hey! That's literally me. Why are you trying so hard to search myself from myself?"),
-    ("answer", f"It's either {bold("42")} or {bold("1/137")} depending on what answer you mean."),
-    (["42", "1/137"], "Yeah, that's right! That's the answer!"),
+    ("answer", f"It's {bold("1/137")}. No questions, just that."),
+    ("1/137", "Yeah, that's right! That's the answer!"),
+    ("403", fore("Element access not granted", YELLOW)),
+    ("404", fore("Element not found", YELLOW)),
+    ("recursion", "See: recursion."),
+    ("your mom", "She's not on the periodic table, but she probably will crash the entire table if whe was."),
+    ("sudo", "You don't need root access to learn chemistry. You need a brain."),
+    (["give me a list of easter eggs", "give me easter eggs"], "no")
 ]
 
 try:
