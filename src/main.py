@@ -133,6 +133,11 @@ def print_separator():
     print("-" * TERMINAL_WIDTH)
     print()
 
+def check_for_exit_event(user_input):
+    if user_input in ["quit", "q", "abort", "exit"]:
+        animate_print("Okay. Exiting...")
+        logger.abort("User exited interactive input.")
+
 def ordinal(number):
     if 10 <= number % 100 <= 20:
         suffix = "th"
@@ -332,6 +337,9 @@ def export_element():
         animate_print(f"Search for an element {italic('to export')} by name, symbol, or atomic number.")
         while element is None:
             user_input = input("> ").strip()
+
+            check_for_exit_event(user_input)
+
             element, suggestion = process_isotope_input(user_input)
             if element is None and not suggestion:
                 animate_print(fore("Could not find that element or isotope. Please enter one manually.", RED))
@@ -425,6 +433,7 @@ def compare_by_factor():
                 logger.warn(f"No direct match found for '{factor_candidate}'.")
 
         factor_candidate = "_".join(input("> ").strip().lower().split(" "))
+        check_for_exit_event(factor_candidate)
 
     animate_print(f"\nComparing all elements by factor {bold(factor)}... {dim('(Please note that elements may be missing.)')}\n")
     logger.info(f"Comparing all elements by factor {factor}...")
@@ -486,6 +495,8 @@ def compare_bond_type():
         while True:
             user_input = input("> ").strip().lower()
             logger.info(f"Primary input: \"{user_input}\"")
+            check_for_exit_event(user_input)
+
             primary_element, suggestion = find_element(user_input)
             if primary_element:
                 break
@@ -501,6 +512,8 @@ def compare_bond_type():
         while True:
             user_input = input("> ").strip().lower()
             logger.info(f"Secondary input: \"{user_input}\"")
+            check_for_exit_event(user_input)
+
             secondary_element, suggestion = find_element(user_input)
             if secondary_element:
                 break
@@ -554,6 +567,12 @@ def enable_debugging():
     logger.info(f"Configuration overview: superscripts={use_superscripts}, truecolor={support_truecolor}, "
                 f"isotope_format={isotope_format}, animation={animation_type}, "
                 f"animation_delay={animation_delay}s, constant_debugging={constant_debugging}")
+
+    if flag_arguments:
+        logger.info(f"Given flags: {", ".join(flag_arguments)}")
+
+    if positional_arguments:
+        logger.info(f"Other positional arguments given: {", ".join(positional_arguments)}")
 
 if "--debug" in flag_arguments or constant_debugging:
     enable_debugging()
@@ -772,7 +791,7 @@ def safe_format(value, measurement, placeholder = "None"):
     return fore(placeholder, NULL)
 
 # Other important variables and functions
-match random.randint(0, 3):
+match random.randint(0, 5):
     case 0:
         tip = "(Tip: You can give this program argv to directly search an element from there. You can even give argv to the periodica.sh file too!)"
     case 1:
@@ -780,7 +799,9 @@ match random.randint(0, 3):
     case 2:
         tip = "(Tip: Run this script with the --init flag to configure options like using superscripts.)"
     case 3:
-        tip = ""
+        tip = "(Tip: In an input field, you can input quit to exit the interactive input session.)"
+    case 4:
+        tip = f"(Tip: In the main interactive input field, you can input, {italic("certain")} things to trigger an easter egg message.)"
     case _:
         tip = ""
 
@@ -849,10 +870,15 @@ if elementdata_malformed:
     logger.info(f"Successfully got the data.json file from {url}.")
 
 # Getting element / isotope
-easter_eggs = {
-    "vibranium": "🦾 WAKANDA FOREVER",
-    "--info": "nice try bozo this isnt an argv"
-}
+easter_eggs = [
+    ("vibranium", "🦾 WAKANDA FOREVER"),
+    ("--info", "this isn't a flag input field"),
+    ("lanzoor", fore("do not try to find me, please try to find my sanity", ELECTRONEG_COL)),
+    ("periodica", "Hey, that's me! Why are you trying to search me from myself? That's me! Why are you trying to search from myself?\nWhat? That's me... why are you trying to search myself whilst in myself? Hey! That's literally me. Why are you trying so hard to search myself from myself?"),
+    ("answer", f"It's either {bold("42")} or {bold("1/137")} depending on what answer you mean."),
+    (["42", "1/137"], "Yeah, that's right! That's the answer!"),
+]
+
 try:
     TERMINAL_WIDTH = os.get_terminal_size().columns
     TERMINAL_HEIGHT = os.get_terminal_size().lines
@@ -908,20 +934,15 @@ if len(sys.argv) > 1:
     )
 
     if not recognized_flag:
-        if not user_input:
-            animate_print(fore("No valid element or isotope provided. Falling back to interactive input.", RED))
-            logger.warn("Argv missing valid content, fallback to interactive.")
-        else:
+        if user_input:
             logger.info(f"User gave argv: \"{user_input}\"")
             element_data, element_suggestion = process_isotope_input(user_input)
-
-        if ISOTOPE_LOGIC:
-            sys.exit(0)
-
-        if element_data is None:
-            message = f"Invalid argv.{' Did you mean \"' + bold(element_suggestion) + '\"?' if element_suggestion else ' Falling back to interactive input.'}"
-            animate_print(fore(message, YELLOW if element_suggestion else RED))
-            logger.warn("Argv invalid, fallback to interactive.")
+            if ISOTOPE_LOGIC:
+                sys.exit(0)
+            if element_data is None and not primary_flags:
+                message = f"Invalid element or isotope.{' Did you mean \"' + bold(element_suggestion) + '\"?' if element_suggestion else ' Falling back to interactive input.'}"
+                animate_print(fore(message, YELLOW if element_suggestion else RED))
+                logger.warn("No valid element or isotope provided from argv, fallback to interactive.")
 
 else:
     logger.warn("Argument not given, falling back to interactive input.")
@@ -932,9 +953,16 @@ if element_data is None:
         user_input = input("> ").strip().lower()
         logger.info(f"User gave input: \"{user_input}\"")
 
-        if user_input in easter_eggs:
-            print(easter_eggs[user_input])
-            sys.exit(0)
+        for keys, response in easter_eggs:
+            if (user_input in keys and isinstance(keys, list)) or user_input == keys:
+                animate_print(response)
+                if user_input == "periodica":
+                    import base64
+                    exec(base64.b64decode("cmFpc2UgUmVjdXJzaW9uRXJyb3IoIm1heGltdW0gZGVwdGggcmVhY2hlZCB3aGlsc3QgdHJ5aW5nIHRvIGZpbmQgcGVyaW9kaWNhIGluc2lkZSBwZXJpb2RpY2EgaW5zaWRlIHBlcmlvZGljYSBpbnNpZGUgcGVyaW9kaWNhIGluc2lkZS4uLiIp"))
+                sys.exit(0)
+
+
+        check_for_exit_event(user_input)
 
         element_data, element_suggestion = process_isotope_input(user_input)
 
