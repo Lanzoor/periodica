@@ -9,7 +9,7 @@ except ImportError:
     sys.exit(1)
 
 from utils.loader import get_config, get_response, Logger, failsafe
-from utils.terminal import RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, BRIGHT_BLACK, BRIGHT_GREEN
+from utils.terminal import RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, BRIGHT_BLACK, BRIGHT_GREEN, BRIGHT_RED
 from utils.terminal import fore, bold, dim, italic, animate_print, clear_screen, gradient
 from pprint import pprint
 
@@ -57,7 +57,7 @@ if support_truecolor:
     INDIGO = (94, 52, 235)
     NULL = (115, 255, 225)
     EXCITED = (185, 255, 128)
-    PERIWINKLE = (87, 89, 212)
+    PERIWINKLE = (159, 115, 255)
     GOLD = (255, 209, 102)
 else:
     VALENCE_ELECTRONS_COL = YELLOW
@@ -69,7 +69,7 @@ else:
     ORANGE = YELLOW
     INDIGO = BLUE
     NULL = CYAN
-    EXCITED = GREEN
+    EXCITED = BRIGHT_GREEN
     PERIWINKLE = CYAN
     GOLD = YELLOW
 
@@ -85,6 +85,13 @@ ELEMENT_TYPE_COLORS = {
 	"Alkali metal": (215, 215, 215) if support_truecolor else BRIGHT_BLACK,
 	"Alkali earth metal": ORANGE,
 	"Metalloid": CYAN
+}
+
+CONDUCTIVITY_TYPE_COLORS = {
+    "Superconductor": NULL,
+    "Semiconductor": CYAN,
+    "Insulator": RED,
+    "Conductor": GOLD
 }
 
 SUBSHELL_COLORS = {
@@ -115,13 +122,13 @@ positional_arguments = [arg.strip().lower() for arg in get_positional_args()]
 
 # Unit conversions
 def celcius_to_kelvin(celsius):
-	return (celsius * 1e16 + 273.15 * 1e16) / 1e16
+	return round((celsius + 273.15), 5)
 
 def celcius_to_fahrenheit(celsius):
-	return (celsius * 9 / 5) + 32
+	return round((celsius * 9 / 5) + 32, 5)
 
 def eV_to_kJpermol(eV):
-    return eV * 96.485
+    return round(eV * 96.485, 5)
 
 # Print helpers (they use print instead of animate_print since it takes a long time)
 def print_header(title):
@@ -549,7 +556,7 @@ def compare_bond_type():
     animate_print()
     animate_print(f"Primary element ({primary_element_name})'s electronegativity: {bold(primary_en)}")
     animate_print(f"Secondary element ({secondary_element_name})'s electronegativity: {bold(secondary_en)}")
-    animate_print(f"Difference: {primary_en} - {secondary_en} = ≈{bold(f'{diff:.3f}')}")
+    animate_print(f"Difference: {primary_en} - {secondary_en} = {bold(f'{diff:.3f}')}")
     animate_print(f"Bond type: {bond_type_str} (According to Pauling's Electronegativity Method)")
     animate_print()
     sys.exit(0)
@@ -629,8 +636,8 @@ def print_isotope(norm_iso, info, fullname):
     animate_print(f"      d - {fore('Down Quarks', CYAN)}: {fore(protons, RED)} + ({fore(neutrons, BLUE)} * 2) = {bold(down_quarks)}")
 
     half_life = info.get('half_life')
-    animate_print(f"      t1/2 - Half Life: {bold(half_life) if half_life else fore('Stable', NULL)}")
-    animate_print(f"      u - Isotope Weight: {bold(info['isotope_weight'])}g/mol")
+    animate_print(f"      t1/2 - {fore("Half Life", PERIWINKLE)}: {bold(half_life) if half_life else fore('Stable', NULL)}")
+    animate_print(f"      u - {fore("Isotope Weight", BRIGHT_RED)}: {bold(info['isotope_weight'])}g/mol")
 
     def show_decay(decays, indent=12):
         padding = " " * indent
@@ -657,7 +664,7 @@ def print_isotope(norm_iso, info, fullname):
             animate_print(f"{padding}{bold(display_name)} -> {bold(mode)} {arrow} {out} {chance}")
 
     if isinstance(info.get("decay"), list):
-        animate_print("      ⛓️ - Possible Decays:")
+        animate_print(f"      ⛓️ - {fore("Possible Decays", GOLD)}:")
         show_decay(info["decay"])
 
     if isinstance(info.get("metastable"), dict):
@@ -666,10 +673,10 @@ def print_isotope(norm_iso, info, fullname):
             display_meta = format_isotope(norm_iso, fullname, metastable=state)
             animate_print(f"        {bold(display_meta)}:")
             if "half_life" in data:
-                animate_print(f"          t1/2 - Half Life: {bold(data['half_life'])}")
-            animate_print(f"          ⚡️ - Excitation Energy: {bold(data['energy'])}keV")
+                animate_print(f"          t1/2 - {fore("Half Life", PERIWINKLE)}: {bold(data['half_life'])}")
+            animate_print(f"          ⚡️ - {fore("Excitation Energy", EXCITED)}: {bold(data['energy'])}keV")
             if "decay" in data:
-                animate_print("          ⛓️ - Possible Decays:")
+                animate_print(f"          ⛓️ - {fore("Possible Decays", GOLD)}:")
                 show_decay(data["decay"], indent=14)
 
     animation_delay *= 4
@@ -1052,11 +1059,11 @@ lanthanides_range = range(LANTHANUM, LUTHENIUM + 1)
 actinides_range = range(ACTINIUM, LAWRENCIUM + 1)
 
 if atomic_number in lanthanides_range:
-    lanthanides[atomic_number - LANTHANUM + 3] = fore("▪", ELEMENT_TYPE_COLORS[element_type])
+    lanthanides[atomic_number - LANTHANUM + 3] = bold(fore("▪", ELEMENT_TYPE_COLORS[element_type]))
 elif atomic_number in actinides_range:
-    actinides[atomic_number - ACTINIUM + 3] = fore("▪", ELEMENT_TYPE_COLORS[element_type])
+    actinides[atomic_number - ACTINIUM + 3] = bold(fore("▪", ELEMENT_TYPE_COLORS[element_type]))
 else:
-    periodic_table[period - 1][group - 1] = fore("▪", ELEMENT_TYPE_COLORS[element_type])
+    periodic_table[period - 1][group - 1] = bold(fore("▪", ELEMENT_TYPE_COLORS[element_type]))
 
 entries = [
     bold(fore(name, MALE if gender == "male" else FEMALE))
@@ -1218,6 +1225,11 @@ positives_result = ", ".join(positives)
 
 conductivity_type = electronic["conductivity_type"]
 
+try:
+    conductivity_type = fore(conductivity_type, CONDUCTIVITY_TYPE_COLORS[conductivity_type])
+except ValueError:
+    conductivity_type = bold(conductivity_type)
+
 # Measurements
 radius = measurements["radius"]
 hardness = measurements["hardness"]
@@ -1238,7 +1250,7 @@ animate_print(f" 🔍 - Discoverer(s): {discoverers}")
 animate_print(f" 🔍 - Discovery Date: {bold(discovery_date)}")
 animate_print(f" ↔️ - Period (Row): {bold(period)}")
 animate_print(f" ↕️ - Group (Column): {bold(group)}")
-animate_print(f" 🎨 - Type: {fore(element_type, ELEMENT_TYPE_COLORS[element_type])}")
+animate_print(f" 🎨 - Type: {bold(fore(element_type, ELEMENT_TYPE_COLORS[element_type]))}")
 animate_print(f" 🧱 - Block: {bold(block)}")
 animate_print(f" 📇 - CAS Number: {bold(cas_number)}")
 
@@ -1286,20 +1298,20 @@ animate_print()
 print_header("Physical Properties")
 animate_print()
 
-animate_print(f" 💧 - {fore("Melting Point", MELT_COL)}: {bold(melting_point)}°C = {bold(celcius_to_fahrenheit(melting_point))}°F = {bold(celcius_to_kelvin(melting_point))}K")
-animate_print(f" 💨 - {fore("Boiling Point", BOIL_COL)}: {bold(boiling_point)}°C = {bold(celcius_to_fahrenheit(boiling_point))}°F = {bold(celcius_to_kelvin(boiling_point))}K")
+animate_print(f" 💧 - {fore("Melting Point", MELT_COL)}: {bold(melting_point)}°C ≈ {bold(celcius_to_fahrenheit(melting_point))}°F = {bold(celcius_to_kelvin(melting_point))}K")
+animate_print(f" 💨 - {fore("Boiling Point", BOIL_COL)}: {bold(boiling_point)}°C ≈ {bold(celcius_to_fahrenheit(boiling_point))}°F = {bold(celcius_to_kelvin(boiling_point))}K")
 animate_print(f" A - {fore("Mass Number", GOLD)}: {fore(protons, RED)} + {fore(neutrons, BLUE)} = {bold(protons + neutrons)}")
-animate_print(f" u - Atomic Mass: {bold(atomic_mass)}g/mol")
+animate_print(f" u - {fore("Atomic Mass", BRIGHT_RED)}: {bold(atomic_mass)}g/mol")
 animate_print(f" ☢️ - {fore("Radioactive", ORANGE)}: {fore("Yes", GREEN) if radioactive else fore("No", RED)}")
-animate_print(f" t1/2 - Half Life: {bold(half_life if not (half_life is None) else fore("Stable", CYAN))}")
+animate_print(f" t1/2 - {fore("Half Life", PERIWINKLE)}: {bold(half_life if not (half_life is None) else fore("Stable", CYAN))}")
 
 animate_print()
 print_header("Electronic Properties")
 animate_print()
 
 animate_print(f" χ - {fore("Electronegativity", ELECTRONEG_COL)}: {bold(electronegativity)}")
-animate_print(f" EA - Electron Affinity: {bold(electron_affinity)}eV = {bold(eV_to_kJpermol(electron_affinity))}kJ/mol")
-animate_print(f" IE - {fore("Ionization Energy", FEMALE)}: {bold(ionization_energy)}eV = {bold(eV_to_kJpermol(ionization_energy))}kJ/mol")
+animate_print(f" EA - {fore("Electron Affinity", EXCITED)}: {bold(electron_affinity)}eV ≈ {bold(eV_to_kJpermol(electron_affinity))}kJ/mol")
+animate_print(f" IE - {fore("Ionization Energy", FEMALE)}: {bold(ionization_energy)}eV ≈ {bold(eV_to_kJpermol(ionization_energy))}kJ/mol")
 animate_print(f"      {bold("ESTIMATED")} Ionization Energy Series {bold("(THIS IS A VERY HUGE SIMPLIFICATION. Do not rely on them.)")}: ")
 animate_print(f"\n{calculate_ionization_series(subshells, atomic_number, ionization_energy)}\n")
 

@@ -1855,7 +1855,7 @@
             "shells": [2, 5],
             "subshells": ["1s2", "2s2", "2p3"],
             "oxidation_states": [-3, -2, -1, 0, 1, 2, 3, 4, 5],
-            "conductivity_type": "Non-conductor"
+            "conductivity_type": "Insulator"
         },
         "measurements": {
             "radius": {

@@ -193,14 +193,18 @@ try:
         user_input = input("> ").lower().strip()
 
         try:
+            removes = ["r", "return", "ret"]
             if user_input in ["quit", "q", "abort", "exit"]:
                 fancy_abort()
                 save_config()
                 logger.info("User quit the program. Aborting...")
                 sys.exit(0)
-            elif "r" in user_input.split(" ") or "return" in user_input.split(" ") or "ret" in user_input.split(" "):
+            elif user_input.split(" ")[0] in removes:
                 user_arguments = user_input.split(" ")
-                user_arguments.remove("r")
+
+                for remove_factor in removes:
+                    if remove_factor in user_arguments:
+                        user_arguments.remove(remove_factor)
                 save_config()
                 clear_screen()
                 subprocess.run([sys.executable, str(MAIN_FILE), *user_arguments], check=True)
