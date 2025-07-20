@@ -29,6 +29,7 @@ def fancy_abort():
 def create_fn_event(input: str, function_no: int, callable):
     if input == function_no:
         callable()
+        save_config()
         return True
     return False
 

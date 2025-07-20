@@ -91,7 +91,16 @@ CONDUCTIVITY_TYPE_COLORS = {
     "Superconductor": NULL,
     "Semiconductor": CYAN,
     "Insulator": RED,
-    "Conductor": GOLD
+    "Conductor": GOLD,
+    "Unsure": EXCITED
+}
+
+CONDUCTIVITY_TYPE_SYMBOLS = {
+    "Superconductor": "💨",
+    "Semiconductor": "🔗",
+    "Insulator": "🫧",
+    "Conductor": "🔃",
+    "Unsure": "❓"
 }
 
 SUBSHELL_COLORS = {
@@ -831,17 +840,36 @@ The vibrant colors and visuals were done with the help of {italic(bold("ANSI esc
 {dim("(You can disable this anytime in the config.json file, or using the --init flag.)")}
 There are also other flags you can provide to this CLI.
 
-- {bold("--debug")} - Enable debug mode for testing (always the first priority)
-- {bold("--info")} - Give this information message
-- {bold("--version")} - Check the version
-- {bold("--init")} - Edit the settings
-- {bold("--update")} - Check for updates
-- {bold("--table")} - View the periodic table
-- {bold("--export")} {fore("element", BLUE)},
-  {bold("--export")} {fore("isotope", GREEN)} - Export {fore("element", BLUE)} or {fore("isotope", GREEN)} to a .json file
-- {bold("--compare")} {fore("factor", RED)} - Compare all elements with a factor of {fore("factor", RED)}
-- {bold("--bond-type")} - Compare two elements and get their bond type
-- {bold("--random")} - Pick a random element
+- {bold("--debug")}
+- Enable debug mode for testing (always the first priority)
+
+- {bold("--info")}
+- Give this information message
+
+- {bold("--version")}
+- Check the version
+
+- {bold("--init")}
+- Edit the settings
+
+- {bold("--update")}
+- Check for updates
+
+- {bold("--table")}
+- View the periodic table
+
+- {bold("--export")} [{fore("element", BLUE)}],
+  {bold("--export")} [{fore("isotope", GREEN)}]
+- Export {fore("element", BLUE)} or {fore("isotope", GREEN)} to a .json file
+
+- {bold("--compare")} [{fore("factor", RED)}]
+- Compare all elements with a factor of {fore("factor", RED)}
+
+- {bold("--bond-type")}
+- Compare two elements and get their bond type
+
+- {bold("--random")}
+- Pick a random element
 
 Also, for flags that import other scripts, debug mode does not apply. Sorry!
 
@@ -1099,7 +1127,7 @@ orbital_capacity_map = {"s": 1, "p": 3, "d": 5, "f": 7}
 subshell_result = ""
 pattern = re.compile(r"(\d)([spdf])(\d+)")
 
-for subshell in subshells:
+for index, subshell in enumerate(subshells):
     if len(subshell) < 3 or not subshell[-1].isdigit():
         logger.warn(f"To the developers, a malformed subshell was detected in {fullname.capitalize()}. Issue: {subshell}")
         continue
@@ -1111,11 +1139,13 @@ for subshell in subshells:
         electron_count = int(electron_count)
         max_capacity = subshell_capacities[subshell_type]
         colored_subshell = fore(formatted_subshell, SUBSHELL_COLORS.get(subshell_type, (255, 255, 255)))
-        subshell_result += f"{bold(colored_subshell)} ({electron_count}/{max_capacity}), "
+        colored_subshell = bold(colored_subshell) if index + 1 == len(subshells) else colored_subshell
+        subshell_result += f"{colored_subshell} ({electron_count}/{max_capacity}), "
     else:
         subshell_type = subshell[1] if len(subshell) > 1 else 's'
         colored_subshell = fore(formatted_subshell, SUBSHELL_COLORS.get(subshell_type, (255, 255, 255)))
-        subshell_result += f"{bold(colored_subshell)}, "
+        colored_subshell = bold(colored_subshell) if index + 1 == len(subshells) else colored_subshell
+        subshell_result += f"{colored_subshell}, "
 
 subshell_result = subshell_result.rstrip(", ")
 
@@ -1149,7 +1179,7 @@ for subshell_string in subshells:
             )
             orbital_boxes.append(f"[{spins_colored}]")
 
-    formatted_line = f"{energy_level + orbital_type:<4} {' '.join(orbital_boxes)}"
+    formatted_line = f"  {energy_level + orbital_type:<4} {' '.join(orbital_boxes)}"
     formatted_lines.append(formatted_line)
     current_unpaired_electrons = sum(1 for orbital in orbitals if orbital == "↑" or orbital == "↓")
     unpaired_electrons += current_unpaired_electrons
@@ -1176,13 +1206,13 @@ if subshells:
         last_subshell = last_subshell[:-1] + convert_superscripts(last_subshell[-1]) if use_superscripts else last_subshell
         last_subshell = fore(last_subshell, SUBSHELL_COLORS.get(last_subshell_type, (255, 255, 255)))
 
-        subshell_visualisation += f"\n\nValence Subshell ({last_subshell}):"
-        subshell_visualisation += f"\n  n - {fore('Principal', CYAN)}: {bold(principal_quantum_number)}"
-        subshell_visualisation += f"\n  l - {fore('Azimuthal', GREEN)}: {bold(azimuthal_quantum_number)} ({subshell_type} subshell)"
-        subshell_visualisation += f"\n  m_l - {fore('Magnetic', YELLOW)}: {bold(magnetic_quantum_number)} (approximated)"
-        subshell_visualisation += f"\n  m_s - {fore('Spin', MAGENTA)}: {bold(spin_quantum_number)} ({unpaired_electrons} unpaired electron{'s' if unpaired_electrons != 1 else ''}, {pair_determiner})"
-        subshell_visualisation += f"\n  σ - {fore('Shielding Constant', PERIWINKLE)}: {bold(f'{shielding_constant:.2f}')}"
-        subshell_visualisation += f"\n  Z_eff - {fore('Effective Nuclear Charge', GOLD)}: {bold(f'{effective_nuclear_charge:.2f}')}"
+        subshell_visualisation += f"\n\n      Valence Subshell ({bold(last_subshell)}):"
+        subshell_visualisation += f"\n        n - {fore('Principal', CYAN)}: {bold(principal_quantum_number)}"
+        subshell_visualisation += f"\n        l - {fore('Azimuthal', GREEN)}: {bold(azimuthal_quantum_number)} ({subshell_type} subshell)"
+        subshell_visualisation += f"\n        m_l - {fore('Magnetic', YELLOW)}: {bold(magnetic_quantum_number)} (approximated)"
+        subshell_visualisation += f"\n        m_s - {fore('Spin', MAGENTA)}: {bold(spin_quantum_number)} ({unpaired_electrons} unpaired electron{'s' if unpaired_electrons != 1 else ''}, {pair_determiner})"
+        subshell_visualisation += f"\n        σ - {fore('Shielding Constant', PERIWINKLE)}: {bold(f'{shielding_constant:.2f}')}"
+        subshell_visualisation += f"\n        Z_eff - {fore('Effective Nuclear Charge', GOLD)}: {bold(f'{effective_nuclear_charge:.2f}')}"
 
 # Physical properties
 
@@ -1226,9 +1256,15 @@ positives_result = ", ".join(positives)
 conductivity_type = electronic["conductivity_type"]
 
 try:
-    conductivity_type = fore(conductivity_type, CONDUCTIVITY_TYPE_COLORS[conductivity_type])
-except ValueError:
-    conductivity_type = bold(conductivity_type)
+    formatted_conductivity = fore(conductivity_type, CONDUCTIVITY_TYPE_COLORS[conductivity_type])
+except KeyError:
+    logger.warn(f"Invalid conductivity type found; {conductivity_type}. Please pay attention.")
+    formatted_conductivity = bold(conductivity_type)
+
+try:
+    formatted_conductivity += f" {CONDUCTIVITY_TYPE_SYMBOLS[conductivity_type]}"
+except KeyError:
+    pass
 
 # Measurements
 radius = measurements["radius"]
@@ -1285,8 +1321,8 @@ animate_print(f" nv - {fore('Valence Electrons', VALENCE_ELECTRONS_COL)}: {bold(
 animate_print(f" u - {fore('Up Quarks', GREEN)}: ({fore(protons, RED)} * 2) + {fore(neutrons, BLUE)} = {bold(up_quarks)}")
 animate_print(f" d - {fore('Down Quarks', CYAN)}: {fore(protons, RED)} + ({fore(neutrons, BLUE)} * 2) = {bold(down_quarks)}")
 animate_print(f" ⚛️ - {fore('Shells', EXCITED)} {dim(f'(Valence electrons in {fore('yellow', VALENCE_ELECTRONS_COL)})')}:\n    {shell_result}")
-animate_print(f" 🌀 - {fore('Subshells', PERIWINKLE)} {dim(f'(Colored by type: {subshell_examples})')}:\n    {subshell_result}")
-animate_print(f"      Breakdown:\n\n{subshell_visualisation}\n")
+animate_print(f" 🌀 - {fore('Subshells', PERIWINKLE)} {dim(f'(Colored by type: {subshell_examples}, valence subshell in {bold('bold')})')}:\n    {subshell_result}")
+animate_print(f"      {bold('Breakdown')}:\n\n{subshell_visualisation}\n")
 
 animate_print(f" 🪞 - Isotopes ({len(isotopes.keys())}): {dim(f"(Decay processes in {fore("red", RED)} need verification. Do not trust them!)")}:")
 
@@ -1316,7 +1352,7 @@ animate_print(f"      {bold("ESTIMATED")} Ionization Energy Series {bold("(THIS 
 animate_print(f"\n{calculate_ionization_series(subshells, atomic_number, ionization_energy)}\n")
 
 animate_print(f" ⚡️ - {fore("Oxidation States", YELLOW)} {dim(f"(Only the ones that have {fore("color", BLUE)} are activated)")}:\n{"   " + negatives_result}\n{"   " + positives_result}\n")
-animate_print(f" ⚡️ - {fore("Conductivity Type", BRIGHT_BLACK)}: {bold(conductivity_type)}")
+animate_print(f" ⚡️ - {fore("Conductivity Type", BRIGHT_BLACK)}: {bold(formatted_conductivity)}")
 
 animate_print()
 print_header("Measurements")
