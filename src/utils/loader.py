@@ -55,7 +55,7 @@ class Logger():
         self.error(message)
         time.sleep(1)
         self.fatal("Program terminated.")
-        sys.exit(1)
+        sys.exit(0)
 
 log = Logger(enable_debugging=False)
 
@@ -124,11 +124,11 @@ def failsafe():
         confirmation = input("> ").strip().lower()
         if confirmation not in ["y", "yes", ""]:
             print("You denied the file execution. Please run the build script yourself.")
-            sys.exit(1)
+            sys.exit(0)
         if BUILD_FILE.is_file():
             subprocess.run([sys.executable, str(BUILD_FILE)], check=True)
             sys.exit(0)
         else:
             print("The build script was not found. Please read the README.md for more information. (If that even exists, that is.)")
-            sys.exit(1)
+            sys.exit(0)
 

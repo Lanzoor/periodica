@@ -19,7 +19,7 @@ symlink_target = bin_path / "periodica"
 OS = platform.system()
 if OS not in ["Linux", "Darwin"]:
     print(f"Unsupported OS: {OS}. This tool is for Unix-based systems only. Please follow README.md for Windows instructions.")
-    sys.exit(1)
+    sys.exit(0)
 
 if not venv_path.exists():
     print("Virtual environment not found. Creating one...")
@@ -37,7 +37,7 @@ elif pyproject.exists():
     subprocess.run([str(venv_python), "-m", "pip", "install", "-e", "."], check=True, cwd=str(script_dir))
 else:
     print("Neither requirements.txt nor pyproject.toml found. Aborting...")
-    sys.exit(1)
+    sys.exit(0)
 
 source_display = str(sh_script).replace(str(Path.home()), "~")
 print(f"Would you like this script to make a symlink from {source_display} -> ~/.local/bin/periodica?")
@@ -47,15 +47,15 @@ confirmation = input("> ").lower().strip()
 if confirmation == "n":
     print("Alright! Just please make sure what you are doing. You may run this build script again anytime to create a symlink.")
     print(f"If you are following a custom install, run: ln -s {sh_script} ~/.local/bin/periodica")
-    sys.exit(1)
+    sys.exit(0)
 elif confirmation not in ["", "y"]:
     print("Invalid input. Please enter 'y', 'n', or press Enter for yes.")
-    sys.exit(1)
+    sys.exit(0)
 
 try:
     if not sh_script.exists():
         print(f"Launch script missing: {sh_script}")
-        sys.exit(1)
+        sys.exit(0)
     os.chmod(sh_script, 0o755)
     bin_path.mkdir(parents=True, exist_ok=True)
     if symlink_target.exists():
@@ -66,7 +66,7 @@ try:
             overwrite = input("Would you like to overwrite it? [y/N]: ").strip().lower()
             if overwrite != "y":
                 print(f"Skipped creating symlink. Please do it manually: ln -s {sh_script} ~/.local/bin/periodica")
-                sys.exit(1)
+                sys.exit(0)
             symlink_target.unlink()
             symlink_target.symlink_to(sh_script)
             print(f"Symlink replaced: {symlink_target} -> {sh_script}")
@@ -83,6 +83,6 @@ try:
 
 except Exception as error:
     print(f"Failed to create symlink: {error}")
-    sys.exit(1)
+    sys.exit(0)
 
 print("Setup complete. You can now run Periodica using: periodica")

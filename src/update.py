@@ -11,7 +11,6 @@ log = Logger(enable_debugging=False)
 if __name__ == "__main__":
     print("Please refrain from running this script manually. Instead, please run the periodica.sh file with the --update flag.")
     sys.exit(0)
-
 OS = platform.system()
 
 if OS not in ["Linux", "Darwin"]:
@@ -29,15 +28,15 @@ def fetch_toml():
             toml_data = tomllib.load(f)
     except PermissionError:
         print("Permission denied while reading pyproject.toml.")
-        sys.exit(1)
+        sys.exit(0)
     except FileNotFoundError:
         print("pyproject.toml not found. Please manually update if using version < v5.0.2-alpha.")
-        sys.exit(1)
+        sys.exit(0)
 
     local_version = toml_data.get("project", {}).get("version")
     if not local_version:
         print("Could not determine local version.")
-        sys.exit(1)
+        sys.exit(0)
 
     return local_version
 
@@ -65,7 +64,7 @@ def update_main():
         parsed_lts = version.parse(lts_version)
     except Exception:
         print(fore("Failed to parse version. Check if pyproject.toml is malformed.", RED))
-        sys.exit(1)
+        sys.exit(0)
 
     if parsed_local == parsed_lts:
         print(bold("You are using the latest version."))
@@ -98,7 +97,7 @@ def update_main():
 
         if not BUILD_FILE.exists():
             print("build.py not found. Aborting...")
-            sys.exit(1)
+            sys.exit(0)
 
         print("Running build.py to reinitialize environment...")
         subprocess.run([sys.executable, str(BUILD_FILE)], check=True)

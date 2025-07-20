@@ -6,7 +6,7 @@ try:
     import utils
 except ImportError:
     print("The utils helper library was not found. Please ensure all required files are present.")
-    sys.exit(1)
+    sys.exit(0)
 
 from utils.loader import get_config, get_response, Logger, failsafe
 from utils.terminal import RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, BRIGHT_BLACK, BRIGHT_GREEN, BRIGHT_RED
@@ -470,7 +470,7 @@ def compare_by_factor():
     if not valid_results:
         animate_print(fore(f"No valid data for {factor}", RED))
         logger.error(f"No elements have valid {factor} data")
-        sys.exit(1)
+        sys.exit(0)
 
     sorted_results = sorted(result.items(), key=lambda item: (item[1] is None, item[1]))
 
