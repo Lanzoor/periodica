@@ -915,6 +915,7 @@ if elementdata_malformed:
 # Getting element / isotope
 easter_eggs = [
     ("vibranium", "🦾 WAKANDA FOREVER"),
+    (["veritasium", "ve"], "The element of truth. Not real tho, but I really love that channel tho fr"),
     ("--info", "this isn't a flag input field"),
     ("lanzoor", fore("do not try to find me, please try to find my sanity", ELECTRONEG_COL)),
     ("periodica", "Hey, that's me! Why are you trying to search me from myself? That's me! Why are you trying to search from myself?\nWhat? That's me... why are you trying to search myself whilst in myself? Hey! That's literally me. Why are you trying so hard to search myself from myself?"),
@@ -922,10 +923,10 @@ easter_eggs = [
     ("1/137", "Yeah, that's right! That's the answer!"),
     ("403", fore("Element access not granted", YELLOW)),
     ("404", fore("Element not found", YELLOW)),
-    ("recursion", "See: recursion."),
+    ("recursion", f"See: {bold("recursion")}."),
     ("your mom", "She's not on the periodic table, but she probably will crash the entire table if she was."),
     ("sudo", "You don't need root access to learn chemistry. You need a brain."),
-    ("carbonara", "Monsieur?? This isn't an italian restaurant. It's a restaurant made up of atoms. GET OUT!!")
+    ("carbonara", "Monsieur?? This isn't an italian restaurant. Se riesci a leggere questo, sei italiano.")
 ]
 
 try:
@@ -1007,7 +1008,7 @@ if element_data is None:
                 animate_print(response)
                 if user_input == "periodica":
                     import base64
-                    exec(base64.b64decode("cmFpc2UgUmVjdXJzaW9uRXJyb3IoIm1heGltdW0gZGVwdGggcmVhY2hlZCB3aGlsc3QgdHJ5aW5nIHRvIGZpbmQgcGVyaW9kaWNhIGluc2lkZSBwZXJpb2RpY2EgaW5zaWRlIHBlcmlvZGljYSBpbnNpZGUgcGVyaW9kaWNhIGluc2lkZS4uLiIp"))
+                    exec(base64.b64decode("cmFpc2UgUmVjdXJzaW9uRXJyb3IoIm1heGltdW0gZGVwdGggcmVhY2hlZCB3aGlsc3QgdHJ5aW5nIHRvIGZpbmQgcGVyaW9kaWNhIGluc2lkZSBwZXJpb2RpY2EgaW5zaWRlIHBlcmlvZGljYSBpbnNpZGUgcGVyaW9kaWNhIGluc2lkZS4uLiIpIGZyb20gTm9uZQ=="))
                 sys.exit(0)
 
 
