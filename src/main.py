@@ -337,6 +337,7 @@ def view_table():
     clear_screen()
 
     # TODO: Continue the logic. Way too busy to refactor stuff for now.
+    ...
 
     sys.exit(0)
 
@@ -406,12 +407,29 @@ def compare_by_factor():
         "neutrons",
         "mass_number",
         "up_quarks",
-        "down_quarks"
+        "down_quarks",
+        "isotopes",
+        "calculated_radius",
+        "melting_point",
+        "boiling_point"
     ]
+
+    determiner = ""
+    sorting_methods = {"ascending", "descending", "name"}
+    sorting_method = "ascending"
+
+    for index, argument in enumerate(positional_arguments):
+        if argument in sorting_methods:
+            sorting_method = argument
+            animate_print(f"Using the sorting method {bold(argument)} for sorting...")
+            logger.info(f"Using {argument} sorting for sorting.")
+            del positional_arguments[index]
+            break
+
 
     factor_candidate = positional_arguments[0] if positional_arguments else None
 
-    if factor_candidate:
+    if factor_candidate and factor_candidate not in factors:
         suggestion = difflib.get_close_matches(factor_candidate, factors, n=1, cutoff=0.6)
         if suggestion:
             animate_print(fore(f"Not a valid factor. Did you mean \"{bold(suggestion[0])}\"?", YELLOW))
@@ -421,6 +439,7 @@ def compare_by_factor():
             logger.warn(f"No direct match found for '{factor_candidate}'.")
 
     def match_input(data: dict[str, dict], factor):
+        nonlocal determiner
         try:
             match factor:
                 case "protons":
@@ -435,6 +454,14 @@ def compare_by_factor():
                     return (data["nuclear"]["protons"] * 2) + data["nuclear"]["neutrons"]
                 case "down_quarks":
                     return data["nuclear"]["protons"] + (data["nuclear"]["neutrons"] * 2)
+                case "isotopes":
+                    return len(list(data["nuclear"]["isotopes"].keys()))
+                case "melting_point":
+                    determiner = "°C"
+                    return data["physical"]["melt"]
+                case "boiling_point":
+                    determiner = "°C"
+                    return data["physical"]["boil"]
         except (KeyError, ValueError) as e:
             logger.warn(f"Missing or invalid {factor} for {data['general']['fullname']}: {e}")
             return None
@@ -472,16 +499,25 @@ def compare_by_factor():
         logger.error(f"No elements have valid {factor} data")
         sys.exit(0)
 
-    sorted_results = sorted(result.items(), key=lambda item: (item[1] is None, item[1]))
+    match sorting_method:
+        case "ascending":
+            sorted_results = sorted(result.items(), key=lambda item: (item[1] is None, item[1]))
+        case "descending":
+            sorted_results = sorted(result.items(), key=lambda item: (item[1] is None, item[1]))
+            sorted_results.reverse()
+        case "name":
+            sorted_results = result.items()
 
     max_value = max(value for _, value in valid_results) or 1
     for name, value in sorted_results:
         if value is not None:
-            padding = 25
+            padding = 30 + len(determiner)
             bar_space = max(TERMINAL_WIDTH - padding, 10)
             bar_length = int((value / max_value) * bar_space)
             bar = fore("█" * bar_length, CYAN)
-            animate_print(f"{name:<12} {str(value):<4} [{bar}]")
+            animate_print(f"{name:<12} {str(value) + determiner:<12} [{bar}]")
+        elif value is None:
+            animate_print(f"{" " * 24} [{fore("None", NULL)}]")
 
     # Calculate stats
     valid_values = [value for _, value in valid_results]
@@ -490,9 +526,9 @@ def compare_by_factor():
     lowest_pair = min(valid_results, key=lambda item: item[1])
 
     animate_print()
-    animate_print(f"Average - {average:.2f}")
-    animate_print(f"Element with the highest {factor} is {highest_pair[0]}, with {highest_pair[1]}.")
-    animate_print(f"Element with the lowest {factor} is {lowest_pair[0]}, with {lowest_pair[1]}.")
+    animate_print(f"Average - {average:.2f}{determiner}")
+    animate_print(f"Element with the highest {factor} is {highest_pair[0]}, with {highest_pair[1]}{determiner}.")
+    animate_print(f"Element with the lowest {factor} is {lowest_pair[0]}, with {lowest_pair[1]}{determiner}.")
 
     sys.exit(0)
 
@@ -916,7 +952,7 @@ if elementdata_malformed:
 easter_eggs = [
     ("vibranium", "🦾 WAKANDA FOREVER"),
     (["veritasium", "ve"], "The element of truth. Not real tho, but I really love that channel tho fr"),
-    ("--info", "this isn't a flag input field"),
+    ("--info", "this isn't a flag input field sorry"),
     ("lanzoor", fore("do not try to find me, please try to find my sanity", ELECTRONEG_COL)),
     ("periodica", "Hey, that's me! Why are you trying to search me from myself? That's me! Why are you trying to search from myself?\nWhat? That's me... why are you trying to search myself whilst in myself? Hey! That's literally me. Why are you trying so hard to search myself from myself?"),
     ("answer", f"It's {bold("1/137")}. No questions, just that."),
