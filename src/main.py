@@ -117,6 +117,28 @@ SUBSHELL_AZIMUTHALS = {
     "f": 3
 }
 
+match random.randint(0, 5):
+    case 0:
+        tip = "(Tip: You can give this program argv to directly search an element from there. You can even give argv to the periodica.sh file too!)"
+    case 1:
+        tip = "(Tip: Run this script with the --info flag to get information about flags.)"
+    case 2:
+        tip = "(Tip: Run this script with the --init flag to configure options like using superscripts.)"
+    case 3:
+        tip = "(Tip: In an input field, you can input quit to exit the interactive input session.)"
+    case 4:
+        tip = f"(Tip: In the main interactive input field, you can input, {italic("certain")} things to trigger an easter egg message.)"
+    case _:
+        tip = ""
+
+match random.randint(0, 3):
+    case 0:
+        compare_tip = "(Tip: You can give the arguments 'ascending', 'descending', and 'name' to change sort behavior.)"
+    case 1:
+        compare_tip = "(Tip: You can still input factors without underscores in the interactive text input field. Just not in arguments.)"
+    case _:
+        compare_tip = ""
+
 # Fetch arguments that are not flags (removes --export, --compare, etc.)
 def get_positional_args() -> list[str]:
     return [arg for arg in sys.argv[1:] if not arg.startswith("--")]
@@ -398,7 +420,7 @@ def export_element():
     sys.exit(0)
 
 def compare_by_factor():
-    global full_data, positional_arguments
+    global full_data, positional_arguments, compare_tip
     logger.info("User gave --compare flag; redirecting to another logic.")
 
     factors = [
@@ -409,9 +431,10 @@ def compare_by_factor():
         "up_quarks",
         "down_quarks",
         "isotopes",
-        "calculated_radius",
         "melting_point",
-        "boiling_point"
+        "boiling_point",
+        "atomic_mass",
+        "electronegativity"
     ]
 
     determiner = ""
@@ -434,9 +457,11 @@ def compare_by_factor():
         if suggestion:
             animate_print(fore(f"Not a valid factor. Did you mean \"{bold(suggestion[0])}\"?", YELLOW))
             logger.warn(f"No direct match found for '{factor_candidate}'. Found a close match; '{suggestion[0]}'?")
+            factor_candidate = None
         else:
             animate_print(fore("Not a valid factor. Please provide one manually.", RED))
             logger.warn(f"No direct match found for '{factor_candidate}'.")
+            factor_candidate = None
 
     def match_input(data: dict[str, dict], factor):
         nonlocal determiner
@@ -462,11 +487,18 @@ def compare_by_factor():
                 case "boiling_point":
                     determiner = "°C"
                     return data["physical"]["boil"]
-        except (KeyError, ValueError) as e:
-            logger.warn(f"Missing or invalid {factor} for {data['general']['fullname']}: {e}")
+                case "atomic_mass":
+                    determiner = "g/mol"
+                    return data["physical"]["atomic_mass"]
+                case "electronegativity":
+                    return data["electronic"]["electronegativity"]
+        except (KeyError, ValueError) as error:
+            logger.warn(f"Missing or invalid {factor} for {data['general']['fullname']}: {error}")
             return None
 
-    animate_print(f"Please enter a factor to compare all the elements with. The valid factors are:\n  {', '.join(factors)}")
+    compare_tip = "\n" + compare_tip if compare_tip else ""
+    formatted_factors = ', '.join(map(lambda element: bold(element), factors))
+    animate_print(f"Please enter a factor to compare all the elements with. The valid factors are:\n  {formatted_factors}{dim(compare_tip)}")
 
     while True:
         if factor_candidate and factor_candidate in factors:
@@ -486,7 +518,7 @@ def compare_by_factor():
         factor_candidate = "_".join(input("> ").strip().lower().split(" "))
         check_for_exit_event(factor_candidate)
 
-    animate_print(f"\nComparing all elements by factor {bold(factor)}... {dim('(Please note that elements may be missing.)')}\n")
+    animate_print(f"\nComparing all elements by factor {bold(factor)} with {bold(sorting_method)} sorting... {dim('(Please note that some elements may be missing, and the data is trimmed up to 4 digits of float numbers.)')}\n")
     logger.info(f"Comparing all elements by factor {factor}...")
 
     result: dict[str, float | int | None] = {}
@@ -509,27 +541,35 @@ def compare_by_factor():
             sorted_results = result.items()
 
     max_value = max(value for _, value in valid_results) or 1
+    none_counter = 0
+    none_list = []
+
     for name, value in sorted_results:
         if value is not None:
             padding = 30 + len(determiner)
             bar_space = max(TERMINAL_WIDTH - padding, 10)
             bar_length = int((value / max_value) * bar_space)
             bar = fore("█" * bar_length, CYAN)
-            animate_print(f"{name:<12} {str(value) + determiner:<12} [{bar}]")
+            animate_print(f"{name:<12} {str(round(value, 4)) + determiner:<12} [{bar}]")
         elif value is None:
-            animate_print(f"{" " * 24} [{fore("None", NULL)}]")
+            none_counter += 1
+            none_list.append(name)
+            animate_print(f"{name:<12} {fore("None", NULL) + " " * 8} []")
 
     # Calculate stats
     valid_values = [value for _, value in valid_results]
     average = sum(valid_values) / len(valid_values) if valid_values else 0
     highest_pair = max(valid_results, key=lambda item: item[1])
     lowest_pair = min(valid_results, key=lambda item: item[1])
+    formatted_nones = ', '.join(map(lambda element: bold(element), none_list))
 
     animate_print()
-    animate_print(f"Average - {average:.2f}{determiner}")
-    animate_print(f"Element with the highest {factor} is {highest_pair[0]}, with {highest_pair[1]}{determiner}.")
-    animate_print(f"Element with the lowest {factor} is {lowest_pair[0]}, with {lowest_pair[1]}{determiner}.")
+    animate_print(f"Average - {bold(round(average, 4))}{determiner}")
+    animate_print(f"Element with the highest {factor} is {bold(highest_pair[0])}, with {bold(highest_pair[1])}{determiner}.")
+    animate_print(f"Element with the lowest {factor} is {bold(lowest_pair[0])}, with {bold(lowest_pair[1])}{determiner}.")
 
+    if none_counter > 0:
+        animate_print(fore(f"{none_counter} element(s) do not have a value in {bold(factor)}, and they are;\n  {formatted_nones}", NULL))
     sys.exit(0)
 
 def compare_bond_type():
@@ -851,20 +891,6 @@ def safe_format(value, measurement, placeholder = "None"):
     return fore(placeholder, NULL)
 
 # Other important variables and functions
-match random.randint(0, 5):
-    case 0:
-        tip = "(Tip: You can give this program argv to directly search an element from there. You can even give argv to the periodica.sh file too!)"
-    case 1:
-        tip = "(Tip: Run this script with the --info flag to get information about flags.)"
-    case 2:
-        tip = "(Tip: Run this script with the --init flag to configure options like using superscripts.)"
-    case 3:
-        tip = "(Tip: In an input field, you can input quit to exit the interactive input session.)"
-    case 4:
-        tip = f"(Tip: In the main interactive input field, you can input, {italic("certain")} things to trigger an easter egg message.)"
-    case _:
-        tip = ""
-
 periodica_logo = bold(gradient("Periodica", (156, 140, 255), (140, 255, 245)) if config['truecolor'] else fore("periodica", BLUE))
 
 program_information = f"""
