@@ -8,7 +8,7 @@ except ImportError:
     print("The utils helper library was not found. Please ensure all required files are present.")
     sys.exit(0)
 
-from utils.loader import get_config, get_response, Logger, failsafe
+from utils.loader import get_config, get_response, Logger, failsafe, valid_sorting_methods
 from utils.terminal import RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, BRIGHT_BLACK, BRIGHT_GREEN, BRIGHT_RED
 from utils.terminal import fore, bold, dim, italic, animate_print, clear_screen, gradient
 from pprint import pprint
@@ -420,7 +420,7 @@ def export_element():
     sys.exit(0)
 
 def compare_by_factor():
-    global full_data, positional_arguments, compare_tip
+    global full_data, positional_arguments, compare_tip, valid_sorting_methods
     logger.info("User gave --compare flag; redirecting to another logic.")
 
     factors = [
@@ -438,11 +438,10 @@ def compare_by_factor():
     ]
 
     determiner = ""
-    sorting_methods = {"ascending", "descending", "name"}
     sorting_method = "ascending"
 
     for index, argument in enumerate(positional_arguments):
-        if argument in sorting_methods:
+        if argument in valid_sorting_methods:
             sorting_method = argument
             animate_print(f"Using the sorting method {bold(argument)} for sorting...")
             logger.info(f"Using {argument} sorting for sorting.")

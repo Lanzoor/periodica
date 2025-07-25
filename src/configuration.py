@@ -1,6 +1,6 @@
 import time, sys, pathlib, subprocess, json
 from utils.terminal import  RED, GREEN, CYAN, fore, bold, dim, clear_screen, clear_line
-from utils.loader import get_config, save_config, valid_formats, valid_animation_types, default_config, Logger
+from utils.loader import get_config, save_config, valid_formats, valid_animation_types, valid_sorting_methods, default_config, Logger
 
 if __name__ == "__main__":
     print("Please refrain from running this script manually. Instead, please run the periodica.sh file with the --init flag.")
@@ -88,11 +88,48 @@ def change_isotope_format():
             if user_input not in valid_formats:
                 print(f"{user_input} is neither a valid option name nor a valid option number. Please try again.")
                 logger.warn(f"{user_input} was neither a valid option name nor a valid option number.")
-                continue
+                time.sleep(1)
+                break
             config['isotope_format'] = user_input
             isotope_format = config["isotope_format"]
             print(f"Successfully changed option 'Isotope Format' to {bold(isotope_format)}.")
             logger.info(f"Setting 'Isotope Format' changed to {isotope_format}.")
+            time.sleep(1)
+            break
+
+def change_sorting_method():
+    global config, sorting_method
+
+    user_input = ""
+    while user_input not in valid_formats:
+        clear_screen()
+        print("You are about to change the sorting method. Here are all valid options;\n")
+
+        print(f"1. ascending")
+        print(f"2. descending")
+        print(f"3. name\n")
+
+        print("To change to an option, please input the corresponding option name, or the option number.")
+        user_input = input("> ").lower().strip()
+
+        try:
+            user_input = int(user_input)
+            config['default_sorting_method'] = valid_sorting_methods[user_input - 1]
+            sorting_method = config["default_sorting_method"]
+            print(f"Successfully changed option 'Sorting Method' to {bold(sorting_method)}.")
+            logger.info(f"Setting 'Sorting Method' changed to {sorting_method}.")
+            time.sleep(1)
+            break
+        except ValueError:
+            if user_input not in valid_sorting_methods:
+                print(f"{user_input} is neither a valid option name nor a valid option number. Please try again.")
+                logger.warn(f"{user_input} was neither a valid option name nor a valid option number.")
+                time.sleep(1)
+                break
+            config['default_sorting_method'] = user_input
+            sorting_method = config["default_sorting_method"]
+            print(f"Successfully changed option 'Sorting Method' to {bold(sorting_method)}.")
+            logger.info(f"Setting 'Sorting Method' changed to {sorting_method}.")
             time.sleep(1)
             break
 
@@ -151,7 +188,8 @@ def change_animation_delay():
         except ValueError:
             print(f"{user_input} is not a valid float. Please try again.")
             logger.warn(f"{user_input} was not a valid float.")
-            continue
+            time.sleep(1)
+            break
 
 def reset():
     global config
@@ -178,6 +216,7 @@ try:
         animation_type = config["animation_type"]
         animation_delay = config["animation_delay"]
         constant_debugging = config["constant_debugging"]
+        sorting_method = config["default_sorting_method"]
 
         clear_screen()
         print("NOTE: This program intentionally does not respect your animation settings. Please understand.\n")
@@ -188,7 +227,8 @@ try:
         print("4. Isotope Display Format: Determines how isotopes are formatted")
         print(f"5. Print Animation: Determines the print animation (Set to {bold(animation_type.capitalize())})")
         print(f"6. Animation Delay: Determines the delay between lines / characters based on animation type, does not work when animation is set to 'none' (Set to {bold(fore(animation_delay, CYAN))})")
-        print(f"7. Reset Data: {bold("Overwrites all settings to the default settings.")}\n")
+        print(f"7. Default Sorting Method: Determines the sorting behavior in the compare menu (Set to {bold(sorting_method)})")
+        print(f"8. Reset Data: {bold("Overwrites all settings to the default settings.")}\n")
 
         print(f"To change a setting, please input the corresponding function name. To exit, please enter the {bold('q')} key.\nTo return to the main program, please enter the {bold('r')} key with optional arguments.")
         user_input = input("> ").lower().strip()
@@ -225,7 +265,8 @@ try:
             create_fn_event(user_input, 4, change_isotope_format) or
             create_fn_event(user_input, 5, change_animation_type) or
             create_fn_event(user_input, 6, change_animation_delay) or
-            create_fn_event(user_input, 7, reset)
+            create_fn_event(user_input, 7, change_sorting_method) or
+            create_fn_event(user_input, 8, reset)
         )
 
         if not recognized_flag:
