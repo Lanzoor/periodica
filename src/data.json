@@ -1542,7 +1542,7 @@
             },
             "hardness": {
                 "brinell": null,
-                "mohs": "0.5 (graphite), 10 (diamond)",
+                "mohs": 0.5,
                 "vickers": null
             },
             "moduli": {

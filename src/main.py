@@ -136,6 +136,8 @@ match random.randint(0, 3):
         compare_tip = "(Tip: You can give the arguments 'ascending', 'descending', and 'name' to change sort behavior.)"
     case 1:
         compare_tip = "(Tip: You can still input factors without underscores in the interactive text input field. Just not in arguments.)"
+    case 2:
+        compare_tip = "(Tip: If you \"\"accidentally\"\" give two or more sorting methods in argv, only the first one will be used.)"
     case _:
         compare_tip = ""
 
@@ -434,7 +436,23 @@ def compare_by_factor():
         "melting_point",
         "boiling_point",
         "atomic_mass",
-        "electronegativity"
+        "electronegativity",
+        "electron_affinity",
+        "ionization_energy",
+        "calculated_radius",
+        "empirical_radius",
+        "covalent_radius",
+        "van_der_waals_radius",
+        "brinell_hardness",
+        "mohs_hardness",
+        "vickers_hardness",
+        "bulk_modulus",
+        "young_modulus",
+        "shear_modulus",
+        "poissons_ratio"
+        "stp_density",
+        "liquid_density",
+        "sound_transmission_speed"
     ]
 
     determiner = ""
@@ -447,7 +465,6 @@ def compare_by_factor():
             logger.info(f"Using {argument} sorting for sorting.")
             del positional_arguments[index]
             break
-
 
     factor_candidate = positional_arguments[0] if positional_arguments else None
 
@@ -467,36 +484,74 @@ def compare_by_factor():
         try:
             match factor:
                 case "protons":
-                    return data["nuclear"]["protons"]
+                    result = data["nuclear"]["protons"]
                 case "electrons":
-                    return data["nuclear"]["electrons"]
+                    result = data["nuclear"]["electrons"]
                 case "neutrons":
-                    return data["nuclear"]["neutrons"]
+                    result = data["nuclear"]["neutrons"]
                 case "mass_number":
-                    return data["nuclear"]["protons"] + data["nuclear"]["neutrons"]
+                    result = data["nuclear"]["protons"] + data["nuclear"]["neutrons"]
                 case "up_quarks":
-                    return (data["nuclear"]["protons"] * 2) + data["nuclear"]["neutrons"]
+                    result = (data["nuclear"]["protons"] * 2) + data["nuclear"]["neutrons"]
                 case "down_quarks":
-                    return data["nuclear"]["protons"] + (data["nuclear"]["neutrons"] * 2)
+                    result = data["nuclear"]["protons"] + (data["nuclear"]["neutrons"] * 2)
                 case "isotopes":
-                    return len(list(data["nuclear"]["isotopes"].keys()))
+                    result = len(list(data["nuclear"]["isotopes"].keys()))
                 case "melting_point":
                     determiner = "°C"
-                    return data["physical"]["melt"]
+                    result = data["physical"]["melt"]
                 case "boiling_point":
                     determiner = "°C"
-                    return data["physical"]["boil"]
+                    result = data["physical"]["boil"]
                 case "atomic_mass":
                     determiner = "g/mol"
-                    return data["physical"]["atomic_mass"]
+                    result = data["physical"]["atomic_mass"]
                 case "electronegativity":
-                    return data["electronic"]["electronegativity"]
+                    result = data["electronic"]["electronegativity"]
+                case "electron_affinity":
+                    determiner = "eV"
+                    result = data["electronic"]["electronegativity"]
+                case "ionization_energy":
+                    determiner = "eV"
+                    result = data["electronic"]["ionization_energy"]
+                case "calculated_radius" | "empirical_radius" | "covalent_radius" | "van_der_waals_radius":
+                    determiner = "pm"
+                    result = data["measurements"]["radius"][factor.replace("_radius", "")]
+                case "brinell_hardness" | "mohs_hardness" | "vickers_hardness":
+                    determiner = f"kgf/{SQUARE_MILLIMETER}" if determiner != "mohs_hardness" else ""
+                    result = data["measurements"]["hardness"][factor.replace("_hardness", "")]
+                case "bulk_modulus" | "young_modulus" | "shear_modulus":
+                    determiner = "GPa"
+                    result = data["measurements"]["moduli"][factor.replace("_modulus", "")]
+                case "poissons_ratio":
+                    result = data["measurements"]["moduli"]["poissons_ratio"]
+                case "stp_density":
+                    determiner = f"kg/{CUBIC_METER}"
+                    result = data["measurements"]["density"]["STP"]
+                case "liquid_density":
+                    determiner = f"kg/{CUBIC_METER}"
+                    result = data["measurements"]["density"]["liquid"]
+                case "sound_transmission_speed":
+                    determiner = "m/s"
+                    result = data["measurements"]["sound_transmission_speed"]
         except (KeyError, ValueError) as error:
             logger.warn(f"Missing or invalid {factor} for {data['general']['fullname']}: {error}")
             return None
 
+        try:
+            return float(result) if result is not None else None
+        except (ValueError, TypeError) as error:
+            logger.warn(f"Couldn't convert data {result} from anything else to float: {error}")
+            return None
+
     compare_tip = "\n" + compare_tip if compare_tip else ""
+
     formatted_factors = ', '.join(map(lambda element: bold(element), factors))
+    formatted_factors = "\n" + "\n\n".join(
+        textwrap.fill(paragraph.strip(), width=TERMINAL_WIDTH * 1.25, initial_indent="    ", subsequent_indent="")
+        for paragraph in formatted_factors.strip().split("\n\n")
+    ) + "\n"
+
     animate_print(f"Please enter a factor to compare all the elements with. The valid factors are:\n  {formatted_factors}{dim(compare_tip)}")
 
     while True:
@@ -517,7 +572,7 @@ def compare_by_factor():
         factor_candidate = "_".join(input("> ").strip().lower().split(" "))
         check_for_exit_event(factor_candidate)
 
-    animate_print(f"\nComparing all elements by factor {bold(factor)} with {bold(sorting_method)} sorting... {dim('(Please note that some elements may be missing, and the data is trimmed up to 4 digits of float numbers.)')}\n")
+    animate_print(f"\nComparing all elements by factor {bold(factor)} with sorting by {bold(sorting_method)}... {dim('(Please note that some elements may be missing, and the data is trimmed up to 4 digits of float numbers.)')}\n")
     logger.info(f"Comparing all elements by factor {factor}...")
 
     result: dict[str, float | int | None] = {}
