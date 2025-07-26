@@ -24,18 +24,22 @@ CONFIG_FILE = PERIODICA_DIR / "src" / "config.json"
 DATA_FILE = PERIODICA_DIR / "src" / "data.json"
 PYPROJECT_FILE = PERIODICA_DIR / "pyproject.toml"
 
+# Flags for logic altering
 EXPORT_ENABLED = False
 DEBUG_MODE = False
 ISOTOPE_LOGIC = False
-logger = Logger(enable_debugging=DEBUG_MODE)
-
-element_data = None
-element_suggestion = ""
 recognized_flag = False
 elementdata_malformed = False
+
+# This is where elements and suggestions will go
+element_data = None
+element_suggestion = ""
+
 # greek_symbols = ["α", "β", "γ", "δ", "ε", "ζ", "η", "θ", "ι", "κ", "λ", "μ", "ν", "ξ", "ο", "π", "ρ", "σ", "τ", "υ", "φ", "χ", "ψ", "ω"]
 
-# Get configuration
+logger = Logger(enable_debugging=DEBUG_MODE)
+
+# Configuration variables
 config = get_config()
 
 use_superscripts = config["use_superscripts"]
@@ -73,12 +77,13 @@ else:
     PERIWINKLE = CYAN
     GOLD = YELLOW
 
-CUBIC_CENTIMETER = "cm³" if use_superscripts else "cm3"
-CUBIC_METER = "m³" if use_superscripts else "m3"
-SQUARE_MILLIMETER = "mm²" if use_superscripts else "mm2"
+cm3 = "cm³" if use_superscripts else "cm3"
+m3 = "m³" if use_superscripts else "m3"
+mm2 = "mm²" if use_superscripts else "mm2"
 
 full_data = {}
 
+# Color configurations for specific outputs
 ELEMENT_TYPE_COLORS = {
 	"Reactive nonmetal": (130, 255, 151) if support_truecolor else BRIGHT_GREEN,
 	"Noble gas": YELLOW,
@@ -110,6 +115,7 @@ SUBSHELL_COLORS = {
     'f': MAGENTA
 }
 
+# For ionization calculations
 SUBSHELL_AZIMUTHALS = {
     "s": 0,
     "p": 1,
@@ -117,6 +123,7 @@ SUBSHELL_AZIMUTHALS = {
     "f": 3
 }
 
+# Selecting random tips
 match random.randint(0, 5):
     case 0:
         tip = "(Tip: You can give this program argv to directly search an element from there. You can even give argv to the periodica.sh file too!)"
@@ -149,9 +156,11 @@ def get_positional_args() -> list[str]:
 def get_flags() -> list[str]:
     return [arg for arg in sys.argv[1:] if arg.startswith("--")]
 
+# Other arguments that are NOT flags
+positional_arguments = [arg.strip().lower() for arg in get_positional_args()]
+
 # Defining flag arguments to use everywhere
 flag_arguments = [arg.strip().lower() for arg in get_flags()]
-positional_arguments = [arg.strip().lower() for arg in get_positional_args()]
 
 # Unit conversions
 def celcius_to_kelvin(celsius):
@@ -173,7 +182,7 @@ def print_separator():
     print("-" * TERMINAL_WIDTH)
     print()
 
-def check_for_exit_event(user_input):
+def check_exit_event(user_input):
     if user_input in ["quit", "q", "abort", "exit"]:
         animate_print("Okay. Exiting...")
         logger.abort("User exited interactive input.")
@@ -272,15 +281,20 @@ def calculate_ionization_series(subshells: list[str], atomic_number: int, ioniza
         if index == 0:
             uncertainty = "eV"
         elif index == 1:
+            # The first breakdown always has a lot of inaccuracy
             uncertainty = "±75eV"
         elif index < atomic_number // 2:
+            # Then it settles in the next half
             uncertainty = "±50eV"
         elif index > atomic_number // 2:
+            # The last half and especially the last one is pretty accurate
             current_IE = RYDBERG_CONSTANT * (Z_eff ** 2) / (quantum_target ** 2)
             uncertainty = "±25eV"
 
         formatted_subshell = f"{subshell_str}1"
         formatted_subshell = formatted_subshell[:-1] + convert_superscripts(formatted_subshell[-1]) if use_superscripts else formatted_subshell
+
+        # Appending to the output
         lines.append(
             f"  - {bold(ordinal(index + 1))} Ionization:\n"
             f"    {fore('Removed', RED)} = {formatted_subshell}\n"
@@ -295,6 +309,7 @@ def calculate_ionization_series(subshells: list[str], atomic_number: int, ioniza
 
     return "\n".join(lines)
 
+# Superscript functions
 def convert_superscripts(text: str) -> str:
     superscript_map = {
         "0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴",
@@ -327,6 +342,7 @@ def create_flag_event(*flags: str, callable):
             return True
     return False
 
+# Below are functions that get triggered by create_flag_event when flags are given
 def get_information():
     logger.info("User gave --info flag; redirecting to information logic.")
     animate_print(program_information)
@@ -361,6 +377,7 @@ def view_table():
     clear_screen()
 
     # TODO: Continue the logic. Way too busy to refactor stuff for now.
+    # NOTE: Either give the option to show the minimal style or the full style with the table
     ...
 
     sys.exit(0)
@@ -387,7 +404,7 @@ def export_element():
         while element is None:
             user_input = input("> ").strip()
 
-            check_for_exit_event(user_input)
+            check_exit_event(user_input)
 
             element, suggestion = process_isotope_input(user_input)
             if element is None and not suggestion:
@@ -479,7 +496,7 @@ def compare_by_factor():
             logger.warn(f"No direct match found for '{factor_candidate}'.")
             factor_candidate = None
 
-    def match_input(data: dict[str, dict], factor):
+    def get_key_by_input(data: dict[str, dict], factor):
         nonlocal determiner
         try:
             match factor:
@@ -518,7 +535,7 @@ def compare_by_factor():
                     determiner = "pm"
                     result = data["measurements"]["radius"][factor.replace("_radius", "")]
                 case "brinell_hardness" | "mohs_hardness" | "vickers_hardness":
-                    determiner = f"kgf/{SQUARE_MILLIMETER}" if determiner != "mohs_hardness" else ""
+                    determiner = f"kgf/{mm2}" if determiner != "mohs_hardness" else ""
                     result = data["measurements"]["hardness"][factor.replace("_hardness", "")]
                 case "bulk_modulus" | "young_modulus" | "shear_modulus":
                     determiner = "GPa"
@@ -526,10 +543,10 @@ def compare_by_factor():
                 case "poissons_ratio":
                     result = data["measurements"]["moduli"]["poissons_ratio"]
                 case "stp_density":
-                    determiner = f"kg/{CUBIC_METER}"
+                    determiner = f"kg/{m3}"
                     result = data["measurements"]["density"]["STP"]
                 case "liquid_density":
-                    determiner = f"kg/{CUBIC_METER}"
+                    determiner = f"kg/{m3}"
                     result = data["measurements"]["density"]["liquid"]
                 case "sound_transmission_speed":
                     determiner = "m/s"
@@ -570,14 +587,14 @@ def compare_by_factor():
                 logger.warn(f"No direct match found for '{factor_candidate}'.")
 
         factor_candidate = "_".join(input("> ").strip().lower().split(" "))
-        check_for_exit_event(factor_candidate)
+        check_exit_event(factor_candidate)
 
     animate_print(f"\nComparing all elements by factor {bold(factor)} with sorting by {bold(sorting_method)}... {dim('(Please note that some elements may be missing, and the data is trimmed up to 4 digits of float numbers.)')}\n")
     logger.info(f"Comparing all elements by factor {factor}...")
 
     result: dict[str, float | int | None] = {}
     for name, value in full_data.items():
-        result[name] = match_input(value, factor)
+        result[name] = get_key_by_input(value, factor)
 
     valid_results = [(name, value) for name, value in result.items() if value is not None]
     if not valid_results:
@@ -649,7 +666,7 @@ def compare_bond_type():
         while True:
             user_input = input("> ").strip().lower()
             logger.info(f"Primary input: \"{user_input}\"")
-            check_for_exit_event(user_input)
+            check_exit_event(user_input)
 
             primary_element, suggestion = find_element(user_input)
             if primary_element:
@@ -666,7 +683,7 @@ def compare_bond_type():
         while True:
             user_input = input("> ").strip().lower()
             logger.info(f"Secondary input: \"{user_input}\"")
-            check_for_exit_event(user_input)
+            check_exit_event(user_input)
 
             secondary_element, suggestion = find_element(user_input)
             if secondary_element:
@@ -728,6 +745,7 @@ def enable_debugging():
     if positional_arguments:
         logger.info(f"Other positional arguments given: {", ".join(positional_arguments)}")
 
+# Debugging is the first priority, therefore enable it ASAP when it gets activated to avoid syntax checking
 if "--debug" in flag_arguments or constant_debugging:
     enable_debugging()
 
@@ -944,7 +962,7 @@ def safe_format(value, measurement, placeholder = "None"):
 
     return fore(placeholder, NULL)
 
-# Other important variables and functions
+# Information
 periodica_logo = bold(gradient("Periodica", (156, 140, 255), (140, 255, 245)) if config['truecolor'] else fore("periodica", BLUE))
 
 program_information = f"""
@@ -993,7 +1011,6 @@ Anyways, I hope you enjoy this small CLI. {bold("Please read the README.md file 
 """
 
 # Reading json file, and trying to get from GitHub if fails
-
 logger.info("Program initialized.")
 
 try:
@@ -1124,11 +1141,11 @@ if element_data is None:
                 animate_print(response)
                 if user_input == "periodica":
                     import base64
+                    # I wonder what this translates to...
                     exec(base64.b64decode("cmFpc2UgUmVjdXJzaW9uRXJyb3IoIm1heGltdW0gZGVwdGggcmVhY2hlZCB3aGlsc3QgdHJ5aW5nIHRvIGZpbmQgcGVyaW9kaWNhIGluc2lkZSBwZXJpb2RpY2EgaW5zaWRlIHBlcmlvZGljYSBpbnNpZGUgcGVyaW9kaWNhIGluc2lkZS4uLiIpIGZyb20gTm9uZQ=="))
                 sys.exit(0)
 
-
-        check_for_exit_event(user_input)
+        check_exit_event(user_input)
 
         element_data, element_suggestion = process_isotope_input(user_input)
 
@@ -1148,7 +1165,6 @@ if DEBUG_MODE:
     pprint(element_data, indent = 2, width=TERMINAL_WIDTH, sort_dicts=False, underscore_numbers=True, depth=float("inf"))
 
 # Dividing categories
-
 general = element_data["general"]
 historical = element_data["historical"]
 nuclear = element_data["nuclear"]
@@ -1157,7 +1173,6 @@ physical = element_data["physical"]
 measurements = element_data["measurements"]
 
 # General properties
-
 fullname = general["fullname"]
 symbol = general["symbol"]
 atomic_number = general["atomic_number"]
@@ -1332,7 +1347,6 @@ if subshells:
         subshell_visualisation += f"\n        Z_eff - {fore('Effective Nuclear Charge', GOLD)}: {bold(f'{effective_nuclear_charge:.2f}')}"
 
 # Physical properties
-
 melting_point = physical["melt"]
 boiling_point = physical["boil"]
 atomic_mass = physical["atomic_mass"]
@@ -1340,7 +1354,6 @@ radioactive = general["radioactive"]
 half_life = general["half_life"]
 
 # Electronic properties
-
 electronegativity = electronic["electronegativity"]
 electron_affinity = electronic["electron_affinity"]
 ionization_energy = electronic["ionization_energy"]
@@ -1431,9 +1444,13 @@ print()
 print_header("Nuclear Properties")
 print()
 
-animate_print(f" p⁺ - {fore('Protons', RED)}: {bold(protons)}")
-animate_print(f" n⁰ - {fore('Neutrons', BLUE)}: {bold(neutrons)}")
-animate_print(f" e⁻ - {fore('Electrons', YELLOW)}: {bold(electrons)}")
+pos = "⁺" if use_superscripts else "+"
+neg = "⁻" if use_superscripts else "-"
+neutral = "⁰" if use_superscripts else "0"
+
+animate_print(f" p{pos} - {fore('Protons', RED)}: {bold(protons)}")
+animate_print(f" n{neutral} - {fore('Neutrons', BLUE)}: {bold(neutrons)}")
+animate_print(f" e{neg} - {fore('Electrons', YELLOW)}: {bold(electrons)}")
 animate_print(f" nv - {fore('Valence Electrons', VALENCE_ELECTRONS_COL)}: {bold(valence_electrons)}")
 animate_print(f" u - {fore('Up Quarks', GREEN)}: ({fore(protons, RED)} * 2) + {fore(neutrons, BLUE)} = {bold(up_quarks)}")
 animate_print(f" d - {fore('Down Quarks', CYAN)}: {fore(protons, RED)} + ({fore(neutrons, BLUE)} * 2) = {bold(down_quarks)}")
@@ -1481,17 +1498,17 @@ animate_print(f"   r_emp - Empirical: {safe_format(radius['empirical'], 'pm', 'N
 animate_print(f"   r_cov - Covalent: {safe_format(radius['covalent'], 'pm', 'N/A')}")
 animate_print(f"   rvdW - Van der Waals: {safe_format(radius['van_der_waals'], 'pm', 'N/A')}\n")
 animate_print(f" H - {fore("Hardness", PERIWINKLE)}: ")
-animate_print(f"   HB - Brinell: {safe_format(hardness['brinell'], f'kgf/{SQUARE_MILLIMETER}')}")
+animate_print(f"   HB - Brinell: {safe_format(hardness['brinell'], f'kgf/{mm2}')}")
 animate_print(f"   H - Mohs: {safe_format(hardness['mohs'], '')}")
-animate_print(f"   HV - Vickers: {safe_format(hardness['vickers'], f'kgf/{SQUARE_MILLIMETER}')}\n")
+animate_print(f"   HV - Vickers: {safe_format(hardness['vickers'], f'kgf/{mm2}')}\n")
 animate_print(f" 🔃 - {fore("Moduli", EXCITED)}: ")
 animate_print(f"   K - Bulk Modulus: {safe_format(moduli['bulk'], 'GPa')}")
 animate_print(f"   E - Young's Modulus: {safe_format(moduli['young'], 'GPa')}")
 animate_print(f"   G - Shear Modulus: {safe_format(moduli['shear'], 'GPa')}")
 animate_print(f"   ν - Poisson's Ratio: {safe_format(moduli['poissons_ratio'], '')}\n")
 animate_print(" ρ - Density: ")
-animate_print(f"   STP Density: {safe_format(density['STP'], f'kg/{CUBIC_METER}')}")
-animate_print(f"   Liquid Density: {safe_format(density['liquid'], f'kg/{CUBIC_METER}')}\n")
+animate_print(f"   STP Density: {safe_format(density['STP'], f'kg/{m3}')}")
+animate_print(f"   Liquid Density: {safe_format(density['liquid'], f'kg/{m3}')}\n")
 
 animate_print(f" 📢 - Speed of Sound Transmission: {bold(sound_transmission_speed)}m/s = {bold(sound_transmission_speed / 1000)}km/s")
 
