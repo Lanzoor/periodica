@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import platform, pathlib, sys, json, os, re, difflib, random, typing, textwrap, copy, base64
+import platform, pathlib, sys, json, os, re, difflib, random, typing, textwrap, copy, base64, subprocess
 
 try:
     import utils
@@ -11,20 +11,11 @@ except ImportError:
 from utils.loader import get_config, get_response, Logger, failsafe, valid_sorting_methods
 from utils.terminal import RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, DEFAULT_COLOR, BRIGHT_BLACK, BRIGHT_GREEN, BRIGHT_RED
 from utils.terminal import fore, bold, dim, italic, animate_print, clear_screen, gradient, underline
+from utils.directories import DATA_FILE, OUTPUT_FILE, CONFIG_SCRIPT, UPDATE_SCRIPT
 from pprint import pprint
 
 # Just in case when the venv does not exist
 failsafe()
-
-# Directory paths and variables
-PERIODICA_DIR = pathlib.Path(__file__).resolve().parent.parent
-BUILD_SCRIPT = PERIODICA_DIR / "build.py"
-OUTPUT_FILE = PERIODICA_DIR / "src" / "output.json"
-CONFIG_FILE = PERIODICA_DIR / "src" / "config.json"
-CONFIG_SCRIPT = PERIODICA_DIR / "src" / "configuration.py"
-UPDATE_SCRIPT = PERIODICA_DIR / "src" / "update.py"
-DATA_FILE = PERIODICA_DIR / "src" / "data.json"
-PYPROJECT_FILE = PERIODICA_DIR / "pyproject.toml"
 
 # Flags for logic altering
 EXPORT_ENABLED = False
@@ -189,7 +180,7 @@ def print_separator():
     print()
 
 def check_exit_event(user_input):
-    if user_input in ["quit", "q", "abort", "exit"]:
+    if user_input in ["quit", "q", "abort", "exit", "terminate", "stop"]:
         animate_print("Okay. Exiting...")
         logger.abort("User exited interactive input.")
 
@@ -331,7 +322,7 @@ def remove_superscripts(text: str) -> str:
     }
     return "".join(normal_map.get(char, char) for char in text)
 
-def join_with_conjunctions(entries: list) -> str:
+def conjunction_join(entries: list) -> str:
     if not entries:
         return ""
     if len(entries) == 1:
@@ -356,7 +347,7 @@ def get_information():
 def configurate():
     logger.info("User gave --init flag; redirecting to another script.")
     if CONFIG_SCRIPT.is_file():
-        import configuration
+        subprocess.run([sys.executable, str(CONFIG_SCRIPT)], check=True)
         sys.exit(0)
     else:
         animate_print(fore("Looks like the configuration script is missing. Please check for any missing files.", RED))
@@ -389,7 +380,7 @@ def view_table():
 
     clear_screen()
 
-    # TODO: Continue the logic. Way too busy to refactor stuff for now.
+    # TODO: Continue the logic. Way too busy to refactor and fix stuff for now.
     # NOTE: Either give the option to show the minimal style or the full style with the table
     ...
 
@@ -405,11 +396,12 @@ def export_element():
     user_input = positional_arguments[0] if positional_arguments else None
 
     element = None
-    if user_input:
+
+    if user_input is not None:
         element, suggestion = process_isotope_input(user_input)
         if element is None and not suggestion:
             animate_print(fore("Could not find that element or isotope. Please enter one manually.", RED))
-        else:
+        elif element is None:
             animate_print(fore(f"Could not find that element or isotope. Did you mean {suggestion}?", YELLOW))
 
     if element is None:
@@ -422,7 +414,7 @@ def export_element():
             element, suggestion = process_isotope_input(user_input)
             if element is None and not suggestion:
                 animate_print(fore("Could not find that element or isotope. Please enter one manually.", RED))
-            else:
+            elif element is None:
                 animate_print(fore(f"Could not find that element or isotope. Did you mean {suggestion}?", YELLOW))
 
 
@@ -1081,6 +1073,7 @@ easter_eggs = [
     ("carbonara", "Monsieur?? This isn't an italian restaurant. Se riesci a leggere questo, sei italiano.")
 ]
 
+# TODO: Add a stable, fixed "script output" that will print out a specific data of an element / isotope when given the key
 try:
     TERMINAL_WIDTH = os.get_terminal_size().columns
     TERMINAL_HEIGHT = os.get_terminal_size().lines
@@ -1109,8 +1102,6 @@ if len(sys.argv) > 1:
     primary_flags = [flag for flag in flag_arguments if (flag != "--debug" or flag != "-d")]
 
     user_input = None
-
-    logger.debug(f"primary_flags: {primary_flags}")
 
     if len(primary_flags) == 0:
         user_input = positional_arguments[0] if positional_arguments else None
@@ -1251,7 +1242,7 @@ entries = [
     for name, gender in discoverers.items()
 ]
 
-discoverers = join_with_conjunctions(entries)
+discoverers = conjunction_join(entries)
 
 # Nuclear properties
 protons = nuclear["protons"]

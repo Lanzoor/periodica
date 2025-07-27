@@ -1,10 +1,7 @@
 import tomllib, sys, subprocess, time, platform, pathlib
 from utils.terminal import bold, fore, RED, BLUE
 from utils.loader import Logger, get_response, failsafe
-
-PERIODICA_DIR = pathlib.Path(__file__).resolve().parent.parent
-PYPROJECT_FILE = PERIODICA_DIR / "pyproject.toml"
-BUILD_FILE = PERIODICA_DIR / "build.py"
+from utils.directories import PERIODICA_DIR, PYPROJECT_FILE, BUILD_SCRIPT
 
 log = Logger(enable_debugging=False)
 
@@ -95,12 +92,12 @@ def update_main():
         print(bold("Successfully pulled the latest changes. Let's build it up for you once again..."))
         time.sleep(2)
 
-        if not BUILD_FILE.exists():
+        if not BUILD_SCRIPT.exists():
             print("build.py not found. Aborting...")
             sys.exit(0)
 
         print("Running build.py to reinitialize environment...")
-        subprocess.run([sys.executable, str(BUILD_FILE)], check=True)
+        subprocess.run([sys.executable, str(BUILD_SCRIPT)], check=True)
 
         print(bold("Update complete."))
         sys.exit(0)

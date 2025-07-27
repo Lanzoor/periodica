@@ -1,10 +1,5 @@
 import json, logging, time, sys, pathlib, subprocess
-
-# utils -> src -> periodica, three parents
-PERIODICA_DIR = pathlib.Path(__file__).resolve().parent.parent.parent
-LOGGING_FILE = PERIODICA_DIR / "src" / "execution.log"
-VENV_DIR = PERIODICA_DIR / "venv"
-BUILD_FILE = PERIODICA_DIR / "build.py"
+from utils.directories import LOGGING_FILE, VENV_DIR, PERIODICA_DIR, BUILD_SCRIPT
 
 with open(LOGGING_FILE, 'w', encoding="utf-8"):
     pass
@@ -129,8 +124,8 @@ def failsafe():
         if confirmation not in ["y", "yes", ""]:
             print("You denied the file execution. Please run the build script yourself.")
             sys.exit(0)
-        if BUILD_FILE.is_file():
-            subprocess.run([sys.executable, str(BUILD_FILE)], check=True)
+        if BUILD_SCRIPT.is_file():
+            subprocess.run([sys.executable, str(BUILD_SCRIPT)], check=True)
             sys.exit(0)
         else:
             print("The build script was not found. Please read the README.md for more information. (If that even exists, that is.)")
