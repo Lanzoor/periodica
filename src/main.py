@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import platform, pathlib, sys, json, os, re, difflib, random, typing, textwrap
+import platform, pathlib, sys, json, os, re, difflib, random, typing, textwrap, copy, base64
 
 try:
     import utils
@@ -9,8 +9,8 @@ except ImportError:
     sys.exit(0)
 
 from utils.loader import get_config, get_response, Logger, failsafe, valid_sorting_methods
-from utils.terminal import RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, BRIGHT_BLACK, BRIGHT_GREEN, BRIGHT_RED
-from utils.terminal import fore, bold, dim, italic, animate_print, clear_screen, gradient
+from utils.terminal import RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, DEFAULT_COLOR, BRIGHT_BLACK, BRIGHT_GREEN, BRIGHT_RED
+from utils.terminal import fore, bold, dim, italic, animate_print, clear_screen, gradient, underline
 from pprint import pprint
 
 # Just in case when the venv does not exist
@@ -18,9 +18,11 @@ failsafe()
 
 # Directory paths and variables
 PERIODICA_DIR = pathlib.Path(__file__).resolve().parent.parent
-BUILD_FILE = PERIODICA_DIR / "build.py"
+BUILD_SCRIPT = PERIODICA_DIR / "build.py"
 OUTPUT_FILE = PERIODICA_DIR / "src" / "output.json"
 CONFIG_FILE = PERIODICA_DIR / "src" / "config.json"
+CONFIG_SCRIPT = PERIODICA_DIR / "src" / "configuration.py"
+UPDATE_SCRIPT = PERIODICA_DIR / "src" / "update.py"
 DATA_FILE = PERIODICA_DIR / "src" / "data.json"
 PYPROJECT_FILE = PERIODICA_DIR / "pyproject.toml"
 
@@ -43,14 +45,15 @@ logger = Logger(enable_debugging=DEBUG_MODE)
 config = get_config()
 
 use_superscripts = config["use_superscripts"]
-support_truecolor = config["truecolor"]
+support_effects = config["terminal_effects"]
 isotope_format = config["isotope_format"]
 animation_type = config["animation_type"]
 animation_delay = config["animation_delay"]
 constant_debugging = config["constant_debugging"]
+default_sorting_method = config["default_sorting_method"]
 
-# Defining custom colors (if truecolor is enabled)
-if support_truecolor:
+# Defining custom colors (if terminal_effects is enabled)
+if support_effects:
     VALENCE_ELECTRONS_COL = (248, 255, 166)
     ELECTRONEG_COL = (131, 122, 255)
     MALE = (109, 214, 237)
@@ -80,14 +83,17 @@ else:
 cm3 = "cm³" if use_superscripts else "cm3"
 m3 = "m³" if use_superscripts else "m3"
 mm2 = "mm²" if use_superscripts else "mm2"
+pos = "⁺" if use_superscripts else "+"
+neg = "⁻" if use_superscripts else "-"
+neutral = "⁰" if use_superscripts else "0"
 
 full_data = {}
 
 # Color configurations for specific outputs
 ELEMENT_TYPE_COLORS = {
-	"Reactive nonmetal": (130, 255, 151) if support_truecolor else BRIGHT_GREEN,
+	"Reactive nonmetal": (130, 255, 151) if support_effects else BRIGHT_GREEN,
 	"Noble gas": YELLOW,
-	"Alkali metal": (215, 215, 215) if support_truecolor else BRIGHT_BLACK,
+	"Alkali metal": (215, 215, 215) if support_effects else BRIGHT_BLACK,
 	"Alkali earth metal": ORANGE,
 	"Metalloid": CYAN
 }
@@ -150,17 +156,17 @@ match random.randint(0, 3):
 
 # Fetch arguments that are not flags (removes --export, --compare, etc.)
 def get_positional_args() -> list[str]:
-    return [arg for arg in sys.argv[1:] if not arg.startswith("--")]
+    return [arg for arg in sys.argv[1:] if not arg.startswith("-")]
 
 # The opposite of get_positional_args
 def get_flags() -> list[str]:
-    return [arg for arg in sys.argv[1:] if arg.startswith("--")]
+    return [arg for arg in sys.argv[1:] if arg.startswith("-")]
 
 # Other arguments that are NOT flags
-positional_arguments = [arg.strip().lower() for arg in get_positional_args()]
+positional_arguments = [arg.strip() for arg in get_positional_args()]
 
 # Defining flag arguments to use everywhere
-flag_arguments = [arg.strip().lower() for arg in get_flags()]
+flag_arguments = [arg.strip() for arg in get_flags()]
 
 # Unit conversions
 def celcius_to_kelvin(celsius):
@@ -245,7 +251,6 @@ def calculate_shielding_constant(subshell_list: list[str], target_subshell: str)
     return shielding_constant
 
 def calculate_ionization_series(subshells: list[str], atomic_number: int, ionization_energy: float | None) -> str:
-    import copy
     lines = []
     config = parse_electron_configuration(subshells)
     if not config:
@@ -287,7 +292,7 @@ def calculate_ionization_series(subshells: list[str], atomic_number: int, ioniza
             # Then it settles in the next half
             uncertainty = "±50eV"
         elif index > atomic_number // 2:
-            # The last half and especially the last one is pretty accurate
+            # The last half and especially the last one is actually pretty accurate
             current_IE = RYDBERG_CONSTANT * (Z_eff ** 2) / (quantum_target ** 2)
             uncertainty = "±25eV"
 
@@ -300,7 +305,7 @@ def calculate_ionization_series(subshells: list[str], atomic_number: int, ioniza
             f"    {fore('Removed', RED)} = {formatted_subshell}\n"
             f"    σ       = {sigma:.2f}\n"
             f"    Z_eff   = {Z_eff:.2f}\n"
-            f"    {fore('IE', FEMALE)}      = {bold(f'{current_IE:.3f}')}{uncertainty}\n"
+            f"    {fore('IE', FEMALE)}      = {bold(round(current_IE, 3))}{uncertainty}\n"
         )
 
         if last_idx is not None:
@@ -350,14 +355,22 @@ def get_information():
 
 def configurate():
     logger.info("User gave --init flag; redirecting to another script.")
-    import configuration
-    sys.exit(0)
+    if CONFIG_SCRIPT.is_file():
+        import configuration
+        sys.exit(0)
+    else:
+        animate_print(fore("Looks like the configuration script is missing. Please check for any missing files.", RED))
+        logger.abort("Failed to find the configuration script.")
 
 def check_for_updates():
     logger.info("User gave --update flag; redirecting to update logic.")
-    from update import update_main
-    update_main()
-    sys.exit(0)
+    if UPDATE_SCRIPT.is_file():
+        from update import update_main
+        update_main()
+        sys.exit(0)
+    else:
+        animate_print(fore("Looks like the update script is missing. Please check for any missing files.", RED))
+        logger.abort("Failed to find the update script.")
 
 def view_table():
     logger.info("User gave --table flag; redirecting to another logic.")
@@ -473,7 +486,7 @@ def compare_by_factor():
     ]
 
     determiner = ""
-    sorting_method = "ascending"
+    sorting_method = default_sorting_method
 
     for index, argument in enumerate(positional_arguments):
         if argument in valid_sorting_methods:
@@ -735,9 +748,9 @@ def enable_debugging():
     if constant_debugging:
         logger.info("Debug mode was enabled due to the constant_debugging configuration.")
 
-    logger.info(f"Configuration overview: superscripts={use_superscripts}, truecolor={support_truecolor}, "
+    logger.info(f"Configuration overview: superscripts={use_superscripts}, terminal_effects={support_effects}, "
                 f"isotope_format={isotope_format}, animation={animation_type}, "
-                f"animation_delay={animation_delay}s, constant_debugging={constant_debugging}")
+                f"animation_delay={animation_delay}s, constant_debugging={constant_debugging}, default_sorting_method={default_sorting_method}")
 
     if flag_arguments:
         logger.info(f"Given flags: {", ".join(flag_arguments)}")
@@ -745,8 +758,14 @@ def enable_debugging():
     if positional_arguments:
         logger.info(f"Other positional arguments given: {", ".join(positional_arguments)}")
 
+    if "--debug" in flag_arguments:
+        flag_arguments.remove("--debug")
+
+    if "-d" in flag_arguments:
+        flag_arguments.remove("-d")
+
 # Debugging is the first priority, therefore enable it ASAP when it gets activated to avoid syntax checking
-if "--debug" in flag_arguments or constant_debugging:
+if ("--debug" in flag_arguments or "-d" in flag_arguments) or constant_debugging:
     enable_debugging()
 
 def fetch_version():
@@ -784,8 +803,8 @@ def print_isotope(norm_iso, info, fullname):
 
     protons = info['protons']
     neutrons = info['neutrons']
-    animate_print(f"      p{convert_superscripts('+')}, e{convert_superscripts('-')} - {fore('Protons', RED)} and {fore('Electrons', YELLOW)}: {bold(protons)}")
-    animate_print(f"      n{'⁰' if use_superscripts else ''} - {fore('Neutrons', BLUE)}: {bold(neutrons)}")
+    animate_print(f"      p{pos}, e{neg} - {fore('Protons', RED)} and {fore('Electrons', YELLOW)}: {bold(protons)}")
+    animate_print(f"      n{neutral} - {fore('Neutrons', BLUE)}: {bold(neutrons)}")
 
     up_quarks = protons * 2 + neutrons
     down_quarks = protons + neutrons * 2
@@ -963,46 +982,46 @@ def safe_format(value, measurement, placeholder = "None"):
     return fore(placeholder, NULL)
 
 # Information
-periodica_logo = bold(gradient("Periodica", (156, 140, 255), (140, 255, 245)) if config['truecolor'] else fore("periodica", BLUE))
+periodica_logo = bold(gradient("Periodica", (156, 140, 255), (140, 255, 245)) if support_effects else fore("periodica", BLUE))
 
 program_information = f"""
 Welcome to {periodica_logo}!
 This CLI provides useful information about the periodic elements, and pretty much everything here was made by the Discord user {bold(fore("Lanzoor", INDIGO))}!
 This project started as a fun hobby at around {bold("March 2025")}, but ended up getting taken seriously.
 This CLI was built with {fore("Python", CYAN)}, and uses {fore("JSON", YELLOW)} for configuration files / element database.
-The vibrant colors and visuals were done with the help of {italic(bold("ANSI escape codes"))}, although you should note that {bold("some terminals may not have truecolor support.")}
+The vibrant colors and visuals were done with the help of {italic(bold("ANSI escape codes"))}, although you should note that {bold("some terminals may n support.")}
 {dim("(You can disable this anytime in the config.json file, or using the --init flag.)")}
-There are also other flags you can provide to this CLI.
+There are also other flags you can provide to this CLI. (The ones marked after the slash are shortcut flags. {bold("They behave the same as the original flags.")})
 
-- {bold("--debug")}
+- {bold("--debug")} / -d
 - Enable debug mode for testing (always the first priority)
 
-- {bold("--info")}
+- {bold("--info")} / -i
 - Give this information message
 
-- {bold("--version")}
+- {bold("--version")} / -v
 - Check the version
 
-- {bold("--init")}
+- {bold("--init")} / -I
 - Edit the settings
 
-- {bold("--update")}
+- {bold("--update")} / -u
 - Check for updates
 
 - {bold("--table")}
 - View the periodic table
 
 - {bold("--export")} [{fore("element", BLUE)}],
-  {bold("--export")} [{fore("isotope", GREEN)}]
+  {bold("--export")} [{fore("isotope", GREEN)}] / -x
 - Export {fore("element", BLUE)} or {fore("isotope", GREEN)} to a .json file
 
-- {bold("--compare")} [{fore("factor", RED)}]
+- {bold("--compare")} [{fore("factor", RED)}] / -C
 - Compare all elements with a factor of {fore("factor", RED)}
 
-- {bold("--bond-type")}
+- {bold("--bond-type")} / -B
 - Compare two elements and get their bond type
 
-- {bold("--random")}
+- {bold("--random")} / -r
 - Pick a random element
 
 Also, for flags that import other scripts, debug mode does not apply. Sorry!
@@ -1076,44 +1095,47 @@ if TERMINAL_WIDTH <= 80:
     logger.warn("Not enough width for terminal.")
 
 if len(sys.argv) > 1:
-    valid_flag_names = [
-        "debug", "info", "init", "update", "table", "export",
-        "compare", "bond-type", "random", "version"
+    valid_flags = [
+        "--debug", "--info", "--init", "--update", "--table", "--export",
+        "--compare", "--bond-type", "--random", "--version",
+        "-i", "-I", "-u", "-x", "-C", "-B", "-r", "-v"
     ]
 
     flags_that_require_position_argument = [
-        "export", "compare", "bond-type"
+        "--export", "--compare", "--bond-type",
+        "-x", "-C", "-B"
     ]
 
-    valid_flags = ["--" + flag for flag in valid_flag_names]
-
-    flag_arguments = get_flags()
-    positional_arguments = get_positional_args()
-    primary_flags = [flag for flag in flag_arguments if flag != "--debug"]
+    primary_flags = [flag for flag in flag_arguments if (flag != "--debug" or flag != "-d")]
 
     user_input = None
 
+    logger.debug(f"primary_flags: {primary_flags}")
+
     if len(primary_flags) == 0:
         user_input = positional_arguments[0] if positional_arguments else None
-    elif len(primary_flags) != 1 or any(flag not in valid_flags for flag in primary_flags):
-        animate_print("Malformed flags structure. Run the script with the --info flag for more information.")
-        logger.abort("Unrecognizable or multiple main flags detected.")
+    elif len(primary_flags) != 1:
+        animate_print("Multiple main flags detected. Run the script with the --info flag for more information.")
+        logger.abort("Multiple main flags detected.")
+    elif any(flag not in valid_flags for flag in primary_flags):
+        animate_print("Unrecognizable flags detected. Run the script with the --info flag for more information.")
+        logger.abort("Unrecognizable flags detected.")
     else:
         primary_flag = primary_flags[0]
-        if primary_flag.replace("--", "") not in flags_that_require_position_argument and len(positional_arguments) > 0:
+        if primary_flag not in flags_that_require_position_argument and len(positional_arguments) > 0:
             animate_print("Unexpected positional argument. Refer to --info.")
             logger.abort("Unexpected additional arguments.")
 
     recognized_flag = (
-        create_flag_event("--info", callable=get_information) or
-        create_flag_event("--init", callable=configurate) or
-        create_flag_event("--update", callable=check_for_updates) or
+        create_flag_event("--info", "-i", callable=get_information) or
+        create_flag_event("--init", "-I", callable=configurate) or
+        create_flag_event("--update", "-u", callable=check_for_updates) or
         create_flag_event("--table", callable=view_table) or
-        create_flag_event("--export", callable=export_element) or
-        create_flag_event("--compare", callable=compare_by_factor) or
-        create_flag_event("--bond-type", callable=compare_bond_type) or
-        create_flag_event("--random", callable=select_random_element) or
-        create_flag_event("--version", callable=fetch_version)
+        create_flag_event("--export", "-x", callable=export_element) or
+        create_flag_event("--compare", "-C", callable=compare_by_factor) or
+        create_flag_event("--bond-type", "-B", callable=compare_bond_type) or
+        create_flag_event("--random", "-r", callable=select_random_element) or
+        create_flag_event("--version", "-v", callable=fetch_version)
     )
 
     if not recognized_flag:
@@ -1140,7 +1162,6 @@ if element_data is None:
             if (user_input in keys and isinstance(keys, list)) or user_input == keys:
                 animate_print(response)
                 if user_input == "periodica":
-                    import base64
                     # I wonder what this translates to...
                     exec(base64.b64decode("cmFpc2UgUmVjdXJzaW9uRXJyb3IoIm1heGltdW0gZGVwdGggcmVhY2hlZCB3aGlsc3QgdHJ5aW5nIHRvIGZpbmQgcGVyaW9kaWNhIGluc2lkZSBwZXJpb2RpY2EgaW5zaWRlIHBlcmlvZGljYSBpbnNpZGUgcGVyaW9kaWNhIGluc2lkZS4uLiIpIGZyb20gTm9uZQ=="))
                 sys.exit(0)
@@ -1270,13 +1291,13 @@ for index, subshell in enumerate(subshells):
         energy_level, subshell_type, electron_count = match.groups()
         electron_count = int(electron_count)
         max_capacity = subshell_capacities[subshell_type]
-        colored_subshell = fore(formatted_subshell, SUBSHELL_COLORS.get(subshell_type, (255, 255, 255)))
-        colored_subshell = bold(colored_subshell) if index + 1 == len(subshells) else colored_subshell
+        colored_subshell = fore(formatted_subshell, SUBSHELL_COLORS.get(subshell_type, DEFAULT_COLOR))
+        colored_subshell = underline(colored_subshell) if index + 1 == len(subshells) else colored_subshell
         subshell_result += f"{colored_subshell} ({electron_count}/{max_capacity}), "
     else:
         subshell_type = subshell[1] if len(subshell) > 1 else 's'
-        colored_subshell = fore(formatted_subshell, SUBSHELL_COLORS.get(subshell_type, (255, 255, 255)))
-        colored_subshell = bold(colored_subshell) if index + 1 == len(subshells) else colored_subshell
+        colored_subshell = fore(formatted_subshell, SUBSHELL_COLORS.get(subshell_type, DEFAULT_COLOR))
+        colored_subshell = underline(colored_subshell) if index + 1 == len(subshells) else colored_subshell
         subshell_result += f"{colored_subshell}, "
 
 subshell_result = subshell_result.rstrip(", ")
@@ -1338,7 +1359,7 @@ if subshells:
         last_subshell = last_subshell[:-1] + convert_superscripts(last_subshell[-1]) if use_superscripts else last_subshell
         last_subshell = fore(last_subshell, SUBSHELL_COLORS.get(last_subshell_type, (255, 255, 255)))
 
-        subshell_visualisation += f"\n\n      Valence Subshell ({bold(last_subshell)}):"
+        subshell_visualisation += f"\n\n      {fore("Valence Subshell", VALENCE_ELECTRONS_COL)} ({underline(last_subshell)}):"
         subshell_visualisation += f"\n        n - {fore('Principal', CYAN)}: {bold(principal_quantum_number)}"
         subshell_visualisation += f"\n        l - {fore('Azimuthal', GREEN)}: {bold(azimuthal_quantum_number)} ({subshell_type} subshell)"
         subshell_visualisation += f"\n        m_l - {fore('Magnetic', YELLOW)}: {bold(magnetic_quantum_number)} (approximated)"
@@ -1444,10 +1465,6 @@ print()
 print_header("Nuclear Properties")
 print()
 
-pos = "⁺" if use_superscripts else "+"
-neg = "⁻" if use_superscripts else "-"
-neutral = "⁰" if use_superscripts else "0"
-
 animate_print(f" p{pos} - {fore('Protons', RED)}: {bold(protons)}")
 animate_print(f" n{neutral} - {fore('Neutrons', BLUE)}: {bold(neutrons)}")
 animate_print(f" e{neg} - {fore('Electrons', YELLOW)}: {bold(electrons)}")
@@ -1455,7 +1472,7 @@ animate_print(f" nv - {fore('Valence Electrons', VALENCE_ELECTRONS_COL)}: {bold(
 animate_print(f" u - {fore('Up Quarks', GREEN)}: ({fore(protons, RED)} * 2) + {fore(neutrons, BLUE)} = {bold(up_quarks)}")
 animate_print(f" d - {fore('Down Quarks', CYAN)}: {fore(protons, RED)} + ({fore(neutrons, BLUE)} * 2) = {bold(down_quarks)}")
 animate_print(f" ⚛️ - {fore('Shells', EXCITED)} {dim(f'(Valence electrons in {fore('yellow', VALENCE_ELECTRONS_COL)})')}:\n    {shell_result}")
-animate_print(f" 🌀 - {fore('Subshells', PERIWINKLE)} {dim(f'(Colored by type: {subshell_examples}, valence subshell in {bold('bold')})')}:\n    {subshell_result}")
+animate_print(f" 🌀 - {fore('Subshells', PERIWINKLE)} {dim(f'(Colored by type: {subshell_examples}, the valence subshell is {underline("underlined")})')}:\n    {subshell_result}")
 animate_print(f"      {bold('Breakdown')}:\n\n{subshell_visualisation}\n")
 
 animate_print(f" 🪞 - Isotopes ({len(isotopes.keys())}): {dim(f"(Decay processes in {fore("red", RED)} need verification. Do not trust them!)")}:")
@@ -1473,7 +1490,7 @@ animate_print(f" 💨 - {fore("Boiling Point", BOIL_COL)}: {bold(boiling_point)}
 animate_print(f" A - {fore("Mass Number", GOLD)}: {fore(protons, RED)} + {fore(neutrons, BLUE)} = {bold(protons + neutrons)}")
 animate_print(f" u - {fore("Atomic Mass", BRIGHT_RED)}: {bold(atomic_mass)}g/mol")
 animate_print(f" ☢️ - {fore("Radioactive", ORANGE)}: {fore("Yes", GREEN) if radioactive else fore("No", RED)}")
-animate_print(f" t1/2 - {fore("Half Life", PERIWINKLE)}: {bold(half_life if not (half_life is None) else fore("Stable", CYAN))}")
+animate_print(f" t1/2 - {fore("Half Life", PERIWINKLE)}: {bold(half_life if not (half_life is None) else bold(fore("Stable", CYAN)))}")
 
 animate_print()
 print_header("Electronic Properties")
@@ -1506,7 +1523,7 @@ animate_print(f"   K - Bulk Modulus: {safe_format(moduli['bulk'], 'GPa')}")
 animate_print(f"   E - Young's Modulus: {safe_format(moduli['young'], 'GPa')}")
 animate_print(f"   G - Shear Modulus: {safe_format(moduli['shear'], 'GPa')}")
 animate_print(f"   ν - Poisson's Ratio: {safe_format(moduli['poissons_ratio'], '')}\n")
-animate_print(" ρ - Density: ")
+animate_print(f" ρ - {fore("Density", CYAN)}: ")
 animate_print(f"   STP Density: {safe_format(density['STP'], f'kg/{m3}')}")
 animate_print(f"   Liquid Density: {safe_format(density['liquid'], f'kg/{m3}')}\n")
 

@@ -42,13 +42,13 @@ def toggle_superscript():
     logger.info(f"Setting 'Use Superscripts' changed from {not use_superscripts} to {use_superscripts}.")
     time.sleep(1)
 
-def toggle_truecolor():
-    global config, support_truecolor
+def toggle_effects():
+    global config, support_effects
 
-    config['truecolor'] = not config['truecolor']
-    support_truecolor = config["truecolor"]
-    print(f"The setting 'Use Truecolor' was changed to {bold(fore(support_truecolor, GREEN) if support_truecolor else fore(support_truecolor, RED))}.")
-    logger.info(f"Setting 'Use Truecolor' changed from {not support_truecolor} to {support_truecolor}.")
+    config['terminal_effects'] = not config['terminal_effects']
+    support_effects = config["terminal_effects"]
+    print(f"The setting 'Terminal Effects' was changed to {bold(fore(support_effects, GREEN) if support_effects else fore(support_effects, RED))}.")
+    logger.info(f"Setting 'Terminal Effects' changed from {not support_effects} to {support_effects}.")
     time.sleep(1)
 
 def toggle_debugging():
@@ -211,7 +211,7 @@ def reset():
 try:
     while True:
         use_superscripts = config["use_superscripts"]
-        support_truecolor = config["truecolor"]
+        support_effects = config["terminal_effects"]
         isotope_format = config["isotope_format"]
         animation_type = config["animation_type"]
         animation_delay = config["animation_delay"]
@@ -222,7 +222,7 @@ try:
         print("NOTE: This program intentionally does not respect your animation settings. Please understand.\n")
         print("Here are all available options that you can change in your config file.\n")
         print(f"1. Use Superscripts: Determines whether to use superscripts (Set to {bold(fore(use_superscripts, GREEN) if use_superscripts else fore(use_superscripts, RED))})")
-        print(f"2. Use Truecolor: Determines whether to use RGB-accurate coloring in terminal (Set to {bold(fore(support_truecolor, GREEN) if support_truecolor else fore(support_truecolor, RED))})")
+        print(f"2. Terminal Effects: Determines whether to use RGB-accurate coloring in terminal and additional styling (Set to {bold(fore(support_effects, GREEN) if support_effects else fore(support_effects, RED))})")
         print(f"3. Debug Constantly: Determines whether to log data constantly. Usually, you need the --debug flag to do it, but this constantly enables debug mode. (Set to {bold(fore(constant_debugging, GREEN) if constant_debugging else fore(constant_debugging, RED))})")
         print("4. Isotope Display Format: Determines how isotopes are formatted")
         print(f"5. Print Animation: Determines the print animation (Set to {bold(animation_type.capitalize())})")
@@ -260,7 +260,7 @@ try:
 
         recognized_flag = (
             create_fn_event(user_input, 1, toggle_superscript) or
-            create_fn_event(user_input, 2, toggle_truecolor) or
+            create_fn_event(user_input, 2, toggle_effects) or
             create_fn_event(user_input, 3, toggle_debugging) or
             create_fn_event(user_input, 4, change_isotope_format) or
             create_fn_event(user_input, 5, change_animation_type) or

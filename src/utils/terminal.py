@@ -4,6 +4,7 @@ import re, sys, time, colorsys
 config = get_config()
 animation_type = config["animation_type"]
 animation_delay = config["animation_delay"]
+support_effects = config["terminal_effects"]
 
 # Default supported terminal colors
 BLACK = 0
@@ -42,19 +43,34 @@ def bold(string) -> str:
     return f"\033[1m{string}\033[22m"
 
 def dim(string) -> str:
-    return f"\033[2m{string}\033[22m"
+    if support_effects:
+        return f"\033[2m{string}\033[22m"
+    else:
+        return string
 
 def italic(string) -> str:
-    return f"\033[3m{string}\033[23m"
+    if support_effects:
+        return f"\033[3m{string}\033[23m"
+    else:
+        return string
 
 def underline(string) -> str:
-    return f"\033[4m{string}\033[24m"
+    if support_effects:
+        return f"\033[4m{string}\033[24m"
+    else:
+        return bold(string)
 
 def crossout(string) -> str:
-    return f"\033[9m{string}\033[29m"
+    if support_effects:
+        return f"\033[9m{string}\033[29m"
+    else:
+        return string
 
 def blink(string) -> str:
-    return f"\033[5m{string}\033[25m"
+    if support_effects:
+        return f"\033[5m{string}\033[25m"
+    else:
+        return string
 
 def inverse_color(string) -> str:
     return f"\033[7m{string}\033[27m"

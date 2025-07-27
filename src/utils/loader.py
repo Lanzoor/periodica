@@ -61,7 +61,7 @@ log = Logger(enable_debugging=False)
 
 default_config = {
     "use_superscripts": True,
-    "truecolor": True,
+    "terminal_effects": True,
     "isotope_format": "fullname-number",
     "animation_type": "none",
     "animation_delay": 0.0005,
