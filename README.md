@@ -1,3 +1,9 @@
+# Important Note!
+
+So, this tool is still a good option, except for the fact that the database is incomplete and therefore is not ready for production.
+Please, DO NOT DOWNLOAD THIS SOFTWARE before it gets to the "stable" branch. We do not want random issues popping up in our source code.
+Only try and download this if you are testing the existing elements. But until the database gets completed? Yeah. Thanks for your understanding.
+
 # Installation
 
 Of course, this is a Python script, which means you will need to run it with a Python interpreter.
