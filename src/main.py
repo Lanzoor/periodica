@@ -836,7 +836,7 @@ def print_isotope(norm_iso, info, fullname):
             if "chance" in branch:
                 chance = f"({branch['chance']}%)" if branch["chance"] != 100 else ""
             else:
-                chance = fore("(Not proven)", RED)
+                chance = ""
             products = branch.get("product", [])
             if not isinstance(products, list):
                 products = [str(products)]

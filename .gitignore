@@ -4,3 +4,4 @@ src/config.json
 src/output.json
 **/__pycache__/
 **/.ropeproject/
+**/a.out
