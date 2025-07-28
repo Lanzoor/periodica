@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 
-import platform, pathlib, sys, json, os, re, difflib, random, typing, textwrap, copy, base64, subprocess
+import platform, sys, json, os, re, difflib, random, typing, textwrap, copy, base64, subprocess
 
 try:
     import utils
+    import utils.loader
+    import utils.terminal
+    import utils.directories
 except ImportError:
-    print("The utils helper library was not found. Please ensure all required files are present.")
+    print("The utils helper library or its scripts was not found. Please ensure all required files are present.")
     sys.exit(0)
 
 from utils.loader import get_config, get_response, Logger, failsafe, valid_sorting_methods
@@ -27,7 +30,6 @@ elementdata_malformed = False
 # This is where elements and suggestions will go
 element_data = None
 element_suggestion = ""
-
 # greek_symbols = ["α", "β", "γ", "δ", "ε", "ζ", "η", "θ", "ι", "κ", "λ", "μ", "ν", "ξ", "ο", "π", "ρ", "σ", "τ", "υ", "φ", "χ", "ψ", "ω"]
 
 logger = Logger(enable_debugging=DEBUG_MODE)
@@ -87,6 +89,18 @@ ELEMENT_TYPE_COLORS = {
 	"Alkali metal": (215, 215, 215) if support_effects else BRIGHT_BLACK,
 	"Alkali earth metal": ORANGE,
 	"Metalloid": CYAN
+}
+
+PHASE_TYPE_COLORS = {
+    "Solid": (156, 156, 156) if support_effects else BRIGHT_BLACK,
+    "Gas": YELLOW,
+    "Liquid": CYAN
+}
+
+PHASE_TYPE_SYMBOLS = {
+    "Solid": "🧊",
+    "Gas": "💨",
+    "Liquid": "💦"
 }
 
 CONDUCTIVITY_TYPE_COLORS = {
@@ -1000,9 +1014,6 @@ There are also other flags you can provide to this CLI. (The ones marked after t
 - {bold("--update")} / -u
 - Check for updates
 
-- {bold("--table")}
-- View the periodic table
-
 - {bold("--export")} [{fore("element", BLUE)}],
   {bold("--export")} [{fore("isotope", GREEN)}] / -x
 - Export {fore("element", BLUE)} or {fore("isotope", GREEN)} to a .json file
@@ -1060,7 +1071,6 @@ if elementdata_malformed:
 easter_eggs = [
     ("vibranium", "🦾 WAKANDA FOREVER"),
     (["veritasium", "ve"], "The element of truth. Not real tho, but I really love that channel tho fr"),
-    ("--info", "this isn't a flag input field sorry"),
     ("lanzoor", fore("do not try to find me, please try to find my sanity", ELECTRONEG_COL)),
     ("periodica", "Hey, that's me! Why are you trying to search me from myself? That's me! Why are you trying to search from myself?\nWhat? That's me... why are you trying to search myself whilst in myself? Hey! That's literally me. Why are you trying so hard to search myself from myself?"),
     ("answer", f"It's {bold("1/137")}. No questions, just that."),
@@ -1070,7 +1080,7 @@ easter_eggs = [
     ("recursion", f"See: {bold("recursion")}."),
     ("your mom", "She's not on the periodic table, but she probably will crash the entire table if she was."),
     ("sudo", "You don't need root access to learn chemistry. You need a brain."),
-    ("carbonara", "Monsieur?? This isn't an italian restaurant. Se riesci a leggere questo, sei italiano.")
+    ("carbonara", "Monsieur?? This isn't an italian restaurant. GET OUT!!!")
 ]
 
 # TODO: Add a stable, fixed "script output" that will print out a specific data of an element / isotope when given the key
@@ -1185,20 +1195,36 @@ physical = element_data["physical"]
 measurements = element_data["measurements"]
 
 # General properties
-fullname = general["fullname"]
-symbol = general["symbol"]
-atomic_number = general["atomic_number"]
-description = general["description"]
+fullname: str = general["fullname"]
+symbol: str = general["symbol"]
+atomic_number: int = general["atomic_number"]
+description: str = general["description"]
 
 description = "\n\n" + "\n\n".join(
     textwrap.fill(paragraph.strip(), width=TERMINAL_WIDTH, initial_indent="    ", subsequent_indent="")
     for paragraph in description.strip().split("\n\n")
 )
 
+color: list[int] = general["appearance"]["color"]
+
+phase: str = general["appearance"]["phase"].capitalize()
+formatted_phase: str = phase[:]
+
+try:
+    formatted_phase = fore(phase, PHASE_TYPE_COLORS[phase])
+except KeyError:
+    logger.warn(f"Invalid STP phase for {fullname.capitalize()}; Please pay attention.")
+    phase = "solid"
+
+try:
+    formatted_phase += f" {PHASE_TYPE_SYMBOLS[phase]}"
+except KeyError:
+    pass
+
 discoverers = historical["discoverers"]
 discovery_date = historical["date"]
-period = general["period"]
-group = general["group"]
+period: int = general["period"]
+group: int = general["group"]
 element_type = general["type"]
 block = general["block"]
 cas_number = general["cas_number"]
@@ -1424,6 +1450,22 @@ animate_print()
 animate_print(f" 🔡 - Element Name: {bold(fullname)} ({bold(symbol)})")
 animate_print(f" Z - Atomic Number: {bold(atomic_number)}")
 animate_print(f" 📃 - Description: {description}\n")
+animate_print(f" 🔡 - STP Phase: {formatted_phase}")
+
+if color is not None:
+    try:
+        color_description = general["appearance"]["color_description"]
+    except (KeyError, ValueError):
+        logger.warn(f"No color description for {fullname.capitalize()} given when the color was present. Please pay attention.")
+        color_description = "not given"
+    if support_effects:
+        r, g, b = color
+        animate_print(f" 🎨 - Standard Color: {fore("██", (r, g, b))} ({bold(color_description)})")
+    else:
+        animate_print(f" 🎨 - Standard Color: {color_description}")
+else:
+    animate_print(f" 🎨 - Standard Color: {fore("Colorless", NULL)}")
+
 animate_print(f" 🔍 - Discoverer(s): {discoverers}")
 animate_print(f" 🔍 - Discovery Date: {bold(discovery_date)}")
 animate_print(f" ↔️ - Period (Row): {bold(period)}")

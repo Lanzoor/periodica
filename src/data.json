@@ -338,7 +338,8 @@
             "atomic_number": 3,
             "description": "Lithium is a soft, silvery-white alkali metal. Under standard conditions it is the lightest metal and the least dense solid element.\nIt has important industrial applications in batteries, ceramics, and pharmaceuticals, and it is highly reactive—especially in water.",
             "appearance": {
-                "color": "silvery-white",
+                "color": [192, 192, 192],
+                "color_description": "Light Grey",
                 "phase": "solid"
             },
             "period": 2,
@@ -610,7 +611,8 @@
             "atomic_number": 4,
             "description": "Beryllium is a chemical element; it has symbol Be and atomic number 4. It is a steel-gray, strong, lightweight, and brittle alkaline earth metal. It occurs naturally only in combination with other elements in minerals like beryl. Beryllium has important applications in aerospace, nuclear, and X-ray equipment due to its stiffness, low density, and transparency to X-rays.",
             "appearance": {
-                "color": "steel-gray",
+                "color": [150, 150, 150],
+                "color_description": "Light Grey",
                 "phase": "solid"
             },
             "period": 2,
@@ -915,7 +917,8 @@
             "atomic_number": 5,
             "description": "Boron is a chemical element with symbol B and atomic number 5. It is a brittle, dark, lustrous metalloid (solid) that occurs naturally only in compounds (e.g. borate minerals). Boron’s compounds are used in high-strength, lightweight materials (boron fibers, ceramics), in borosilicate glass, and as additives in fiberglass and detergents. The isotope boron-10 is an important neutron-absorbing agent in nuclear reactors.",
             "appearance": {
-                "color": "black, brown",
+                "color": [60, 30, 30],
+                "color_description": "Dark Brown",
                 "phase": "solid"
             },
             "period": 2,
@@ -1254,7 +1257,7 @@
             "atomic_number": 6,
             "description": "Carbon is a nonmetallic chemical element with the symbol C and atomic number 6. It's the backbone of all known life, forming the basis of organic molecules like proteins, DNA, and carbohydrates. In its pure forms, carbon appears as graphite (soft and black), diamond (hard and transparent), and amorphous carbon (like charcoal or soot).",
             "appearance": {
-                "color": "black (graphite), transparent (diamond)",
+                "color": null,
                 "phase": "solid"
             },
             "period": 2,
@@ -1571,7 +1574,7 @@
             "atomic_number": 7,
             "description": "Nitrogen is a colorless, odorless gas that constitutes 78% of the Earth's atmosphere. It is a nonmetal and the lightest member of group 15 of the periodic table.\nNitrogen is essential for life, forming the building blocks of proteins and nucleic acids, and is widely used in fertilizers, explosives, and industrial processes.",
             "appearance": {
-                "color": "colorless",
+                "color": null,
                 "phase": "gas"
             },
             "period": 2,
