@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import platform, sys, json, os, re, difflib, random, typing, textwrap, copy, base64, subprocess
+import platform, sys, json, os, re, difflib, random, typing, textwrap, copy, base64
 
 try:
     import utils
@@ -361,7 +361,7 @@ def get_information():
 def configurate():
     logger.info("User gave --init flag; redirecting to another script.")
     if CONFIG_SCRIPT.is_file():
-        subprocess.run([sys.executable, str(CONFIG_SCRIPT)], check=True)
+        import configuration
         sys.exit(0)
     else:
         animate_print(fore("Looks like the configuration script is missing. Please check for any missing files.", RED))
@@ -588,7 +588,8 @@ def compare_by_factor():
         for paragraph in formatted_factors.strip().split("\n\n")
     ) + "\n"
 
-    animate_print(f"Please enter a factor to compare all the elements with. The valid factors are:\n  {formatted_factors}{dim(compare_tip)}")
+    if factor_candidate not in factors:
+        animate_print(f"Please enter a factor to compare all the elements with. The valid factors are:\n  {formatted_factors}{dim(compare_tip)}")
 
     while True:
         if factor_candidate and factor_candidate in factors:
