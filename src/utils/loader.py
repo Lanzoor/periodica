@@ -1,4 +1,4 @@
-import json, logging, time, sys, pathlib, subprocess
+import json, logging, time, sys, subprocess
 from utils.directories import LOGGING_FILE, VENV_DIR, PERIODICA_DIR, BUILD_SCRIPT
 
 with open(LOGGING_FILE, 'w', encoding="utf-8"):
@@ -103,7 +103,7 @@ def get_response(url: str):
     try:
         import requests
     except ImportError:
-        failsafe()
+        import_failsafe()
     try:
         response = requests.get(url)
         response.raise_for_status()
@@ -116,7 +116,7 @@ def get_response(url: str):
         print(f"Failed to download data! HTTP status code: {response.status_code}")
         log.abort(f"Failed to fetch data. Status code: {response.status_code}.")
 
-def failsafe():
+def import_failsafe():
     if not VENV_DIR.is_dir():
         print("The virtual environment was not found. Should I run the build script for you? (Y/n)")
 

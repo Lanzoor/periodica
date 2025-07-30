@@ -1,6 +1,6 @@
 import tomllib, sys, subprocess, time, platform, pathlib
 from utils.terminal import bold, fore, RED, BLUE
-from utils.loader import Logger, get_response, failsafe
+from utils.loader import Logger, get_response, import_failsafe
 from utils.directories import PERIODICA_DIR, PYPROJECT_FILE, BUILD_SCRIPT
 
 log = Logger(enable_debugging=False)
@@ -8,6 +8,7 @@ log = Logger(enable_debugging=False)
 if __name__ == "__main__":
     print("Please refrain from running this script manually. Instead, please run the periodica.sh file with the --update flag.")
     sys.exit(0)
+
 OS = platform.system()
 
 if OS not in ["Linux", "Darwin"]:
@@ -17,7 +18,7 @@ if OS not in ["Linux", "Darwin"]:
 try:
     from packaging import version
 except ImportError:
-    failsafe()
+    import_failsafe()
 
 def fetch_toml():
     try:

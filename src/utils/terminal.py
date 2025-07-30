@@ -24,6 +24,7 @@ BRIGHT_YELLOW = 3 + 60
 BRIGHT_BLUE = 4 + 60
 BRIGHT_MAGENTA = 5 + 60
 BRIGHT_CYAN = 6 + 60
+BRIGHT_WHITE = 7 + 60
 
 def fore(string, color: int | list[int] | tuple[int, int, int]) -> str:
     if isinstance(color, int):
@@ -39,6 +40,20 @@ def fore(string, color: int | list[int] | tuple[int, int, int]) -> str:
         red, green, blue = color
         return f"\033[38;2;{red};{green};{blue}m{processed}\033[39m"
 
+def back(string, color: int | list[int] | tuple[int, int, int]) -> str:
+    if isinstance(color, int):
+        processed = str(string)
+        if (color > 7 and color != 9 and color < 60) or (color > 67): raise Exception("Unsupported default terminal color.")
+        try:
+            return f"\033[{(40 + color)}m{processed}\033[49m"
+        except ValueError:
+            logging.warning(f"{color} was an invalid default terminal color. To the developers, please diagnose this issue.")
+            return processed
+    else:
+        processed = str(string)
+        red, green, blue = color
+        return f"\033[48;2;{red};{green};{blue}m{processed}\033[49m"
+
 def bold(string) -> str:
     return f"\033[1m{string}\033[22m"
 
@@ -52,25 +67,13 @@ def italic(string) -> str:
     if support_effects:
         return f"\033[3m{string}\033[23m"
     else:
-        return string
+        return bold(string)
 
 def underline(string) -> str:
     if support_effects:
         return f"\033[4m{string}\033[24m"
     else:
         return bold(string)
-
-def crossout(string) -> str:
-    if support_effects:
-        return f"\033[9m{string}\033[29m"
-    else:
-        return string
-
-def blink(string) -> str:
-    if support_effects:
-        return f"\033[5m{string}\033[25m"
-    else:
-        return string
 
 def inverse_color(string) -> str:
     return f"\033[7m{string}\033[27m"

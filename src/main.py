@@ -11,14 +11,14 @@ except ImportError:
     print("The utils helper library or its scripts was not found. Please ensure all required files are present.")
     sys.exit(0)
 
-from utils.loader import get_config, get_response, Logger, failsafe, valid_sorting_methods
+from utils.loader import get_config, get_response, Logger, import_failsafe, valid_sorting_methods
 from utils.terminal import RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, DEFAULT_COLOR, BRIGHT_BLACK, BRIGHT_GREEN, BRIGHT_RED
 from utils.terminal import fore, bold, dim, italic, animate_print, clear_screen, gradient, underline
 from utils.directories import DATA_FILE, OUTPUT_FILE, CONFIG_SCRIPT, UPDATE_SCRIPT
 from pprint import pprint
 
 # Just in case when the venv does not exist
-failsafe()
+import_failsafe()
 
 # Flags for logic altering
 EXPORT_ENABLED = False
@@ -788,6 +788,15 @@ def fetch_version():
 
     sys.exit(0)
 
+def import_testing():
+    logger.info("User gave --test flag; redirecting to another script.")
+    try:
+        import utils.testing
+        sys.exit(0)
+    except ImportError:
+        animate_print(fore("Looks like the testing script is missing. Please check for any missing files.", RED))
+        logger.abort("Failed to find the testing script.")
+
 # Extract symbol and number from an isotope
 def match_isotope_input(user_input: str) -> typing.Tuple[str | None, str | None]:
     match = re.match(r"^(\d+)([A-Za-z]+)$", user_input)
@@ -1028,6 +1037,9 @@ There are also other flags you can provide to this CLI. (The ones marked after t
 - {bold("--random")} / -r
 - Pick a random element
 
+- {bold("--test")} / -T
+- Test the terminal effects
+
 Also, for flags that import other scripts, debug mode does not apply. Sorry!
 
 Anyways, I hope you enjoy this small CLI. {bold("Please read the README.md file for more information!")}
@@ -1101,8 +1113,8 @@ if TERMINAL_WIDTH <= 80:
 if len(sys.argv) > 1:
     valid_flags = [
         "--debug", "--info", "--init", "--update", "--table", "--export",
-        "--compare", "--bond-type", "--random", "--version",
-        "-i", "-I", "-u", "-x", "-C", "-B", "-r", "-v"
+        "--compare", "--bond-type", "--random", "--version", "--test"
+        "-i", "-I", "-u", "-x", "-C", "-B", "-r", "-v", "-T"
     ]
 
     flags_that_require_position_argument = [
@@ -1137,7 +1149,8 @@ if len(sys.argv) > 1:
         create_flag_event("--compare", "-C", callable=compare_by_factor) or
         create_flag_event("--bond-type", "-B", callable=compare_bond_type) or
         create_flag_event("--random", "-r", callable=select_random_element) or
-        create_flag_event("--version", "-v", callable=fetch_version)
+        create_flag_event("--version", "-v", callable=fetch_version) or
+        create_flag_event("--test", "-T", callable=import_testing)
     )
 
     if not recognized_flag:
