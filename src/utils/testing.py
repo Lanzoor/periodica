@@ -1,4 +1,4 @@
-import sys
+import sys, os
 from utils.terminal import BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE, DEFAULT_COLOR
 from utils.terminal import BRIGHT_BLACK, BRIGHT_RED, BRIGHT_GREEN, BRIGHT_YELLOW, BRIGHT_BLUE, BRIGHT_MAGENTA, BRIGHT_CYAN, BRIGHT_WHITE
 from utils.terminal import fore, back, bold, italic, dim, underline, inverse_color, gradient, clear_screen, clear_line, animate_print
@@ -6,6 +6,13 @@ from utils.terminal import fore, back, bold, italic, dim, underline, inverse_col
 if __name__ == "__main__":
     print("Please refrain from running this script manually. Instead, please run the periodica.sh file with the --test flag.")
     sys.exit(0)
+
+try:
+    TERMINAL_WIDTH = os.get_terminal_size().columns
+    TERMINAL_HEIGHT = os.get_terminal_size().lines
+    animate_print(f"Terminal size: {TERMINAL_WIDTH}x{TERMINAL_HEIGHT}")
+except OSError:
+    animate_print("You are not running this script in a terminal.")
 
 clear_screen()
 
@@ -51,4 +58,5 @@ print(f"    Bold text: {bold("text")}")
 print(f"    Italic text: {italic("text")} <- may behave the same as inverse_color")
 print(f"    Dim text: {dim("text")} <- may not be widely supported")
 print(f"    Underlined text: {underline("text")} <- also may not be widely supported, may be treated as bold")
-print(f"    Inverse color: {inverse_color("This should be flipped colors")} and {inverse_color(fore("so should this", GREEN))}")
+print(f"    Inverse color: {inverse_color("Should appear as white background + black text")} and {inverse_color(fore("green background + black text", GREEN))}")
+

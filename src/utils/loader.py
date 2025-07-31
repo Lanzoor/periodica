@@ -55,7 +55,7 @@ class Logger():
 log = Logger(enable_debugging=False)
 
 default_config = {
-    "use_superscripts": True,
+    "use_unicode": True,
     "terminal_effects": True,
     "isotope_format": "fullname-number",
     "animation_type": "none",

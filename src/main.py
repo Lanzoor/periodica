@@ -30,14 +30,13 @@ elementdata_malformed = False
 # This is where elements and suggestions will go
 element_data = None
 element_suggestion = ""
-# greek_symbols = ["α", "β", "γ", "δ", "ε", "ζ", "η", "θ", "ι", "κ", "λ", "μ", "ν", "ξ", "ο", "π", "ρ", "σ", "τ", "υ", "φ", "χ", "ψ", "ω"]
 
 logger = Logger(enable_debugging=DEBUG_MODE)
 
 # Configuration variables
 config = get_config()
 
-use_superscripts = config["use_superscripts"]
+use_unicode = config["use_unicode"]
 support_effects = config["terminal_effects"]
 isotope_format = config["isotope_format"]
 animation_type = config["animation_type"]
@@ -49,8 +48,8 @@ default_sorting_method = config["default_sorting_method"]
 if support_effects:
     VALENCE_ELECTRONS_COL = (248, 255, 166)
     ELECTRONEG_COL = (131, 122, 255)
-    MALE = (109, 214, 237)
-    FEMALE = (255, 133, 245)
+    TURQUOISE = (109, 214, 237)
+    PINK = (255, 133, 245)
     MELT_COL = (52, 110, 235)
     BOIL_COL = (189, 165, 117)
     ORANGE = (245, 164, 66)
@@ -62,8 +61,8 @@ if support_effects:
 else:
     VALENCE_ELECTRONS_COL = YELLOW
     ELECTRONEG_COL = BLUE
-    MALE = CYAN
-    FEMALE = MAGENTA
+    TURQUOISE = CYAN
+    PINK = MAGENTA
     MELT_COL = BLUE
     BOIL_COL = YELLOW
     ORANGE = YELLOW
@@ -73,13 +72,21 @@ else:
     PERIWINKLE = CYAN
     GOLD = YELLOW
 
-cm3 = "cm³" if use_superscripts else "cm3"
-m3 = "m³" if use_superscripts else "m3"
-mm2 = "mm²" if use_superscripts else "mm2"
-pos = "⁺" if use_superscripts else "+"
-neg = "⁻" if use_superscripts else "-"
-neutral = "⁰" if use_superscripts else "0"
-
+cm3 = "cm³" if use_unicode else "cm3"
+m3 = "m³" if use_unicode else "m3"
+mm2 = "mm²" if use_unicode else "mm2"
+pos = "⁺" if use_unicode else "+"
+neg = "⁻" if use_unicode else "-"
+neutral = "⁰" if use_unicode else "0"
+pm = "±" if use_unicode else "+-"   
+decay = "⛓️" if use_unicode else "d"
+energy = "⚡️" if use_unicode else "E"
+rho = "ρ" if use_unicode else "p"
+chi = "χ" if use_unicode else "x"
+full_block = "█" if use_unicode else "-"
+up_arrow = "↑" if use_unicode else "^"
+down_arrow = "↓" if use_unicode else "_"
+sigma = "σ" if use_unicode else "s"
 full_data = {}
 
 # Color configurations for specific outputs
@@ -97,12 +104,6 @@ PHASE_TYPE_COLORS = {
     "Liquid": CYAN
 }
 
-PHASE_TYPE_SYMBOLS = {
-    "Solid": "🧊",
-    "Gas": "💨",
-    "Liquid": "💦"
-}
-
 CONDUCTIVITY_TYPE_COLORS = {
     "Superconductor": NULL,
     "Semiconductor": CYAN,
@@ -111,13 +112,23 @@ CONDUCTIVITY_TYPE_COLORS = {
     "Unsure": EXCITED
 }
 
-CONDUCTIVITY_TYPE_SYMBOLS = {
-    "Superconductor": "💨",
-    "Semiconductor": "🔗",
-    "Insulator": "🫧",
-    "Conductor": "🔃",
-    "Unsure": "❓"
-}
+if use_unicode:
+    PHASE_TYPE_SYMBOLS = {
+        "Solid": "🧊",
+        "Gas": "💨",
+        "Liquid": "💦"
+    }
+
+    CONDUCTIVITY_TYPE_SYMBOLS = {
+        "Superconductor": "💨",
+        "Semiconductor": "🔗",
+        "Insulator": "🫧",
+        "Conductor": "🔃",
+        "Unsure": "❓"
+    }
+else:
+    PHASE_TYPE_SYMBOLS = None
+    CONDUCTIVITY_TYPE_SYMBOLS = None
 
 SUBSHELL_COLORS = {
     's': RED,
@@ -128,10 +139,10 @@ SUBSHELL_COLORS = {
 
 # For ionization calculations
 SUBSHELL_AZIMUTHALS = {
-    "s": 0,
-    "p": 1,
-    "d": 2,
-    "f": 3
+    's': 0,
+    'p': 1,
+    'd': 2,
+    'f': 3
 }
 
 # Selecting random tips
@@ -280,8 +291,8 @@ def calculate_ionization_series(subshells: list[str], atomic_number: int, ioniza
         subshell_str = f"{last_filled[0]}{last_filled[1]}"
         quantum_target = last_filled[0]
         current_subshells = [f"{q}{a}{c}" for q, a, c in current_config if c > 0]
-        sigma = calculate_shielding_constant(current_subshells, subshell_str)
-        Z_eff = atomic_number - sigma
+        shielding_constant = calculate_shielding_constant(current_subshells, subshell_str)
+        Z_eff = atomic_number - shielding_constant
 
         if index == 0 and ionization_energy is not None:
             current_IE = ionization_energy
@@ -292,25 +303,25 @@ def calculate_ionization_series(subshells: list[str], atomic_number: int, ioniza
             uncertainty = "eV"
         elif index == 1:
             # The first breakdown always has a lot of inaccuracy
-            uncertainty = "±75eV"
+            uncertainty = f"{pm}75eV"
         elif index < atomic_number // 2:
             # Then it settles in the next half
-            uncertainty = "±50eV"
+            uncertainty = f"{pm}50eV"
         elif index > atomic_number // 2:
             # The last half and especially the last one is actually pretty accurate
             current_IE = RYDBERG_CONSTANT * (Z_eff ** 2) / (quantum_target ** 2)
-            uncertainty = "±25eV"
+            uncertainty = f"{pm}25eV"
 
         formatted_subshell = f"{subshell_str}1"
-        formatted_subshell = formatted_subshell[:-1] + convert_superscripts(formatted_subshell[-1]) if use_superscripts else formatted_subshell
+        formatted_subshell = formatted_subshell[:-1] + convert_superscripts(formatted_subshell[-1]) if use_unicode else formatted_subshell
 
         # Appending to the output
         lines.append(
             f"  - {bold(ordinal(index + 1))} Ionization:\n"
-            f"    {fore('Removed', RED)} = {formatted_subshell}\n"
-            f"    σ       = {sigma:.2f}\n"
-            f"    Z_eff   = {Z_eff:.2f}\n"
-            f"    {fore('IE', FEMALE)}      = {bold(round(current_IE, 3))}{uncertainty}\n"
+            f"    {fore('Removed Subshell', RED)}: {formatted_subshell}\n"
+            f"    {sigma} - {fore('Shielding Constant', PERIWINKLE)}: {shielding_constant:.2f}\n"
+            f"    Z_eff - {fore('Effective Nuclear Charge', GOLD)}: {Z_eff:.2f}\n"
+            f"    {fore('Ionization Energy', PINK)}: {bold(round(current_IE, 3))}{uncertainty}\n"
         )
 
         if last_idx is not None:
@@ -609,6 +620,7 @@ def compare_by_factor():
         factor_candidate = "_".join(input("> ").strip().lower().split(" "))
         check_exit_event(factor_candidate)
 
+    clear_screen()
     animate_print(f"\nComparing all elements by factor {bold(factor)} with sorting by {bold(sorting_method)}... {dim('(Please note that some elements may be missing, and the data is trimmed up to 4 digits of float numbers.)')}\n")
     logger.info(f"Comparing all elements by factor {factor}...")
 
@@ -640,7 +652,7 @@ def compare_by_factor():
             padding = 30 + len(determiner)
             bar_space = max(TERMINAL_WIDTH - padding, 10)
             bar_length = int((value / max_value) * bar_space)
-            bar = fore("█" * bar_length, CYAN)
+            bar = fore(full_block * bar_length, CYAN)
             animate_print(f"{name:<12} {str(round(value, 4)) + determiner:<12} [{bar}]")
         elif value is None:
             none_counter += 1
@@ -725,9 +737,9 @@ def compare_bond_type():
     if diff < 0.4:
         bond_type_str = fore("Nonpolar Covalent", BLUE) + " -"
     elif diff < 1.7:
-        bond_type_str = fore("Polar Covalent", YELLOW) + " δ"
+        bond_type_str = fore("Polar Covalent", YELLOW) + (" δ" if use_unicode else " d")
     else:
-        bond_type_str = fore("Ionic", RED) + " →"
+        bond_type_str = fore("Ionic", RED) + (" →" if use_unicode else " >")
 
     animate_print()
     animate_print(f"Primary element ({primary_element_name})'s electronegativity: {bold(primary_en)}")
@@ -755,7 +767,7 @@ def enable_debugging():
     if constant_debugging:
         logger.info("Debug mode was enabled due to the constant_debugging configuration.")
 
-    logger.info(f"Configuration overview: superscripts={use_superscripts}, terminal_effects={support_effects}, "
+    logger.info(f"Configuration overview: superscripts={use_unicode}, terminal_effects={support_effects}, "
                 f"isotope_format={isotope_format}, animation={animation_type}, "
                 f"animation_delay={animation_delay}s, constant_debugging={constant_debugging}, default_sorting_method={default_sorting_method}")
 
@@ -856,7 +868,7 @@ def print_isotope(norm_iso, info, fullname):
             animate_print(f"{padding}{bold(display_name)} -> {bold(mode)} {arrow} {out} {chance}")
 
     if isinstance(info.get("decay"), list):
-        animate_print(f"      ⛓️ - {fore("Possible Decays", GOLD)}:")
+        animate_print(f"      {decay} - {fore("Possible Decays", GOLD)}:")
         show_decay(info["decay"])
 
     if isinstance(info.get("metastable"), dict):
@@ -866,9 +878,9 @@ def print_isotope(norm_iso, info, fullname):
             animate_print(f"        {bold(display_meta)}:")
             if "half_life" in data:
                 animate_print(f"          t1/2 - {fore("Half Life", PERIWINKLE)}: {bold(data['half_life'])}")
-            animate_print(f"          ⚡️ - {fore("Excitation Energy", EXCITED)}: {bold(data['energy'])}keV")
+            animate_print(f"          {energy} - {fore("Excitation Energy", EXCITED)}: {bold(data['energy'])}keV")
             if "decay" in data:
-                animate_print(f"          ⛓️ - {fore("Possible Decays", GOLD)}:")
+                animate_print(f"          {decay} - {fore("Possible Decays", GOLD)}:")
                 show_decay(data["decay"], indent=14)
 
     animation_delay *= 4
@@ -888,10 +900,10 @@ def format_isotope(norm_iso, fullname, *, metastable = ""):
         elif isotope_format == "symbol-number":
             return f"{symbol}-{number}{metastable}"
         elif isotope_format == "numbersymbol":
-            number = convert_superscripts(str(number)) if use_superscripts else number
+            number = convert_superscripts(str(number)) if use_unicode else number
             return f"{number}{metastable}{symbol}"
         elif isotope_format == "number-symbol":
-            number = convert_superscripts(str(number)) if use_superscripts else number
+            number = convert_superscripts(str(number)) if use_unicode else number
             return f"{number}{metastable}-{symbol}"
         else:
             return f"{symbol}-{number}{metastable}"
@@ -1100,13 +1112,14 @@ easter_eggs = [
 try:
     TERMINAL_WIDTH = os.get_terminal_size().columns
     TERMINAL_HEIGHT = os.get_terminal_size().lines
+    logger.info(f"Terminal size: {TERMINAL_WIDTH}x{TERMINAL_HEIGHT} (width x height)")
 except OSError:
     animate_print(bold("What?? So apparently, you aren't running this on a terminal, which is very weird. We will try to ignore this issue, and will determine your terminal width as 80. Please move on and ignore this message."))
     logger.warn("The script ran without a terminal, so failback to reasonable terminal width variable.")
     TERMINAL_WIDTH = 80
     TERMINAL_HEIGHT = 40
 
-if TERMINAL_WIDTH <= 80:
+if TERMINAL_WIDTH < 80:
     animate_print(fore(f"You are running this program in a terminal that has a width of {bold(TERMINAL_WIDTH)},\nwhich may be too compact to display and provide the information.\nPlease try resizing your terminal.", RED))
     logger.warn("Not enough width for terminal.")
 
@@ -1232,7 +1245,7 @@ except KeyError:
 
 try:
     formatted_phase += f" {PHASE_TYPE_SYMBOLS[phase]}"
-except KeyError:
+except (KeyError, TypeError):
     pass
 
 discoverers = historical["discoverers"]
@@ -1278,7 +1291,7 @@ else:
     periodic_table[period - 1][group - 1] = bold(fore("▪", ELEMENT_TYPE_COLORS[element_type]))
 
 entries = [
-    bold(fore(name, MALE if gender == "male" else FEMALE))
+    bold(fore(name, TURQUOISE if gender == "TURQUOISE" else PINK))
     for name, gender in discoverers.items()
 ]
 
@@ -1316,7 +1329,7 @@ for index, subshell in enumerate(subshells):
         logger.warn(f"To the developers, a malformed subshell was detected in {fullname.capitalize()}. Issue: {subshell}")
         continue
 
-    formatted_subshell = subshell[:-1] + (convert_superscripts(subshell[-1]) if use_superscripts else subshell[-1])
+    formatted_subshell = subshell[:-1] + (convert_superscripts(subshell[-1]) if use_unicode else subshell[-1])
     match = pattern.match(subshell)
     if match:
         energy_level, subshell_type, electron_count = match.groups()
@@ -1344,12 +1357,12 @@ for subshell_string in subshells:
     orbitals = [""] * number_of_orbitals
 
     for index in range(min(electron_count, number_of_orbitals)):
-        orbitals[index] = "↑"
+        orbitals[index] = up_arrow
     remaining_electrons = electron_count - number_of_orbitals
     for index in range(number_of_orbitals):
         if remaining_electrons <= 0:
             break
-        orbitals[index] += "↓"
+        orbitals[index] += down_arrow
         remaining_electrons -= 1
 
     orbital_boxes = []
@@ -1358,14 +1371,14 @@ for subshell_string in subshells:
             orbital_boxes.append("[  ]")
         else:
             spins_colored = "".join(
-                fore("\u2191", GREEN) if spin == "↑" else fore("\u2193", RED)
+                fore("\u2191", GREEN) if spin == up_arrow else fore("\u2193", RED)
                 for spin in orbital
             )
             orbital_boxes.append(f"[{spins_colored}]")
 
     formatted_line = f"  {energy_level + orbital_type:<4} {' '.join(orbital_boxes)}"
     formatted_lines.append(formatted_line)
-    current_unpaired_electrons = sum(1 for orbital in orbitals if orbital == "↑" or orbital == "↓")
+    current_unpaired_electrons = sum(1 for orbital in orbitals if orbital == up_arrow or orbital == down_arrow)
     unpaired_electrons += current_unpaired_electrons
 
 subshell_visualisation = "\n".join(formatted_lines)
@@ -1387,7 +1400,7 @@ if subshells:
         effective_nuclear_charge = atomic_number - shielding_constant
 
         last_subshell_type = subshell[1] if len(subshell) > 1 else 's'
-        last_subshell = last_subshell[:-1] + convert_superscripts(last_subshell[-1]) if use_superscripts else last_subshell
+        last_subshell = last_subshell[:-1] + convert_superscripts(last_subshell[-1]) if use_unicode else last_subshell
         last_subshell = fore(last_subshell, SUBSHELL_COLORS.get(last_subshell_type, (255, 255, 255)))
 
         subshell_visualisation += f"\n\n      {fore("Valence Subshell", VALENCE_ELECTRONS_COL)} ({underline(last_subshell)}):"
@@ -1395,7 +1408,7 @@ if subshells:
         subshell_visualisation += f"\n        l - {fore('Azimuthal', GREEN)}: {bold(azimuthal_quantum_number)} ({subshell_type} subshell)"
         subshell_visualisation += f"\n        m_l - {fore('Magnetic', YELLOW)}: {bold(magnetic_quantum_number)} (approximated)"
         subshell_visualisation += f"\n        m_s - {fore('Spin', MAGENTA)}: {bold(spin_quantum_number)} ({unpaired_electrons} unpaired electron{'s' if unpaired_electrons != 1 else ''}, {pair_determiner})"
-        subshell_visualisation += f"\n        σ - {fore('Shielding Constant', PERIWINKLE)}: {bold(f'{shielding_constant:.2f}')}"
+        subshell_visualisation += f"\n        {sigma} - {fore('Shielding Constant', PERIWINKLE)}: {bold(f'{shielding_constant:.2f}')}"
         subshell_visualisation += f"\n        Z_eff - {fore('Effective Nuclear Charge', GOLD)}: {bold(f'{effective_nuclear_charge:.2f}')}"
 
 # Physical properties
@@ -1445,7 +1458,7 @@ except KeyError:
 
 try:
     formatted_conductivity += f" {CONDUCTIVITY_TYPE_SYMBOLS[conductivity_type]}"
-except KeyError:
+except (KeyError, TypeError):
     pass
 
 # Measurements
@@ -1474,7 +1487,7 @@ if color is not None:
         color_description = "not given"
     if support_effects:
         r, g, b = color
-        animate_print(f" 🎨 - Standard Color: {fore("██", (r, g, b))} ({bold(color_description)})")
+        animate_print(f" 🎨 - Standard Color: {fore(full_block * 2, (r, g, b))} ({bold(color_description)})")
     else:
         animate_print(f" 🎨 - Standard Color: {color_description}")
 else:
@@ -1488,25 +1501,26 @@ animate_print(f" 🎨 - Type: {bold(fore(element_type, ELEMENT_TYPE_COLORS[eleme
 animate_print(f" 🧱 - Block: {bold(block)}")
 animate_print(f" 📇 - CAS Number: {bold(cas_number)}")
 
-print()
+if use_unicode:
+    print()
 
-print("  ", end="")
-for y in periodic_table:
-    for x in y:
-        print(x, end=" ")
-    print("\n  ", end="")
+    print("  ", end="")
+    for y in periodic_table:
+        for x in y:
+            print(x, end=" ")
+        print("\n  ", end="")
 
-print()
+    print()
 
-for lanthanide in lanthanides:
-    print(lanthanide, end=" ")
+    for lanthanide in lanthanides:
+        print(lanthanide, end=" ")
 
-print()
+    print()
 
-for actinide in actinides:
-    print(actinide, end=" ")
+    for actinide in actinides:
+        print(actinide, end=" ")
 
-print()
+    print()
 
 print()
 print_header("Nuclear Properties")
@@ -1543,20 +1557,20 @@ animate_print()
 print_header("Electronic Properties")
 animate_print()
 
-animate_print(f" χ - {fore("Electronegativity", ELECTRONEG_COL)}: {bold(electronegativity)}")
+animate_print(f" {chi} - {fore("Electronegativity", ELECTRONEG_COL)}: {bold(electronegativity)}")
 animate_print(f" EA - {fore("Electron Affinity", EXCITED)}: {bold(electron_affinity)}eV ≈ {bold(eV_to_kJpermol(electron_affinity))}kJ/mol")
-animate_print(f" IE - {fore("Ionization Energy", FEMALE)}: {bold(ionization_energy)}eV ≈ {bold(eV_to_kJpermol(ionization_energy))}kJ/mol")
+animate_print(f" IE - {fore("Ionization Energy", PINK)}: {bold(ionization_energy)}eV ≈ {bold(eV_to_kJpermol(ionization_energy))}kJ/mol")
 animate_print(f"      {bold("ESTIMATED")} Ionization Energy Series {bold("(THIS IS A VERY HUGE SIMPLIFICATION. Do not rely on them.)")}: ")
 animate_print(f"\n{calculate_ionization_series(subshells, atomic_number, ionization_energy)}\n")
 
-animate_print(f" ⚡️ - {fore("Oxidation States", YELLOW)} {dim(f"(Only the ones that have {fore("color", BLUE)} are activated)")}:\n{"   " + negatives_result}\n{"   " + positives_result}\n")
-animate_print(f" ⚡️ - {fore("Conductivity Type", BRIGHT_BLACK)}: {bold(formatted_conductivity)}")
+animate_print(f" {energy} - {fore("Oxidation States", YELLOW)} {dim(f"(Only the ones that have {fore("color", BLUE)} are activated)")}:\n{"   " + negatives_result}\n{"   " + positives_result}\n")
+animate_print(f" {energy} - {fore("Conductivity Type", BRIGHT_BLACK)}: {bold(formatted_conductivity)}")
 
 animate_print()
 print_header("Measurements")
 animate_print()
 
-animate_print(f" r - {fore("Radius", FEMALE)}: ")
+animate_print(f" r - {fore("Radius", PINK)}: ")
 animate_print(f"   r_calc - Calculated: {safe_format(radius['calculated'], 'pm', 'N/A')}")
 animate_print(f"   r_emp - Empirical: {safe_format(radius['empirical'], 'pm', 'N/A')}")
 animate_print(f"   r_cov - Covalent: {safe_format(radius['covalent'], 'pm', 'N/A')}")
@@ -1570,7 +1584,7 @@ animate_print(f"   K - Bulk Modulus: {safe_format(moduli['bulk'], 'GPa')}")
 animate_print(f"   E - Young's Modulus: {safe_format(moduli['young'], 'GPa')}")
 animate_print(f"   G - Shear Modulus: {safe_format(moduli['shear'], 'GPa')}")
 animate_print(f"   ν - Poisson's Ratio: {safe_format(moduli['poissons_ratio'], '')}\n")
-animate_print(f" ρ - {fore("Density", CYAN)}: ")
+animate_print(f" {rho} - {fore("Density", CYAN)}: ")
 animate_print(f"   STP Density: {safe_format(density['STP'], f'kg/{m3}')}")
 animate_print(f"   Liquid Density: {safe_format(density['liquid'], f'kg/{m3}')}\n")
 

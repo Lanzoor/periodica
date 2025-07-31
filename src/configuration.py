@@ -33,12 +33,12 @@ def create_fn_event(input: str, function_no: int, callable):
     return False
 
 def toggle_superscript():
-    global config, use_superscripts
+    global config, use_unicode
 
-    config['use_superscripts'] = not config['use_superscripts']
-    use_superscripts = config["use_superscripts"]
-    print(f"The setting 'Use Superscripts' was changed to {bold(fore(use_superscripts, GREEN) if use_superscripts else fore(use_superscripts, RED))}.")
-    logger.info(f"Setting 'Use Superscripts' changed from {not use_superscripts} to {use_superscripts}.")
+    config['use_unicode'] = not config['use_unicode']
+    use_unicode = config["use_unicode"]
+    print(f"The setting 'Use Superscripts' was changed to {bold(fore(use_unicode, GREEN) if use_unicode else fore(use_unicode, RED))}.")
+    logger.info(f"Setting 'Use Superscripts' changed from {not use_unicode} to {use_unicode}.")
     time.sleep(1)
 
 def toggle_effects():
@@ -209,7 +209,7 @@ def reset():
 
 try:
     while True:
-        use_superscripts = config["use_superscripts"]
+        use_unicode = config["use_unicode"]
         support_effects = config["terminal_effects"]
         isotope_format = config["isotope_format"]
         animation_type = config["animation_type"]
@@ -220,7 +220,7 @@ try:
         clear_screen()
         print("NOTE: This program intentionally does not respect your animation settings. Please understand.\n")
         print("Here are all available options that you can change in your config file.\n")
-        print(f"1. Use Superscripts: Determines whether to use superscripts (Set to {bold(fore(use_superscripts, GREEN) if use_superscripts else fore(use_superscripts, RED))})")
+        print(f"1. Use Unicode Symbols: Determines whether to use superscripts and other symbols (Set to {bold(fore(use_unicode, GREEN) if use_unicode else fore(use_unicode, RED))})")
         print(f"2. Terminal Effects: Determines whether to use RGB-accurate coloring in terminal and additional styling (Set to {bold(fore(support_effects, GREEN) if support_effects else fore(support_effects, RED))})")
         print(f"3. Debug Constantly: Determines whether to log data constantly. Usually, you need the --debug flag to do it, but this constantly enables debug mode. (Set to {bold(fore(constant_debugging, GREEN) if constant_debugging else fore(constant_debugging, RED))})")
         print("4. Isotope Display Format: Determines how isotopes are formatted")

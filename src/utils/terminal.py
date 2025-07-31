@@ -107,10 +107,12 @@ def gradient(message, start_rgb: list[int] | tuple[int, int, int], end_rgb: list
     return "".join(result_characters)
 
 def clear_screen():
-    print("\r\033[2J\033[H", end='', flush=True)
+    if support_effects:
+        print("\r\033[2J\033[H", end='', flush=True)
 
 def clear_line():
-    print("\r\033[2K", end='', flush=True)
+    if support_effects:
+        print("\r\033[2K", end='', flush=True)
 
 def animate_print(message: str = "", delay: float = animation_delay, *, end: str = "\n"):
     global animation_type
