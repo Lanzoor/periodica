@@ -78,7 +78,7 @@ mm2 = "mm²" if use_unicode else "mm2"
 pos = "⁺" if use_unicode else "+"
 neg = "⁻" if use_unicode else "-"
 neutral = "⁰" if use_unicode else "0"
-pm = "±" if use_unicode else "+-"   
+pm = "±" if use_unicode else "+-"
 decay = "⛓️" if use_unicode else "d"
 energy = "⚡️" if use_unicode else "E"
 rho = "ρ" if use_unicode else "p"
@@ -191,8 +191,14 @@ def celcius_to_kelvin(celsius):
 def celcius_to_fahrenheit(celsius):
 	return round((celsius * 9 / 5) + 32, 5)
 
+def format_temperature(variable):
+    return f"{bold(variable)}°C ≈ {bold(celcius_to_fahrenheit(variable))}°F = {bold(celcius_to_kelvin(variable))}K"
+
 def eV_to_kJpermol(eV):
     return round(eV * 96.485, 5)
+
+def format_energy(variable):
+    return f"{bold(variable)}eV ≈ {bold(eV_to_kJpermol(variable))}kJ/mol"
 
 # Print helpers (they use print instead of animate_print since it takes a long time)
 def print_header(title):
@@ -767,7 +773,7 @@ def enable_debugging():
     if constant_debugging:
         logger.info("Debug mode was enabled due to the constant_debugging configuration.")
 
-    logger.info(f"Configuration overview: superscripts={use_unicode}, terminal_effects={support_effects}, "
+    logger.info(f"Configuration overview: use_unicode={use_unicode}, terminal_effects={support_effects}, "
                 f"isotope_format={isotope_format}, animation={animation_type}, "
                 f"animation_delay={animation_delay}s, constant_debugging={constant_debugging}, default_sorting_method={default_sorting_method}")
 
@@ -1003,7 +1009,7 @@ def process_isotope_input(user_input):
             return None, None
         return find_element(user_input)
 
-def safe_format(value, measurement, placeholder = "None"):
+def safe_format(value, measurement = "", *, placeholder = "None"):
     if value is not None:
         return bold(str(value)) + measurement
 
@@ -1135,7 +1141,7 @@ if len(sys.argv) > 1:
         "-x", "-C", "-B"
     ]
 
-    primary_flags = [flag for flag in flag_arguments if (flag != "--debug" or flag != "-d")]
+    primary_flags = [flag for flag in flag_arguments if flag in valid_flags and flag not in ("--debug", "-d")]
 
     user_input = None
 
@@ -1190,7 +1196,7 @@ if element_data is None:
             if (user_input in keys and isinstance(keys, list)) or user_input == keys:
                 animate_print(response)
                 if user_input == "periodica":
-                    # I wonder what this translates to...
+                    # I wonder what this translates to... hehehe heh eh he ehh
                     exec(base64.b64decode("cmFpc2UgUmVjdXJzaW9uRXJyb3IoIm1heGltdW0gZGVwdGggcmVhY2hlZCB3aGlsc3QgdHJ5aW5nIHRvIGZpbmQgcGVyaW9kaWNhIGluc2lkZSBwZXJpb2RpY2EgaW5zaWRlIHBlcmlvZGljYSBpbnNpZGUgcGVyaW9kaWNhIGluc2lkZS4uLiIpIGZyb20gTm9uZQ=="))
                 sys.exit(0)
 
@@ -1546,25 +1552,25 @@ animate_print()
 print_header("Physical Properties")
 animate_print()
 
-animate_print(f" 💧 - {fore("Melting Point", MELT_COL)}: {bold(melting_point)}°C ≈ {bold(celcius_to_fahrenheit(melting_point))}°F = {bold(celcius_to_kelvin(melting_point))}K")
-animate_print(f" 💨 - {fore("Boiling Point", BOIL_COL)}: {bold(boiling_point)}°C ≈ {bold(celcius_to_fahrenheit(boiling_point))}°F = {bold(celcius_to_kelvin(boiling_point))}K")
+animate_print(f" 💧 - {fore("Melting Point", MELT_COL)}: {format_temperature(melting_point)}")
+animate_print(f" 💨 - {fore("Boiling Point", BOIL_COL)}: {format_temperature(boiling_point)}")
 animate_print(f" A - {fore("Mass Number", GOLD)}: {fore(protons, RED)} + {fore(neutrons, BLUE)} = {bold(protons + neutrons)}")
 animate_print(f" u - {fore("Atomic Mass", BRIGHT_RED)}: {bold(atomic_mass)}g/mol")
 animate_print(f" ☢️ - {fore("Radioactive", ORANGE)}: {fore("Yes", GREEN) if radioactive else fore("No", RED)}")
-animate_print(f" t1/2 - {fore("Half Life", PERIWINKLE)}: {bold(half_life if not (half_life is None) else bold(fore("Stable", CYAN)))}")
+animate_print(f" t1/2 - {fore("Half Life", PERIWINKLE)}: {safe_format(half_life, placeholder="Stable")}")
 
 animate_print()
 print_header("Electronic Properties")
 animate_print()
 
 animate_print(f" {chi} - {fore("Electronegativity", ELECTRONEG_COL)}: {bold(electronegativity)}")
-animate_print(f" EA - {fore("Electron Affinity", EXCITED)}: {bold(electron_affinity)}eV ≈ {bold(eV_to_kJpermol(electron_affinity))}kJ/mol")
-animate_print(f" IE - {fore("Ionization Energy", PINK)}: {bold(ionization_energy)}eV ≈ {bold(eV_to_kJpermol(ionization_energy))}kJ/mol")
+animate_print(f" EA - {fore("Electron Affinity", EXCITED)}: {format_energy(electron_affinity)}")
+animate_print(f" IE - {fore("Ionization Energy", PINK)}: {format_energy(ionization_energy)}")
 animate_print(f"      {bold("ESTIMATED")} Ionization Energy Series {bold("(THIS IS A VERY HUGE SIMPLIFICATION. Do not rely on them.)")}: ")
 animate_print(f"\n{calculate_ionization_series(subshells, atomic_number, ionization_energy)}\n")
 
 animate_print(f" {energy} - {fore("Oxidation States", YELLOW)} {dim(f"(Only the ones that have {fore("color", BLUE)} are activated)")}:\n{"   " + negatives_result}\n{"   " + positives_result}\n")
-animate_print(f" {energy} - {fore("Conductivity Type", BRIGHT_BLACK)}: {bold(formatted_conductivity)}")
+animate_print(f" c - {fore("Conductivity Type", BRIGHT_BLACK)}: {bold(formatted_conductivity)}")
 
 animate_print()
 print_header("Measurements")
