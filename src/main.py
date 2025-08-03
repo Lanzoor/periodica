@@ -13,7 +13,7 @@ except ImportError:
 
 from utils.loader import get_config, get_response, Logger, import_failsafe, valid_sorting_methods
 from utils.terminal import RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, DEFAULT_COLOR, BRIGHT_BLACK, BRIGHT_GREEN, BRIGHT_RED
-from utils.terminal import fore, bold, dim, italic, animate_print, clear_screen, gradient, underline
+from utils.terminal import fore, back, inverse_color, bold, dim, italic, animate_print, clear_screen, gradient
 from utils.directories import DATA_FILE, OUTPUT_FILE, CONFIG_SCRIPT, UPDATE_SCRIPT
 from pprint import pprint
 
@@ -146,17 +146,19 @@ SUBSHELL_AZIMUTHALS = {
 }
 
 # Selecting random tips
-match random.randint(0, 5):
+match random.randint(0, 6):
     case 0:
         tip = "(Tip: You can give this program argv to directly search an element from there. You can even give argv to the periodica.sh file too!)"
     case 1:
         tip = "(Tip: Run this script with the --info flag to get information about flags.)"
     case 2:
-        tip = "(Tip: Run this script with the --init flag to configure options like using superscripts.)"
+        tip = "(Tip: Run this script with the --init flag to configure options like using unicode or terminal effects.)"
     case 3:
         tip = "(Tip: In an input field, you can input quit to exit the interactive input session.)"
     case 4:
         tip = f"(Tip: In the main interactive input field, you can input, {italic("certain")} things to trigger an easter egg message.)"
+    case 5:
+        tip = f"(Tip: There are shorthand aliases to common flags, run the script with the --info (or -i) flag to get information about them.)"
     case _:
         tip = ""
 
@@ -202,8 +204,8 @@ def format_energy(variable):
 
 # Print helpers (they use print instead of animate_print since it takes a long time)
 def print_header(title):
-    dashes = "-" * (TERMINAL_WIDTH - len(title) - 2)
-    print(f"--{bold(title)}{dashes}")
+    dashes = "-" * (TERMINAL_WIDTH - len(title) - 4)
+    print(f"-- {bold(title)} {dashes}")
 
 def print_separator():
     print()
@@ -1297,7 +1299,7 @@ else:
     periodic_table[period - 1][group - 1] = bold(fore("▪", ELEMENT_TYPE_COLORS[element_type]))
 
 entries = [
-    bold(fore(name, TURQUOISE if gender == "TURQUOISE" else PINK))
+    fore(name, TURQUOISE if gender == "TURQUOISE" else PINK)
     for name, gender in discoverers.items()
 ]
 
@@ -1342,12 +1344,12 @@ for index, subshell in enumerate(subshells):
         electron_count = int(electron_count)
         max_capacity = subshell_capacities[subshell_type]
         colored_subshell = fore(formatted_subshell, SUBSHELL_COLORS.get(subshell_type, DEFAULT_COLOR))
-        colored_subshell = underline(colored_subshell) if index + 1 == len(subshells) else colored_subshell
+        colored_subshell = inverse_color(colored_subshell) if index + 1 == len(subshells) else colored_subshell
         subshell_result += f"{colored_subshell} ({electron_count}/{max_capacity}), "
     else:
         subshell_type = subshell[1] if len(subshell) > 1 else 's'
         colored_subshell = fore(formatted_subshell, SUBSHELL_COLORS.get(subshell_type, DEFAULT_COLOR))
-        colored_subshell = underline(colored_subshell) if index + 1 == len(subshells) else colored_subshell
+        colored_subshell = inverse_color(colored_subshell) if index + 1 == len(subshells) else colored_subshell
         subshell_result += f"{colored_subshell}, "
 
 subshell_result = subshell_result.rstrip(", ")
@@ -1409,7 +1411,7 @@ if subshells:
         last_subshell = last_subshell[:-1] + convert_superscripts(last_subshell[-1]) if use_unicode else last_subshell
         last_subshell = fore(last_subshell, SUBSHELL_COLORS.get(last_subshell_type, (255, 255, 255)))
 
-        subshell_visualisation += f"\n\n      {fore("Valence Subshell", VALENCE_ELECTRONS_COL)} ({underline(last_subshell)}):"
+        subshell_visualisation += f"\n\n      {fore("Valence Subshell", VALENCE_ELECTRONS_COL)} ({inverse_color(last_subshell)}):"
         subshell_visualisation += f"\n        n - {fore('Principal', CYAN)}: {bold(principal_quantum_number)}"
         subshell_visualisation += f"\n        l - {fore('Azimuthal', GREEN)}: {bold(azimuthal_quantum_number)} ({subshell_type} subshell)"
         subshell_visualisation += f"\n        m_l - {fore('Magnetic', YELLOW)}: {bold(magnetic_quantum_number)} (approximated)"
@@ -1503,7 +1505,12 @@ animate_print(f" 🔍 - Discoverer(s): {discoverers}")
 animate_print(f" 🔍 - Discovery Date: {bold(discovery_date)}")
 animate_print(f" ↔️ - Period (Row): {bold(period)}")
 animate_print(f" ↕️ - Group (Column): {bold(group)}")
-animate_print(f" 🎨 - Type: {bold(fore(element_type, ELEMENT_TYPE_COLORS[element_type]))}")
+
+try:
+    animate_print(f" 🎨 - Type: {bold(fore(element_type, ELEMENT_TYPE_COLORS[element_type]))}")
+except KeyError:
+    logger.warn(f"Invalid element type for {fullname.capitalize()}. Please pay attention.")
+
 animate_print(f" 🧱 - Block: {bold(block)}")
 animate_print(f" 📇 - CAS Number: {bold(cas_number)}")
 
@@ -1536,13 +1543,22 @@ animate_print(f" p{pos} - {fore('Protons', RED)}: {bold(protons)}")
 animate_print(f" n{neutral} - {fore('Neutrons', BLUE)}: {bold(neutrons)}")
 animate_print(f" e{neg} - {fore('Electrons', YELLOW)}: {bold(electrons)}")
 animate_print(f" nv - {fore('Valence Electrons', VALENCE_ELECTRONS_COL)}: {bold(valence_electrons)}")
-animate_print(f" u - {fore('Up Quarks', GREEN)}: ({fore(protons, RED)} * 2) + {fore(neutrons, BLUE)} = {bold(up_quarks)}")
-animate_print(f" d - {fore('Down Quarks', CYAN)}: {fore(protons, RED)} + ({fore(neutrons, BLUE)} * 2) = {bold(down_quarks)}")
-animate_print(f" ⚛️ - {fore('Shells', EXCITED)} {dim(f'(Valence electrons in {fore('yellow', VALENCE_ELECTRONS_COL)})')}:\n    {shell_result}")
-animate_print(f" 🌀 - {fore('Subshells', PERIWINKLE)} {dim(f'(Colored by type: {subshell_examples}, the valence subshell is {underline("underlined")})')}:\n    {subshell_result}")
+
+up_quarks_calculation = f"({fore(protons, RED)} * 2) + {fore(neutrons, BLUE)} = {bold(up_quarks)}"
+animate_print(f" u - {fore('Up Quarks', GREEN)}: {up_quarks_calculation}")
+
+down_quarks_calculation = f"{fore(protons, RED)} + ({fore(neutrons, BLUE)} * 2) = {bold(down_quarks)}"
+animate_print(f" d - {fore('Down Quarks', CYAN)}: {down_quarks_calculation}")
+
+shell_tip = dim(f'(Valence electrons in {fore('yellow', VALENCE_ELECTRONS_COL)})')
+animate_print(f" ⚛️ - {fore('Shells', EXCITED)} {shell_tip}:\n    {shell_result}")
+
+subshell_tip = dim(f'(Colored by type: {subshell_examples}, the valence subshell has its color inversed)')
+animate_print(f" 🌀 - {fore('Subshells', PERIWINKLE)} {subshell_tip}:\n    {subshell_result}")
 animate_print(f"      {bold('Breakdown')}:\n\n{subshell_visualisation}\n")
 
-animate_print(f" 🪞 - Isotopes ({len(isotopes.keys())}): {dim(f"(Decay processes in {fore("red", RED)} need verification. Do not trust them!)")}:")
+isotope_tip = dim(f"(Decay processes in {fore("red", RED)} need verification. Do not trust them!)")
+animate_print(f" 🪞 - Isotopes ({len(isotopes.keys())}): {isotope_tip}:")
 
 for isotope, information in isotopes.items():
     animate_print()
@@ -1566,10 +1582,13 @@ animate_print()
 animate_print(f" {chi} - {fore("Electronegativity", ELECTRONEG_COL)}: {bold(electronegativity)}")
 animate_print(f" EA - {fore("Electron Affinity", EXCITED)}: {format_energy(electron_affinity)}")
 animate_print(f" IE - {fore("Ionization Energy", PINK)}: {format_energy(ionization_energy)}")
-animate_print(f"      {bold("ESTIMATED")} Ionization Energy Series {bold("(THIS IS A VERY HUGE SIMPLIFICATION. Do not rely on them.)")}: ")
+
+ionization_energy_series_tip = bold("(THIS IS A VERY HUGE SIMPLIFICATION. Do not rely on them.)")
+animate_print(f"      {bold("ESTIMATED")} Ionization Energy Series {ionization_energy_series_tip}:")
 animate_print(f"\n{calculate_ionization_series(subshells, atomic_number, ionization_energy)}\n")
 
-animate_print(f" {energy} - {fore("Oxidation States", YELLOW)} {dim(f"(Only the ones that have {fore("color", BLUE)} are activated)")}:\n{"   " + negatives_result}\n{"   " + positives_result}\n")
+oxidation_states_tip = dim(f"(Only the ones that have {fore("color", BLUE)} are activated)")
+animate_print(f" {energy} - {fore("Oxidation States", YELLOW)} {oxidation_states_tip}:\n{"   " + negatives_result}\n{"   " + positives_result}\n")
 animate_print(f" c - {fore("Conductivity Type", BRIGHT_BLACK)}: {bold(formatted_conductivity)}")
 
 animate_print()
@@ -1577,10 +1596,10 @@ print_header("Measurements")
 animate_print()
 
 animate_print(f" r - {fore("Radius", PINK)}: ")
-animate_print(f"   r_calc - Calculated: {safe_format(radius['calculated'], 'pm', 'N/A')}")
-animate_print(f"   r_emp - Empirical: {safe_format(radius['empirical'], 'pm', 'N/A')}")
-animate_print(f"   r_cov - Covalent: {safe_format(radius['covalent'], 'pm', 'N/A')}")
-animate_print(f"   rvdW - Van der Waals: {safe_format(radius['van_der_waals'], 'pm', 'N/A')}\n")
+animate_print(f"   r_calc - Calculated: {safe_format(radius['calculated'], 'pm', placeholder='N/A')}")
+animate_print(f"   r_emp - Empirical: {safe_format(radius['empirical'], 'pm', placeholder='N/A')}")
+animate_print(f"   r_cov - Covalent: {safe_format(radius['covalent'], 'pm', placeholder='N/A')}")
+animate_print(f"   rvdW - Van der Waals: {safe_format(radius['van_der_waals'], 'pm', placeholder='N/A')}\n")
 animate_print(f" H - {fore("Hardness", PERIWINKLE)}: ")
 animate_print(f"   HB - Brinell: {safe_format(hardness['brinell'], f'kgf/{mm2}')}")
 animate_print(f"   H - Mohs: {safe_format(hardness['mohs'], '')}")

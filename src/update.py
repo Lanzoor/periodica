@@ -1,4 +1,4 @@
-import tomllib, sys, subprocess, time, platform, pathlib
+import tomllib, sys, subprocess, time, platform
 from utils.terminal import bold, fore, RED, BLUE
 from utils.loader import Logger, get_response, import_failsafe
 from utils.directories import PERIODICA_DIR, PYPROJECT_FILE, BUILD_SCRIPT
