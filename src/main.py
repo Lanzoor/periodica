@@ -281,6 +281,7 @@ def calculate_ionization_series(subshells: list[str], atomic_number: int, ioniza
         return fore("No valid subshell data for ionization series.", YELLOW)
 
     RYDBERG_CONSTANT = 13.6
+    uncertainty = ""
 
     current_config = copy.deepcopy(config)
     for index in range(atomic_number):
@@ -461,19 +462,27 @@ def export_element():
     animate_print(f"Saving data of {bold(name)} to {OUTPUT_FILE}...")
 
     with open(OUTPUT_FILE, "w", encoding="utf-8") as file:
-        json.dump(
-            {
-                "symbol": element["symbol"].capitalize(),
-                "fullname": element.get("fullname").capitalize(),
-                "isotope": element.get("isotope"),
-                "data": element.get("info"),
-            } if is_isotope else element,
-            file,
-            indent=4,
-            ensure_ascii=False
-        )
+        if is_isotope:
+            json.dump(
+                {
+                    "symbol": element["symbol"].capitalize(),
+                    "fullname": element["fullname"].capitalize(),
+                    "isotope": element["isotope"],
+                    "data": element["info"],
+                },
+                file,
+                indent=4,
+                ensure_ascii=False
+            )
+        else:
+            json.dump(
+                element,
+                file,
+                indent=4,
+                ensure_ascii=False
+            )
 
-    animate_print(fore(f"Successfully saved to {OUTPUT_FILE}.", GREEN))
+    animate_print(f"Successfully saved to {OUTPUT_FILE}.")
     sys.exit(0)
 
 def compare_by_factor():
@@ -536,6 +545,7 @@ def compare_by_factor():
 
     def get_key_by_input(data: dict[str, dict], factor):
         nonlocal determiner
+        result = None
         try:
             match factor:
                 case "protons":
@@ -603,7 +613,7 @@ def compare_by_factor():
 
     formatted_factors = ', '.join(map(lambda element: bold(element), factors))
     formatted_factors = "\n" + "\n\n".join(
-        textwrap.fill(paragraph.strip(), width=TERMINAL_WIDTH * 1.25, initial_indent="    ", subsequent_indent="")
+        textwrap.fill(paragraph.strip(), width=round(TERMINAL_WIDTH * 1.25), initial_indent="    ", subsequent_indent="")
         for paragraph in formatted_factors.strip().split("\n\n")
     ) + "\n"
 
@@ -643,13 +653,15 @@ def compare_by_factor():
         sys.exit(0)
 
     match sorting_method:
-        case "ascending":
+        case "ascending" | "descending":
             sorted_results = sorted(result.items(), key=lambda item: (item[1] is None, item[1]))
-        case "descending":
-            sorted_results = sorted(result.items(), key=lambda item: (item[1] is None, item[1]))
-            sorted_results.reverse()
+            if sorting_method == "descending":
+                sorted_results.reverse()
         case "name":
             sorted_results = result.items()
+        case _:
+            logger.warn(f"Invalid sorting method {sorting_method}. Please pay attention.")
+            sorted_results = sorted(result.items(), key=lambda item: (item[1] is None, item[1]))
 
     max_value = max(value for _, value in valid_results) or 1
     none_counter = 0
@@ -769,7 +781,7 @@ def select_random_element():
 def enable_debugging():
     global DEBUG_MODE, logger
     DEBUG_MODE = True
-    animate_print(gradient("Debug mode enabled. Have fun...", ELECTRONEG_COL, NULL))
+    animate_print(gradient("Debug mode enabled. Have fun...", ELECTRONEG_COL, NULL)) # type: ignore
     logger = Logger(enable_debugging=DEBUG_MODE)
     logger.info("Enabled debug mode.")
     if constant_debugging:
@@ -1219,7 +1231,7 @@ if element_data is None:
 
 if DEBUG_MODE:
     animate_print("Printing data...")
-    pprint(element_data, indent = 2, width=TERMINAL_WIDTH, sort_dicts=False, underscore_numbers=True, depth=float("inf"))
+    pprint(element_data, indent = 2, width=TERMINAL_WIDTH, sort_dicts=False, underscore_numbers=True)
 
 # Dividing categories
 general = element_data["general"]
@@ -1252,7 +1264,7 @@ except KeyError:
     phase = "solid"
 
 try:
-    formatted_phase += f" {PHASE_TYPE_SYMBOLS[phase]}"
+    formatted_phase += f" {PHASE_TYPE_SYMBOLS[phase]}" # type: ignore
 except (KeyError, TypeError):
     pass
 
@@ -1407,9 +1419,8 @@ if subshells:
 
         effective_nuclear_charge = atomic_number - shielding_constant
 
-        last_subshell_type = subshell[1] if len(subshell) > 1 else 's'
         last_subshell = last_subshell[:-1] + convert_superscripts(last_subshell[-1]) if use_unicode else last_subshell
-        last_subshell = fore(last_subshell, SUBSHELL_COLORS.get(last_subshell_type, (255, 255, 255)))
+        last_subshell = fore(last_subshell, SUBSHELL_COLORS.get(subshell_type, (255, 255, 255)))
 
         subshell_visualisation += f"\n\n      {fore("Valence Subshell", VALENCE_ELECTRONS_COL)} ({inverse_color(last_subshell)}):"
         subshell_visualisation += f"\n        n - {fore('Principal', CYAN)}: {bold(principal_quantum_number)}"
@@ -1465,7 +1476,7 @@ except KeyError:
     formatted_conductivity = bold(conductivity_type)
 
 try:
-    formatted_conductivity += f" {CONDUCTIVITY_TYPE_SYMBOLS[conductivity_type]}"
+    formatted_conductivity += f" {CONDUCTIVITY_TYPE_SYMBOLS[conductivity_type]}" # type: ignore
 except (KeyError, TypeError):
     pass
 
