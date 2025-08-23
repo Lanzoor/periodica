@@ -1506,7 +1506,8 @@ if color is not None:
         color_description = "not given"
     if support_effects:
         r, g, b = color
-        animate_print(f" 🎨 - Standard Color: {fore(full_block * 2, (r, g, b))} ({bold(color_description)})")
+        colored_block = fore(full_block * 2, (r, g, b))
+        animate_print(f" 🎨 - Standard Color: {colored_block} ({bold(color_description)})")
     else:
         animate_print(f" 🎨 - Standard Color: {color_description}")
 else:

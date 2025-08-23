@@ -58,6 +58,7 @@ def update_main():
     log.info(f"Local: {local_version}, latest: {lts_version}")
 
     try:
+        from packaging import version
         parsed_local = version.parse(local_version)
         parsed_lts = version.parse(lts_version)
     except Exception:

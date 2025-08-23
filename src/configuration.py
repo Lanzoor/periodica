@@ -25,7 +25,7 @@ def fancy_abort():
         clear_line()
     sys.exit(0)
 
-def create_fn_event(input: str, function_no: int, callable):
+def create_fn_event(input: int, function_no: int, callable):
     if input == function_no:
         callable()
         save_config()

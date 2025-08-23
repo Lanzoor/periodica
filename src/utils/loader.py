@@ -104,6 +104,8 @@ def get_response(url: str):
         import requests
     except ImportError:
         import_failsafe()
+
+    import requests
     try:
         response = requests.get(url)
         response.raise_for_status()
