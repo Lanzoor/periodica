@@ -1,7 +1,7 @@
 import tomllib, sys, subprocess, time, platform
-from utils.terminal import bold, fore, RED, BLUE
-from utils.loader import Logger, get_response, import_failsafe
-from utils.directories import PERIODICA_DIR, PYPROJECT_FILE, BUILD_SCRIPT
+from lib.terminal import bold, fore, RED, BLUE
+from lib.loader import Logger, get_response, import_failsafe
+from lib.directories import PERIODICA_DIR, PYPROJECT_FILE, BUILD_SCRIPT
 
 log = Logger(enable_debugging=False)
 

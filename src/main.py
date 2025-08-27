@@ -3,18 +3,18 @@
 import platform, sys, json, os, re, difflib, random, typing, textwrap, copy, base64
 
 try:
-    import utils
-    import utils.loader
-    import utils.terminal
-    import utils.directories
+    import lib
+    import lib.loader
+    import lib.terminal
+    import lib.directories
 except ImportError:
     print("The utils helper library or its scripts was not found. Please ensure all required files are present.")
     sys.exit(0)
 
-from utils.loader import get_config, get_response, Logger, import_failsafe, valid_sorting_methods
-from utils.terminal import RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, DEFAULT_COLOR, BRIGHT_BLACK, BRIGHT_GREEN, BRIGHT_RED
-from utils.terminal import fore, back, inverse_color, bold, dim, italic, animate_print, clear_screen, gradient
-from utils.directories import DATA_FILE, OUTPUT_FILE, CONFIG_SCRIPT, UPDATE_SCRIPT
+from lib.loader import get_config, get_response, Logger, import_failsafe, valid_sorting_methods
+from lib.terminal import RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, DEFAULT_COLOR, BRIGHT_BLACK, BRIGHT_GREEN, BRIGHT_RED
+from lib.terminal import fore, back, inverse_color, bold, dim, italic, animate_print, clear_screen, gradient
+from lib.directories import DATA_FILE, OUTPUT_FILE, CONFIG_SCRIPT, UPDATE_SCRIPT
 from pprint import pprint
 
 # Just in case when the venv does not exist
@@ -823,7 +823,7 @@ def fetch_version():
 def import_testing():
     logger.info("User gave --test flag; redirecting to another script.")
     try:
-        import utils.testing
+        import lib.testing
         sys.exit(0)
     except ImportError:
         animate_print(fore("Looks like the testing script is missing. Please check for any missing files.", RED))

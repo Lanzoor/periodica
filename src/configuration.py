@@ -1,7 +1,7 @@
 import time, sys, pathlib, subprocess, json
-from utils.terminal import  RED, GREEN, CYAN, fore, bold, dim, clear_screen, clear_line
-from utils.loader import get_config, save_config, valid_formats, valid_animation_types, valid_sorting_methods, default_config, Logger
-from utils.directories import PERIODICA_DIR, MAIN_SCRIPT
+from lib.terminal import  RED, GREEN, CYAN, fore, bold, dim, clear_screen, clear_line
+from lib.loader import get_config, save_config, valid_formats, valid_animation_types, valid_sorting_methods, default_config, Logger
+from lib.directories import PERIODICA_DIR, MAIN_SCRIPT
 
 if __name__ == "__main__":
     print("Please refrain from running this script manually. Instead, please run the periodica.sh file with the --init flag.")
