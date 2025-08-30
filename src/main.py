@@ -425,7 +425,6 @@ def export_element():
 
     logger.info("User gave --export flag; redirecting to export logic.")
     EXPORT_ENABLED = True
-    sys.argv.remove("--export")
 
     user_input = positional_arguments[0] if positional_arguments else None
 
@@ -797,12 +796,6 @@ def enable_debugging():
     if positional_arguments:
         logger.info(f"Other positional arguments given: {", ".join(positional_arguments)}")
 
-    if "--debug" in flag_arguments:
-        flag_arguments.remove("--debug")
-
-    if "-d" in flag_arguments:
-        flag_arguments.remove("-d")
-
 # Debugging is the first priority, therefore enable it ASAP when it gets activated to avoid syntax checking
 if ("--debug" in flag_arguments or "-d" in flag_arguments) or constant_debugging:
     enable_debugging()
@@ -1037,7 +1030,7 @@ Welcome to {periodica_logo}!
 This CLI provides useful information about the periodic elements, and pretty much everything here was made by the Discord user {bold(fore("Lanzoor", INDIGO))}!
 This project started as a fun hobby at around {bold("March 2025")}, but ended up getting taken seriously.
 This CLI was built with {fore("Python", CYAN)}, and uses {fore("JSON", YELLOW)} for configuration files / element database.
-The vibrant colors and visuals were done with the help of {italic(bold("ANSI escape codes"))}, although you should note that {bold("some terminals may n support.")}
+The vibrant colors and visuals were done with the help of {italic(bold("ANSI escape codes"))}, although you should note that {bold("some terminals may lack support.")}
 {dim("(You can disable this anytime in the config.json file, or using the --init flag.)")}
 There are also other flags you can provide to this CLI. (The ones marked after the slash are shortcut flags. {bold("They behave the same as the original flags.")})
 
@@ -1146,59 +1139,75 @@ if TERMINAL_WIDTH < 80:
 if len(sys.argv) > 1:
     valid_flags = [
         "--debug", "--info", "--init", "--update", "--table", "--export",
-        "--compare", "--bond-type", "--random", "--version", "--test"
-        "-i", "-I", "-u", "-x", "-C", "-B", "-r", "-v", "-T"
+        "--compare", "--bond-type", "--random", "--version", "--test",
+        "-d", "-i", "-I", "-u", "-x", "-C", "-B", "-r", "-v", "-T"
     ]
-
     flags_that_require_position_argument = [
         "--export", "--compare", "--bond-type",
         "-x", "-C", "-B"
     ]
 
-    primary_flags = [flag for flag in flag_arguments if flag in valid_flags and flag not in ("--debug", "-d")]
+    expanded_flags = []
+    for flag in flag_arguments:
+        if flag.startswith("--") and flag in valid_flags:
+            expanded_flags.append(flag)
+        elif flag.startswith("-") and len(flag) > 1:
+            for char in flag[1:]:
+                shorthand_flag = f"-{char}"
+                if shorthand_flag in valid_flags:
+                    expanded_flags.append(shorthand_flag)
+        else:
+            expanded_flags.append(flag)
+
+    primary_flags = [f for f in expanded_flags if f in valid_flags and f not in ["d", "--debug"]]
+
+    logger.info(f"Primary flags (after expansion and filtering): {primary_flags}")
 
     user_input = None
 
     if len(primary_flags) == 0:
-        user_input = positional_arguments[0] if positional_arguments else None
-    elif len(primary_flags) != 1:
+        user_input = expanded_flags[0] if expanded_flags else None
+    elif len(primary_flags) > 1:
         animate_print("Multiple main flags detected. Run the script with the --info flag for more information.")
         logger.abort("Multiple main flags detected.")
-    elif any(flag not in valid_flags for flag in primary_flags):
-        animate_print("Unrecognizable flags detected. Run the script with the --info flag for more information.")
-        logger.abort("Unrecognizable flags detected.")
     else:
         primary_flag = primary_flags[0]
-        if primary_flag not in flags_that_require_position_argument and len(positional_arguments) > 0:
+        if primary_flag in flags_that_require_position_argument:
+            if len(positional_arguments) == 0:
+                animate_print(f"Flag {primary_flag} requires a positional argument. Refer to --info.")
+                logger.abort(f"Missing positional argument for {primary_flag}.")
+            user_input = positional_arguments[0]
+        elif len(positional_arguments) > 0:
             animate_print("Unexpected positional argument. Refer to --info.")
             logger.abort("Unexpected additional arguments.")
 
-    recognized_flag = (
-        create_flag_event("--info", "-i", callable=get_information) or
-        create_flag_event("--init", "-I", callable=configurate) or
-        create_flag_event("--update", "-u", callable=check_for_updates) or
-        create_flag_event("--table", callable=view_table) or
-        create_flag_event("--export", "-x", callable=export_element) or
-        create_flag_event("--compare", "-C", callable=compare_by_factor) or
-        create_flag_event("--bond-type", "-B", callable=compare_bond_type) or
-        create_flag_event("--random", "-r", callable=select_random_element) or
-        create_flag_event("--version", "-v", callable=fetch_version) or
-        create_flag_event("--test", "-T", callable=import_testing)
-    )
+        recognized_flag = (
+            create_flag_event("--info", "-i", callable=get_information) or
+            create_flag_event("--init", "-I", callable=configurate) or
+            create_flag_event("--update", "-u", callable=check_for_updates) or
+            create_flag_event("--table", callable=view_table) or
+            create_flag_event("--export", "-x", callable=export_element) or
+            create_flag_event("--compare", "-C", callable=compare_by_factor) or
+            create_flag_event("--bond-type", "-B", callable=compare_bond_type) or
+            create_flag_event("--random", "-r", callable=select_random_element) or
+            create_flag_event("--version", "-v", callable=fetch_version) or
+            create_flag_event("--test", "-T", callable=import_testing)
+        )
 
-    if not recognized_flag:
-        if user_input:
-            logger.info(f"User gave argv: \"{user_input}\"")
-            element_data, element_suggestion = process_isotope_input(user_input)
-            if ISOTOPE_LOGIC:
-                sys.exit(0)
-            if element_data is None and not primary_flags:
-                message = f"Invalid element or isotope.{' Did you mean \"' + bold(element_suggestion) + '\"?' if element_suggestion else ' Falling back to interactive input.'}"
-                animate_print(fore(message, YELLOW if element_suggestion else RED))
-                logger.warn("No valid element or isotope provided from argv, fallback to interactive.")
-
+        if not recognized_flag:
+            if user_input:
+                logger.info(f"User gave argv: \"{user_input}\"")
+                element_data, element_suggestion = process_isotope_input(user_input)
+                if ISOTOPE_LOGIC:
+                    sys.exit(0)
+                if element_data is None:
+                    message = f"Invalid element or isotope.{' Did you mean \"' + bold(element_suggestion) + '\"?' if element_suggestion else ' Falling back to interactive input.'}"
+                    animate_print(fore(message, YELLOW if element_suggestion else RED))
+                    logger.warn("No valid element or isotope provided from argv, fallback to interactive.")
+            else:
+                logger.warn("Argument not given, falling back to interactive input.")
 else:
-    logger.warn("Argument not given, falling back to interactive input.")
+    logger.warn("No arguments provided, falling back to interactive input.")
 
 if element_data is None:
     animate_print(f"Search for an element by name, symbol, or atomic number. {dim(tip)}")

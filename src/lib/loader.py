@@ -20,31 +20,31 @@ class Logger():
         from .terminal import bold
         logging.debug(message)
         if self.enable_debugging:
-            print(bold("DEBUG: " + message))
+            print(bold(f"DEBUG: {message}"))
 
     def info(self, message):
         from .terminal import fore, GREEN
         logging.info(message)
         if self.enable_debugging:
-            print(fore("INFO: " + message, GREEN))
+            print(fore(f"INFO: {message}", GREEN))
 
     def warn(self, message):
         from .terminal import fore, YELLOW
         logging.warning(message)
         if self.enable_debugging:
-            print(fore("WARNING: " + message, YELLOW))
+            print(fore(f"WARNING: {message}", YELLOW))
 
     def error(self, message):
         from .terminal import fore, RED
         logging.error(message)
         if self.enable_debugging:
-            print(fore("ERROR: " + message, RED))
+            print(fore(f"ERROR: {message}", RED))
 
     def fatal(self, message):
         from .terminal import fore, BLUE
         logging.fatal(message)
         if self.enable_debugging:
-            print(fore("FATAL: " + message, BLUE))
+            print(fore(f"FATAL: {message}", BLUE))
 
     def abort(self, message):
         self.error(message)
