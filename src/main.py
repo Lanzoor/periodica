@@ -87,6 +87,9 @@ full_block = "█" if use_unicode else "-"
 up_arrow = "↑" if use_unicode else "^"
 down_arrow = "↓" if use_unicode else "_"
 sigma = "σ" if use_unicode else "s"
+double_line = "═" if use_unicode else "="
+single_line = "─" if use_unicode else "-"
+
 full_data = {}
 
 # Color configurations for specific outputs
@@ -186,6 +189,28 @@ positional_arguments = [arg.strip() for arg in get_positional_args()]
 # Defining flag arguments to use everywhere
 flag_arguments = [arg.strip() for arg in get_flags()]
 
+valid_flags = [
+    "--debug", "--info", "--init", "--update", "--table", "--export",
+    "--compare", "--bond-type", "--random", "--version", "--test",
+    "-d", "-i", "-I", "-u", "-x", "-C", "-B", "-r", "-v", "-T"
+]
+
+flags_that_require_position_argument = [
+    "--export", "--compare", "--bond-type",
+    "-x", "-C", "-B"
+]
+
+separated_flags = []
+for flag in flag_arguments:
+    if flag.startswith("--"):
+        separated_flags.append(flag)
+    elif flag.startswith("-") and len(flag) > 1:
+        for char in flag[1:]:
+            shorthand_flag = f"-{char}"
+            separated_flags.append(shorthand_flag)
+    else:
+        separated_flags.append(flag)
+
 # Unit conversions
 def celcius_to_kelvin(celsius):
 	return round((celsius + 273.15), 5)
@@ -203,16 +228,17 @@ def format_energy(variable):
     return f"{bold(variable)}eV ≈ {bold(eV_to_kJpermol(variable))}kJ/mol"
 
 # Print helpers (they use print instead of animate_print since it takes a long time)
-def print_header(title):
-    dashes = "-" * (TERMINAL_WIDTH - len(title) - 4)
-    print(f"-- {bold(title)} {dashes}")
+def print_header(title, double=False):
+    dash = double_line if double else single_line
+    dashes = dash * (TERMINAL_WIDTH - len(title) - 4)
+    print(f"{dash * 2} {bold(title)} {dashes}")
 
 def print_separator():
     print()
     print("-" * TERMINAL_WIDTH)
     print()
 
-def check_exit_event(user_input):
+def check_for_termination(user_input):
     if user_input in ["quit", "q", "abort", "exit", "terminate", "stop"]:
         animate_print("Okay. Exiting...")
         logger.abort("User exited interactive input.")
@@ -366,8 +392,9 @@ def conjunction_join(entries: list) -> str:
     return f"{', '.join(entries[:-1])}, and {entries[-1]}"
 
 def create_flag_event(*flags: str, callable):
-    for arg in sys.argv[1:]:
-        if arg in flags:
+    for flag in separated_flags:
+        if flag in flags:
+            logger.debug(f"Flag matched: {flag}, calling {callable.__name__}")
             callable()
             return True
     return False
@@ -442,7 +469,7 @@ def export_element():
         while element is None:
             user_input = input("> ").strip()
 
-            check_exit_event(user_input)
+            check_for_termination(user_input)
 
             element, suggestion = process_isotope_input(user_input)
             if element is None and not suggestion:
@@ -635,7 +662,7 @@ def compare_by_factor():
                 logger.warn(f"No direct match found for '{factor_candidate}'.")
 
         factor_candidate = "_".join(input("> ").strip().lower().split(" "))
-        check_exit_event(factor_candidate)
+        check_for_termination(factor_candidate)
 
     clear_screen()
     animate_print(f"\nComparing all elements by factor {bold(factor)} with sorting by {bold(sorting_method)}... {dim('(Please note that some elements may be missing, and the data is trimmed up to 4 digits of float numbers.)')}\n")
@@ -717,7 +744,7 @@ def compare_bond_type():
         while True:
             user_input = input("> ").strip().lower()
             logger.info(f"Primary input: \"{user_input}\"")
-            check_exit_event(user_input)
+            check_for_termination(user_input)
 
             primary_element, suggestion = find_element(user_input)
             if primary_element:
@@ -734,7 +761,7 @@ def compare_bond_type():
         while True:
             user_input = input("> ").strip().lower()
             logger.info(f"Secondary input: \"{user_input}\"")
-            check_exit_event(user_input)
+            check_for_termination(user_input)
 
             secondary_element, suggestion = find_element(user_input)
             if secondary_element:
@@ -1137,41 +1164,25 @@ if TERMINAL_WIDTH < 80:
     logger.warn("Not enough width for terminal.")
 
 if len(sys.argv) > 1:
-    valid_flags = [
-        "--debug", "--info", "--init", "--update", "--table", "--export",
-        "--compare", "--bond-type", "--random", "--version", "--test",
-        "-d", "-i", "-I", "-u", "-x", "-C", "-B", "-r", "-v", "-T"
-    ]
-    flags_that_require_position_argument = [
-        "--export", "--compare", "--bond-type",
-        "-x", "-C", "-B"
-    ]
+    filtered_flags = [f for f in separated_flags if f in valid_flags and f not in ["-d", "--debug"]]
+    unrecognized_flags = [f for f in separated_flags if f not in valid_flags]
 
-    expanded_flags = []
-    for flag in flag_arguments:
-        if flag.startswith("--") and flag in valid_flags:
-            expanded_flags.append(flag)
-        elif flag.startswith("-") and len(flag) > 1:
-            for char in flag[1:]:
-                shorthand_flag = f"-{char}"
-                if shorthand_flag in valid_flags:
-                    expanded_flags.append(shorthand_flag)
-        else:
-            expanded_flags.append(flag)
+    if unrecognized_flags:
+        animate_print("Unrecognizable flags detected. Run the script with the --info flag for more information.")
+        logger.abort("Unrecognizable flags detected.")
 
-    primary_flags = [f for f in expanded_flags if f in valid_flags and f not in ["d", "--debug"]]
-
-    logger.info(f"Primary flags (after expansion and filtering): {primary_flags}")
+    logger.info(f"Primary flags (after separation and filtering): {filtered_flags}")
 
     user_input = None
+    recognized_flag = False
 
-    if len(primary_flags) == 0:
-        user_input = expanded_flags[0] if expanded_flags else None
-    elif len(primary_flags) > 1:
+    if len(filtered_flags) == 0:
+        user_input = positional_arguments[0] if positional_arguments else None
+    elif len(filtered_flags) != 1:
         animate_print("Multiple main flags detected. Run the script with the --info flag for more information.")
         logger.abort("Multiple main flags detected.")
     else:
-        primary_flag = primary_flags[0]
+        primary_flag = filtered_flags[0]
         if primary_flag in flags_that_require_position_argument:
             if len(positional_arguments) == 0:
                 animate_print(f"Flag {primary_flag} requires a positional argument. Refer to --info.")
@@ -1180,7 +1191,6 @@ if len(sys.argv) > 1:
         elif len(positional_arguments) > 0:
             animate_print("Unexpected positional argument. Refer to --info.")
             logger.abort("Unexpected additional arguments.")
-
         recognized_flag = (
             create_flag_event("--info", "-i", callable=get_information) or
             create_flag_event("--init", "-I", callable=configurate) or
@@ -1194,18 +1204,17 @@ if len(sys.argv) > 1:
             create_flag_event("--test", "-T", callable=import_testing)
         )
 
-        if not recognized_flag:
-            if user_input:
-                logger.info(f"User gave argv: \"{user_input}\"")
-                element_data, element_suggestion = process_isotope_input(user_input)
-                if ISOTOPE_LOGIC:
-                    sys.exit(0)
-                if element_data is None:
-                    message = f"Invalid element or isotope.{' Did you mean \"' + bold(element_suggestion) + '\"?' if element_suggestion else ' Falling back to interactive input.'}"
-                    animate_print(fore(message, YELLOW if element_suggestion else RED))
-                    logger.warn("No valid element or isotope provided from argv, fallback to interactive.")
-            else:
-                logger.warn("Argument not given, falling back to interactive input.")
+    if user_input:
+        logger.info(f"Element positional argument entry given: \"{user_input}\"")
+        element_data, element_suggestion = process_isotope_input(user_input)
+        if ISOTOPE_LOGIC:
+            sys.exit(0)
+        if element_data is None:
+            message = f"Invalid element or isotope.{' Did you mean \"' + bold(element_suggestion) + '\"?' if element_suggestion else ' Falling back to interactive input.'}"
+            animate_print(fore(message, YELLOW if element_suggestion else RED))
+            logger.warn("No valid element or isotope provided from argv, fallback to interactive.")
+    else:
+        logger.warn("Element argument entry not given, falling back to interactive input.")
 else:
     logger.warn("No arguments provided, falling back to interactive input.")
 
@@ -1219,11 +1228,10 @@ if element_data is None:
             if (user_input in keys and isinstance(keys, list)) or user_input == keys:
                 animate_print(response)
                 if user_input == "periodica":
-                    # I wonder what this translates to... hehehe heh eh he ehh
                     exec(base64.b64decode("cmFpc2UgUmVjdXJzaW9uRXJyb3IoIm1heGltdW0gZGVwdGggcmVhY2hlZCB3aGlsc3QgdHJ5aW5nIHRvIGZpbmQgcGVyaW9kaWNhIGluc2lkZSBwZXJpb2RpY2EgaW5zaWRlIHBlcmlvZGljYSBpbnNpZGUgcGVyaW9kaWNhIGluc2lkZS4uLiIpIGZyb20gTm9uZQ=="))
                 sys.exit(0)
 
-        check_exit_event(user_input)
+        check_for_termination(user_input)
 
         element_data, element_suggestion = process_isotope_input(user_input)
 
