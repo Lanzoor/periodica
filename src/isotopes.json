@@ -1,0 +1,1406 @@
+{
+    "Hydrogen": {
+        "1H": {
+            "name": "Protium",
+            "protons": 1,
+            "neutrons": 0,
+            "half_life": null,
+            "isotope_weight": 1.007825031
+        },
+        "2H": {
+            "name": "Deuterium",
+            "protons": 1,
+            "neutrons": 1,
+            "half_life": null,
+            "isotope_weight": 2.014101777
+        },
+        "3H": {
+            "name": "Tritium",
+            "protons": 1,
+            "neutrons": 2,
+            "half_life": "12.32 years",
+            "isotope_weight": 3.016049281,
+            "decay": [
+                {
+                    "mode": "β-",
+                    "product": ["3He"],
+                    "chance": 100
+                }
+            ]
+        },
+        "4H": {
+            "half_life": "139 yoctoseconds",
+            "protons": 1,
+            "neutrons": 3,
+            "isotope_weight": 4.02643,
+            "decay": [
+                {
+                    "mode": "n",
+                    "product": ["3H"],
+                    "chance": 100
+                }
+            ]
+        },
+        "5H": {
+            "half_life": "86 yoctoseconds",
+            "protons": 1,
+            "neutrons": 4,
+            "isotope_weight": 5.03531,
+            "decay": [
+                {
+                    "mode": "2n",
+                    "product": ["3H"],
+                    "chance": 100
+                }
+            ]
+        },
+        "6H": {
+            "half_life": "294 yoctoseconds",
+            "protons": 1,
+            "neutrons": 5,
+            "isotope_weight": 6.04496
+        },
+        "7H": {
+            "half_life": "652 yoctoseconds",
+            "protons": 1,
+            "neutrons": 6,
+            "isotope_weight": 7.05275
+        }
+    },
+    "Helium": {
+        "2He": {
+            "half_life": "much less than 1e-9 s",
+            "protons": 2,
+            "neutrons": 0,
+            "isotope_weight": 2.015894,
+            "decay": [
+                {
+                    "mode": "p",
+                    "product": ["1H"],
+                    "chance": 99.99
+                },
+                {
+                    "mode": "β+",
+                    "product": ["2H"],
+                    "chance": 0.01
+                }
+            ]
+        },
+        "3He": {
+            "half_life": null,
+            "protons": 2,
+            "neutrons": 1,
+            "isotope_weight": 3.0160293
+        },
+        "4He": {
+            "half_life": null,
+            "protons": 2,
+            "neutrons": 2,
+            "isotope_weight": 4.00260325415
+        },
+        "5He": {
+            "half_life": "6.02e-22 s",
+            "protons": 2,
+            "neutrons": 3,
+            "isotope_weight": 5.012057,
+            "decay": [
+                {
+                    "mode": "n",
+                    "product": ["4He"],
+                    "chance": 100
+                }
+            ]
+        },
+        "6He": {
+            "half_life": "806.92 ms",
+            "protons": 2,
+            "neutrons": 4,
+            "isotope_weight": 6.018885889,
+            "decay": [
+                {
+                    "mode": "β-",
+                    "product": ["6Li"],
+                    "chance": 99.999722
+                },
+                {
+                    "mode": "β-d",
+                    "product": ["4He"],
+                    "chance": 0.000278
+                }
+            ]
+        },
+        "7He": {
+            "half_life": "2.51e-21 s",
+            "protons": 2,
+            "neutrons": 5,
+            "isotope_weight": 7.027991,
+            "decay": [
+                {
+                    "mode": "n",
+                    "product": ["6He"],
+                    "chance": 100
+                }
+            ]
+        },
+        "8He": {
+            "half_life": "119.5 ms",
+            "protons": 2,
+            "neutrons": 6,
+            "isotope_weight": 8.033934388,
+            "decay": [
+                {
+                    "mode": "β-",
+                    "product": ["8Li"],
+                    "chance": 83.1
+                },
+                {
+                    "mode": "β-n",
+                    "product": ["7Li"],
+                    "chance": 16
+                },
+                {
+                    "mode": "β-t",
+                    "product": ["5He"],
+                    "chance": 0.9
+                }
+            ]
+        },
+        "9He": {
+            "half_life": "2.5e−21 s",
+            "protons": 2,
+            "neutrons": 7,
+            "isotope_weight": 9.043946,
+            "decay": [
+                {
+                    "mode": "n",
+                    "product": ["8He"],
+                    "chance": 100
+                }
+            ]
+        },
+        "10He": {
+            "half_life": "2.60e-22 s",
+            "protons": 2,
+            "neutrons": 8,
+            "isotope_weight": 10.05281531,
+            "decay": [
+                {
+                    "mode": "2n",
+                    "product": ["8He"],
+                    "chance": 100
+                }
+            ]
+        }
+    },
+    "Lithium": {
+        "3Li": {
+            "half_life": "???",
+            "protons": 3,
+            "neutrons": 0,
+            "isotope_weight": 3.03078,
+            "decay": [
+                {
+                    "mode": "p?",
+                    "product": ["2He?"],
+                    "chance": 100
+                }
+            ]
+        },
+        "4Li": {
+            "half_life": "91 ys",
+            "protons": 3,
+            "neutrons": 1,
+            "isotope_weight": 4.02719,
+            "decay": [
+                {
+                    "mode": "p",
+                    "product": ["3He"],
+                    "chance": 100
+                }
+            ]
+        },
+        "5Li": {
+            "half_life": "370 ys",
+            "protons": 3,
+            "neutrons": 2,
+            "isotope_weight": 5.01254,
+            "decay": [
+                {
+                    "mode": "p",
+                    "product": ["4He"],
+                    "chance": 100
+                }
+            ]
+        },
+        "6Li": {
+            "half_life": null,
+            "protons": 3,
+            "neutrons": 3,
+            "isotope_weight": 6.0151228874,
+            "metastable": {
+                "m": {
+                    "half_life": "56 as",
+                    "energy": 3562.88,
+                    "decay": [
+                        {
+                            "mode": "IT",
+                            "product": ["6Li"],
+                            "chance": 100
+                        }
+                    ]
+                }
+            }
+        },
+        "7Li": {
+            "half_life": null,
+            "protons": 3,
+            "neutrons": 4,
+            "isotope_weight": 7.016003434
+        },
+        "8Li": {
+            "half_life": "838.7 ms",
+            "protons": 3,
+            "neutrons": 5,
+            "isotope_weight": 8.02248624,
+            "decay": [
+                {
+                    "mode": "β-",
+                    "product": ["8Be"],
+                    "chance": 100
+                }
+            ]
+        },
+        "9Li": {
+            "half_life": "178.2 ms",
+            "protons": 3,
+            "neutrons": 6,
+            "isotope_weight": 9.02679019,
+            "decay": [
+                {
+                    "mode": "β-n",
+                    "product": ["8Be"],
+                    "chance": 50.5
+                },
+                {
+                    "mode": "β-",
+                    "product": ["9Be"],
+                    "chance": 49.5
+                }
+            ]
+        },
+        "10Li": {
+            "half_life": "2 zs",
+            "protons": 3,
+            "neutrons": 7,
+            "isotope_weight": 10.035483,
+            "decay": [
+                {
+                    "mode": "n",
+                    "product": ["9Li"],
+                    "chance": 100
+                }
+            ],
+            "metastable": {
+                "m1": {
+                    "half_life": "3.7 zs",
+                    "energy": 200,
+                    "decay": [
+                        {
+                            "mode": "IT",
+                            "product": ["10Li"],
+                            "chance": 100
+                        }
+                    ]
+                },
+                "m2": {
+                    "half_life": "1.35 zs",
+                    "energy": 480,
+                    "decay": [
+                        {
+                            "mode": "IT",
+                            "product": ["10Li"],
+                            "chance": 100
+                        }
+                    ]
+                }
+            }
+        },
+        "11Li": {
+            "half_life": "8.75 ms",
+            "protons": 3,
+            "neutrons": 8,
+            "isotope_weight": 11.0437236,
+            "decay": [
+                {
+                    "mode": "β−n",
+                    "product": ["10Be"],
+                    "chance": 86.3
+                },
+                {
+                    "mode": "β−",
+                    "product": ["11Be"],
+                    "chance": 6.0
+                },
+                {
+                    "mode": "β−2n",
+                    "product": ["9Be"],
+                    "chance": 4.1
+                },
+                {
+                    "mode": "β−3n",
+                    "product": ["8Be"],
+                    "chance": 1.9
+                },
+                {
+                    "mode": "β−α",
+                    "product": ["7He"],
+                    "chance": 1.7
+                },
+                {
+                    "mode": "β−d",
+                    "product": ["9Li"],
+                    "chance": 0.013
+                },
+                {
+                    "mode": "β−t",
+                    "product": ["8Li"],
+                    "chance": 0.0093
+                }
+            ]
+        },
+        "12Li": {
+            "half_life": "less than 10 ns",
+            "protons": 3,
+            "neutrons": 9,
+            "isotope_weight": 12.05378,
+            "decay": [
+                {
+                    "mode": "n?",
+                    "product": ["11Li?"],
+                    "chance": 100
+                }
+            ]
+        },
+        "13Li": {
+            "half_life": "3.3 zs",
+            "protons": 3,
+            "neutrons": 10,
+            "isotope_weight": 13.06117,
+            "decay": [
+                {
+                    "mode": "2n",
+                    "product": ["11Li"],
+                    "chance": 100
+                }
+            ]
+        }
+    },
+    "Beryllium": {
+        "6Be": {
+            "half_life": "5.0 zs",
+            "protons": 4,
+            "neutrons": 2,
+            "isotope_weight": 6.019726,
+            "decay": [
+                {
+                    "mode": "2p",
+                    "product": ["4He"],
+                    "chance": 100
+                }
+            ]
+        },
+        "7Be": {
+            "half_life": "53.22 d",
+            "protons": 4,
+            "neutrons": 3,
+            "isotope_weight": 7.01692871,
+            "decay": [
+                {
+                    "mode": "ε",
+                    "product": ["7Li"],
+                    "chance": 100
+                }
+            ]
+        },
+        "8Be": {
+            "half_life": "81.9 as",
+            "protons": 4,
+            "neutrons": 4,
+            "isotope_weight": 8.0053051,
+            "decay": [
+                {
+                    "mode": "α",
+                    "product": ["4He"],
+                    "chance": 100
+                }
+            ],
+            "metastable": {
+                "m": {
+                    "half_life": "81.9 as",
+                    "energy": 16626,
+                    "decay": [
+                        {
+                            "mode": "α",
+                            "product": ["4He"],
+                            "chance": 100
+                        }
+                    ]
+                }
+            }
+        },
+        "9Be": {
+            "half_life": null,
+            "protons": 4,
+            "neutrons": 5,
+            "isotope_weight": 9.01218306,
+            "metastable": {
+                "m": {
+                    "half_life": "1.25 as",
+                    "energy": 14390.3,
+                    "decay": [
+                        {
+                            "mode": "IT",
+                            "product": ["9Be"],
+                            "chance": 100
+                        }
+                    ]
+                }
+            }
+        },
+        "10Be": {
+            "half_life": "1.387e6 y",
+            "protons": 4,
+            "neutrons": 6,
+            "isotope_weight": 10.01353469,
+            "decay": [
+                {
+                    "mode": "β-",
+                    "product": ["10B"],
+                    "chance": 100
+                }
+            ]
+        },
+        "11Be": {
+            "half_life": "13.76 s",
+            "protons": 4,
+            "neutrons": 7,
+            "isotope_weight": 11.02166108,
+            "decay": [
+                {
+                    "mode": "β-",
+                    "product": ["11B"],
+                    "chance": 96.7
+                },
+                {
+                    "mode": "β-α",
+                    "product": ["7Li"],
+                    "chance": 3.3
+                },
+                {
+                    "mode": "β-p",
+                    "product": ["10Be"],
+                    "chance": 0.0013
+                }
+            ],
+            "metastable": {
+                "m": {
+                    "half_life": "0.93 zs",
+                    "energy": 21158,
+                    "decay": [
+                        {
+                            "mode": "IT?",
+                            "product": ["11Be?"],
+                            "chance": 100
+                        }
+                    ]
+                }
+            }
+        },
+        "12Be": {
+            "half_life": "21.46 ms",
+            "protons": 4,
+            "neutrons": 8,
+            "isotope_weight": 12.0269221,
+            "decay": [
+                {
+                    "mode": "β-",
+                    "product": ["12B"],
+                    "chance": 99.5
+                },
+                {
+                    "mode": "β-n",
+                    "product": ["11B"],
+                    "chance": 0.5
+                }
+            ],
+            "metastable": {
+                "m": {
+                    "half_life": "233 ns",
+                    "energy": 2251,
+                    "decay": [
+                        {
+                            "mode": "IT",
+                            "product": ["12Be"],
+                            "chance": 100
+                        }
+                    ]
+                }
+            }
+        },
+        "13Be": {
+            "half_life": "1.0 zs",
+            "protons": 4,
+            "neutrons": 9,
+            "isotope_weight": 13.036135,
+            "decay": [
+                {
+                    "mode": "n?",
+                    "product": ["12Be?"],
+                    "chance": 100
+                }
+            ],
+            "metastable": {
+                "m": {
+                    "half_life": "233 ns",
+                    "energy": 1500
+                }
+            }
+        },
+        "14Be": {
+            "half_life": "4.53 ms",
+            "protons": 4,
+            "neutrons": 10,
+            "isotope_weight": 14.04289,
+            "decay": [
+                {
+                    "mode": "β-n",
+                    "product": ["13B"],
+                    "chance": 86.0
+                },
+                {
+                    "mode": "β-",
+                    "product": ["14B"],
+                    "chance": 9.0
+                },
+                {
+                    "mode": "β-2n",
+                    "product": ["12B"],
+                    "chance": 5.0
+                },
+                {
+                    "mode": "β-t",
+                    "product": ["11Be"],
+                    "chance": 0.02
+                },
+                {
+                    "mode": "β-α",
+                    "product": ["10Li"],
+                    "chance": 0.004
+                }
+            ],
+            "metastable": {
+                "m": {
+                    "energy": 1520
+                }
+            }
+        },
+        "15Be": {
+            "half_life": "790 ys",
+            "protons": 4,
+            "neutrons": 11,
+            "isotope_weight": 15.05349,
+            "decay": [
+                {
+                    "mode": "n",
+                    "product": ["14Be"],
+                    "chance": 100
+                }
+            ]
+        },
+        "16Be": {
+            "half_life": "650 ys",
+            "protons": 4,
+            "neutrons": 12,
+            "isotope_weight": 16.06167,
+            "decay": [
+                {
+                    "mode": "2n",
+                    "product": ["14Be"],
+                    "chance": 100
+                }
+            ]
+        }
+    },
+    "Boron": {
+        "7B": {
+            "half_life": "570 ys",
+            "protons": 5,
+            "neutrons": 2,
+            "isotope_weight": 7.029712,
+            "decay": [
+                {
+                    "mode": "p",
+                    "product": ["6Be"],
+                    "chance": 100
+                }
+            ]
+        },
+        "8B": {
+            "half_life": "771.9 ms",
+            "protons": 5,
+            "neutrons": 3,
+            "isotope_weight": 8.0246073,
+            "decay": [
+                {
+                    "mode": "β+",
+                    "product": ["8Be"],
+                    "chance": 100
+                }
+            ],
+            "metastable": {
+                "m": {
+                    "energy": 10624
+                }
+            }
+        },
+        "9B": {
+            "half_life": "800 zs",
+            "protons": 5,
+            "neutrons": 4,
+            "isotope_weight": 9.0133296,
+            "decay": [
+                {
+                    "mode": "p",
+                    "product": ["8Be"],
+                    "chance": 100
+                }
+            ]
+        },
+        "10B": {
+            "half_life": null,
+            "protons": 5,
+            "neutrons": 5,
+            "isotope_weight": 10.012936862
+        },
+        "11B": {
+            "half_life": null,
+            "protons": 5,
+            "neutrons": 6,
+            "isotope_weight": 11.009305167,
+            "metastable": {
+                "m": {
+                    "energy": 12560
+                }
+            }
+        },
+        "12B": {
+            "half_life": "20.20 ms",
+            "protons": 5,
+            "neutrons": 7,
+            "isotope_weight": 12.0143526,
+            "decay": [
+                {
+                    "mode": "β-",
+                    "product": ["12C"],
+                    "chance": 99.4
+                },
+                {
+                    "mode": "β-α",
+                    "product": ["8Be"],
+                    "chance": 0.6
+                }
+            ]
+        },
+        "13B": {
+            "half_life": "17.16 ms",
+            "protons": 5,
+            "neutrons": 8,
+            "isotope_weight": 13.01778,
+            "decay": [
+                {
+                    "mode": "β-",
+                    "product": ["13C"],
+                    "chance": 99.734
+                },
+                {
+                    "mode": "β-n",
+                    "product": ["12C"],
+                    "chance": 0.266
+                }
+            ]
+        },
+        "14B": {
+            "half_life": "12.36 ms",
+            "protons": 5,
+            "neutrons": 9,
+            "isotope_weight": 14.025404,
+            "decay": [
+                {
+                    "mode": "β-",
+                    "product": ["14C"],
+                    "chance": 93.96
+                },
+                {
+                    "mode": "β-n",
+                    "product": ["13C"],
+                    "chance": 6.04
+                },
+                {
+                    "mode": "β-2n?",
+                    "product": ["13C?"]
+                }
+            ],
+            "metastable": {
+                "m": {
+                    "half_life": "4.15 zs",
+                    "energy": 17065,
+                    "decay": [
+                        {
+                            "mode": "IT?",
+                            "chance": 100
+                        }
+                    ]
+                }
+            }
+        },
+        "15B": {
+            "half_life": "10.18 ms",
+            "protons": 5,
+            "neutrons": 10,
+            "isotope_weight": 15.031087,
+            "decay": [
+                {
+                    "mode": "β-n",
+                    "product": ["14C"],
+                    "chance": 98.7
+                },
+                {
+                    "mode": "β-",
+                    "product": ["15C"],
+                    "chance": 1.3
+                },
+                {
+                    "mode": "β-2n",
+                    "product": ["13C"],
+                    "chance": 1.5
+                }
+            ]
+        },
+        "16B": {
+            "half_life": ">4.6 zs",
+            "protons": 5,
+            "neutrons": 11,
+            "isotope_weight": 16.039841,
+            "decay": [
+                {
+                    "mode": "n?",
+                    "product": ["15B?"],
+                    "chance": 100
+                }
+            ]
+        },
+        "17B": {
+            "half_life": "5.08 ms",
+            "protons": 5,
+            "neutrons": 12,
+            "isotope_weight": 17.04693,
+            "decay": [
+                {
+                    "mode": "β-n",
+                    "product": ["16C"],
+                    "chance": 63
+                },
+                {
+                    "mode": "β-",
+                    "product": ["17C"],
+                    "chance": 21.1
+                },
+                {
+                    "mode": "β-2n",
+                    "product": ["15C"],
+                    "chance": 12
+                },
+                {
+                    "mode": "β-3n",
+                    "product": ["14C"],
+                    "chance": 3.5
+                },
+                {
+                    "mode": "β-4n",
+                    "product": ["13C"],
+                    "chance": 0.4
+                }
+            ]
+        },
+        "18B": {
+            "half_life": "less than 26 ns",
+            "protons": 5,
+            "neutrons": 13,
+            "isotope_weight": 18.0556,
+            "decay": [
+                {
+                    "mode": "n",
+                    "product": ["17B"],
+                    "chance": 100
+                }
+            ]
+        },
+        "19B": {
+            "half_life": "2.92 ms",
+            "protons": 5,
+            "neutrons": 14,
+            "isotope_weight": 19.06417,
+            "decay": [
+                {
+                    "mode": "β-n",
+                    "product": ["18C"],
+                    "chance": 71
+                },
+                {
+                    "mode": "β-2n",
+                    "product": ["17C"],
+                    "chance": 17
+                },
+                {
+                    "mode": "β-3n",
+                    "product": ["16C"],
+                    "chance": 9.1
+                },
+                {
+                    "mode": "β-",
+                    "product": ["19C"],
+                    "chance": 2.9
+                }
+            ]
+        },
+        "20B": {
+            "half_life": "more than 912.4 ys",
+            "protons": 5,
+            "neutrons": 15,
+            "isotope_weight": 20.07451,
+            "decay": [
+                {
+                    "mode": "n",
+                    "product": ["19B"],
+                    "chance": 100
+                }
+            ]
+        },
+        "21B": {
+            "half_life": "more than 760 ys",
+            "protons": 5,
+            "neutrons": 16,
+            "isotope_weight": 21.08415,
+            "decay": [
+                {
+                    "mode": "2n",
+                    "product": ["19B"],
+                    "chance": 100
+                }
+            ]
+        }
+    },
+    "Carbon": {
+        "8C": {
+            "half_life": "3.5 zs",
+            "protons": 6,
+            "neutrons": 2,
+            "isotope_weight": 8.037643,
+            "decay": [
+                {
+                    "mode": "2p",
+                    "product": ["6Be"],
+                    "chance": 100
+                }
+            ]
+        },
+        "9C": {
+            "half_life": "126.5 ms",
+            "protons": 6,
+            "neutrons": 3,
+            "isotope_weight": 9.0310372,
+            "decay": [
+                {
+                    "mode": "β+",
+                    "product": ["9B"],
+                    "chance": 54.1
+                },
+                {
+                    "mode": "β+α",
+                    "product": ["5Li"],
+                    "chance": 38.4
+                },
+                {
+                    "mode": "β+p",
+                    "product": ["8Be"],
+                    "chance": 7.5
+                }
+            ]
+        },
+        "10C": {
+            "half_life": "19.3011 s",
+            "protons": 6,
+            "neutrons": 4,
+            "isotope_weight": 10.01685322,
+            "decay": [
+                {
+                    "mode": "β+",
+                    "product": ["10B"],
+                    "chance": 100
+                }
+            ]
+        },
+        "11C": {
+            "half_life": "20.3402 min",
+            "protons": 6,
+            "neutrons": 5,
+            "isotope_weight": 11.0114326,
+            "decay": [
+                {
+                    "mode": "β+",
+                    "product": ["11B"],
+                    "chance": 100
+                }
+            ],
+            "metastable": {
+                "m": {
+                    "energy": 12160,
+                    "decay": [
+                        {
+                            "mode": "p?",
+                            "product": ["10B?"],
+                            "chance": 100
+                        }
+                    ]
+                }
+            }
+        },
+        "12C": {
+            "half_life": null,
+            "protons": 6,
+            "neutrons": 6,
+            "isotope_weight": 12.0
+        },
+        "13C": {
+            "half_life": null,
+            "protons": 6,
+            "neutrons": 7,
+            "isotope_weight": 13.003354835336
+        },
+        "14C": {
+            "half_life": "5700 y",
+            "protons": 6,
+            "neutrons": 8,
+            "isotope_weight": 14.003241989,
+            "decay": [
+                {
+                    "mode": "β-",
+                    "product": ["14N"],
+                    "chance": 100
+                }
+            ],
+            "metastable": {
+                "m": {
+                    "energy": 22100,
+                    "decay": [
+                        {
+                            "mode": "IT",
+                            "chance": 100
+                        }
+                    ]
+                }
+            }
+        },
+        "15C": {
+            "half_life": "2.449 s",
+            "protons": 6,
+            "neutrons": 9,
+            "isotope_weight": 15.0105993,
+            "decay": [
+                {
+                    "mode": "β-",
+                    "product": ["15N"],
+                    "chance": 100
+                }
+            ]
+        },
+        "16C": {
+            "half_life": "750 ms",
+            "protons": 6,
+            "neutrons": 10,
+            "isotope_weight": 16.014701,
+            "decay": [
+                {
+                    "mode": "β-n",
+                    "product": ["15N"],
+                    "chance": 99.0
+                },
+                {
+                    "mode": "β-",
+                    "product": ["16N"],
+                    "chance": 1.0
+                }
+            ]
+        },
+        "17C": {
+            "half_life": "193 ms",
+            "protons": 6,
+            "neutrons": 11,
+            "isotope_weight": 17.022579,
+            "decay": [
+                {
+                    "mode": "β-",
+                    "product": ["17N"],
+                    "chance": 71.6
+                },
+                {
+                    "mode": "β-n",
+                    "product": ["16N"],
+                    "chance": 28.4
+                }
+            ]
+        },
+        "18C": {
+            "half_life": "92 ms",
+            "protons": 6,
+            "neutrons": 12,
+            "isotope_weight": 18.02675,
+            "decay": [
+                {
+                    "mode": "β-",
+                    "product": ["18N"],
+                    "chance": 68.5
+                },
+                {
+                    "mode": "β-n",
+                    "product": ["17N"],
+                    "chance": 31.5
+                }
+            ]
+        },
+        "19C": {
+            "half_life": "46.2 ms",
+            "protons": 6,
+            "neutrons": 13,
+            "isotope_weight": 19.0348,
+            "decay": [
+                {
+                    "mode": "β-n",
+                    "product": ["18N"],
+                    "chance": 47
+                },
+                {
+                    "mode": "β-",
+                    "product": ["19N"],
+                    "chance": 46.0
+                },
+                {
+                    "mode": "β-2n",
+                    "product": ["17N"],
+                    "chance": 7.0
+                }
+            ]
+        },
+        "20C": {
+            "half_life": "16 ms",
+            "protons": 6,
+            "neutrons": 14,
+            "isotope_weight": 20.04026,
+            "decay": [
+                {
+                    "mode": "β-n",
+                    "product": ["19N"],
+                    "chance": 70
+                },
+                {
+                    "mode": "β-2n",
+                    "product": ["18N"],
+                    "chance": 18.6
+                },
+                {
+                    "mode": "β-",
+                    "product": ["20N"],
+                    "chance": 11.4
+                }
+            ]
+        },
+        "22C": {
+            "half_life": "6.2 ms",
+            "protons": 6,
+            "neutrons": 16,
+            "isotope_weight": 22.05755,
+            "decay": [
+                {
+                    "mode": "β-n",
+                    "product": ["21N"],
+                    "chance": 61
+                },
+                {
+                    "mode": "β-2n",
+                    "product": ["20N"],
+                    "chance": 37
+                },
+                {
+                    "mode": "β-",
+                    "product": ["22N"],
+                    "chance": 2
+                }
+            ]
+        }
+    },
+    "Nitrogen": {
+        "10N": {
+            "half_life": "7e-22 s",
+            "protons": 7,
+            "neutrons": 3,
+            "isotope_weight": 10.01685,
+            "decay": [
+                {
+                    "mode": "2p",
+                    "product": ["8B"],
+                    "chance": 100
+                }
+            ]
+        },
+        "11N": {
+            "half_life": "4.2e-22 s",
+            "protons": 7,
+            "neutrons": 4,
+            "isotope_weight": 11.00628,
+            "decay": [
+                {
+                    "mode": "p",
+                    "product": ["10C"],
+                    "chance": 100
+                }
+            ]
+        },
+        "12N": {
+            "half_life": "11.000 ms",
+            "protons": 7,
+            "neutrons": 5,
+            "isotope_weight": 12.000108,
+            "decay": [
+                {
+                    "mode": "β+",
+                    "product": ["12C"],
+                    "chance": 100
+                }
+            ]
+        },
+        "13N": {
+            "half_life": "9.965 m",
+            "protons": 7,
+            "neutrons": 6,
+            "isotope_weight": 13.00573861,
+            "decay": [
+                {
+                    "mode": "β+",
+                    "product": ["13C"],
+                    "chance": 100
+                }
+            ],
+            "metastable": {
+                "m": {
+                    "half_life": "0.6 ns",
+                    "energy": 2350,
+                    "decay": [
+                        {
+                            "mode": "IT",
+                            "product": ["13N"],
+                            "chance": 100
+                        }
+                    ]
+                }
+            }
+        },
+        "14N": {
+            "half_life": null,
+            "protons": 7,
+            "neutrons": 7,
+            "isotope_weight": 14.003074,
+            "decay": null
+        },
+        "15N": {
+            "half_life": null,
+            "protons": 7,
+            "neutrons": 8,
+            "isotope_weight": 15.000109,
+            "decay": null
+        },
+        "16N": {
+            "half_life": "7.13 s",
+            "protons": 7,
+            "neutrons": 9,
+            "isotope_weight": 16.006099,
+            "decay": [
+                {
+                    "mode": "β−",
+                    "product": ["16O"],
+                    "chance": 100
+                }
+            ],
+            "metastable": {
+                "m": {
+                    "half_life": "5.25 μs",
+                    "energy": 120,
+                    "decay": [
+                        {
+                            "mode": "IT",
+                            "product": ["16N"],
+                            "chance": 100
+                        }
+                    ]
+                }
+            }
+        },
+        "17N": {
+            "half_life": "4.173 s",
+            "protons": 7,
+            "neutrons": 10,
+            "isotope_weight": 17.008449,
+            "decay": [
+                {
+                    "mode": "β−n",
+                    "product": ["16O"],
+                    "chance": 95
+                },
+                {
+                    "mode": "β−",
+                    "product": ["17O"],
+                    "chance": 5
+                }
+            ]
+        },
+        "18N": {
+            "half_life": "619 ms",
+            "protons": 7,
+            "neutrons": 11,
+            "isotope_weight": 18.013998,
+            "decay": [
+                {
+                    "mode": "β−",
+                    "product": ["18O"],
+                    "chance": 100
+                }
+            ]
+        },
+        "19N": {
+            "half_life": "329 ms",
+            "protons": 7,
+            "neutrons": 12,
+            "isotope_weight": 19.017022,
+            "decay": [
+                {
+                    "mode": "β−",
+                    "product": ["19O"],
+                    "chance": 100
+                }
+            ]
+        },
+        "20N": {
+            "half_life": "130 ms",
+            "protons": 7,
+            "neutrons": 13,
+            "isotope_weight": 20.02337,
+            "decay": [
+                {
+                    "mode": "β−",
+                    "product": ["20O"],
+                    "chance": 100
+                }
+            ]
+        },
+        "21N": {
+            "half_life": "87 ms",
+            "protons": 7,
+            "neutrons": 14,
+            "isotope_weight": 21.02711,
+            "decay": [
+                {
+                    "mode": "β−",
+                    "product": ["21O"],
+                    "chance": 100
+                }
+            ]
+        },
+        "22N": {
+            "half_life": "24 ms",
+            "protons": 7,
+            "neutrons": 15,
+            "isotope_weight": 22.0341,
+            "decay": [
+                {
+                    "mode": "β−",
+                    "product": ["22O"],
+                    "chance": 100
+                }
+            ]
+        },
+        "23N": {
+            "half_life": "14.5 ms",
+            "protons": 7,
+            "neutrons": 16,
+            "isotope_weight": 23.04122,
+            "decay": [
+                {
+                    "mode": "β−",
+                    "product": ["23O"],
+                    "chance": 100
+                }
+            ]
+        },
+        "24N": {
+            "half_life": "less than 55 ns",
+            "protons": 7,
+            "neutrons": 17,
+            "isotope_weight": 24.05039,
+            "decay": [
+                {
+                    "mode": "n?",
+                    "product": ["23N?"],
+                    "chance": 100
+                }
+            ]
+        },
+        "25N": {
+            "half_life": "less than 260 ps",
+            "protons": 7,
+            "neutrons": 18,
+            "isotope_weight": 25.06066,
+            "decay": [
+                {
+                    "mode": "2n?",
+                    "product": ["23N?"],
+                    "chance": 100
+                }
+            ]
+        },
+        "26N": {
+            "half_life": "less than 260 ps",
+            "protons": 7,
+            "neutrons": 19,
+            "isotope_weight": 26.07217,
+            "decay": [
+                {
+                    "mode": "2n?",
+                    "product": ["24N?"],
+                    "chance": 100
+                }
+            ]
+        },
+        "27N": {
+            "half_life": "less than 260 ps",
+            "protons": 7,
+            "neutrons": 20,
+            "isotope_weight": 27.08391,
+            "decay": [
+                {
+                    "mode": "2n?",
+                    "product": ["25N?"],
+                    "chance": 100
+                }
+            ]
+        }
+    }
+}

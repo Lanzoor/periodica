@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 
-import platform, sys, json, os, re, difflib, random, typing, textwrap, copy, base64
+try:
+    import platform, sys, json, os, re, difflib, random, typing, textwrap, copy, base64, functools, pprint
+except ImportError:
+    print("It seems like some of the standard libraries are missing. Please make sure you have the right version of the Python interpreter installed.")
+    sys.exit(0)
+
+import platform, sys, json, os, re, difflib, random, typing, textwrap, copy, base64, functools
 
 try:
     import lib
@@ -14,7 +20,7 @@ except ImportError:
 from lib.loader import get_config, get_response, Logger, import_failsafe, valid_sorting_methods
 from lib.terminal import RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, DEFAULT_COLOR, BRIGHT_BLACK, BRIGHT_GREEN, BRIGHT_RED
 from lib.terminal import fore, back, inverse_color, bold, dim, italic, animate_print, clear_screen, gradient
-from lib.directories import DATA_FILE, OUTPUT_FILE, CONFIG_SCRIPT, UPDATE_SCRIPT
+from lib.directories import ELEMENT_DATA_FILE, ISOTOPE_DATA_FILE, OUTPUT_FILE, CONFIG_SCRIPT, UPDATE_SCRIPT
 from pprint import pprint
 
 # Just in case when the venv does not exist
@@ -24,12 +30,18 @@ import_failsafe()
 EXPORT_ENABLED = False
 DEBUG_MODE = False
 ISOTOPE_LOGIC = False
+RAW_OUTPUT = False
+
 recognized_flag = False
-elementdata_malformed = False
+data_malformed = False
 
 # This is where elements and suggestions will go
-element_data = None
-element_suggestion = ""
+full_element_data = {}
+full_isotope_data = {}
+
+current_element_data = None
+current_element_suggestion = ""
+current_isotope_data = None
 
 logger = Logger(enable_debugging=DEBUG_MODE)
 
@@ -72,6 +84,7 @@ else:
     PERIWINKLE = CYAN
     GOLD = YELLOW
 
+# Defining unicode symbols
 cm3 = "cm³" if use_unicode else "cm3"
 m3 = "m³" if use_unicode else "m3"
 mm2 = "mm²" if use_unicode else "mm2"
@@ -89,8 +102,6 @@ down_arrow = "↓" if use_unicode else "_"
 sigma = "σ" if use_unicode else "s"
 double_line = "═" if use_unicode else "="
 single_line = "─" if use_unicode else "-"
-
-full_data = {}
 
 # Color configurations for specific outputs
 ELEMENT_TYPE_COLORS = {
@@ -190,9 +201,9 @@ positional_arguments = [arg.strip() for arg in get_positional_args()]
 flag_arguments = [arg.strip() for arg in get_flags()]
 
 valid_flags = [
-    "--debug", "--info", "--init", "--update", "--table", "--export",
-    "--compare", "--bond-type", "--random", "--version", "--test",
-    "-d", "-i", "-I", "-u", "-x", "-C", "-B", "-r", "-v", "-T"
+    "--debug", "--info", "--init", "--update", "--export",
+    "--compare", "--bond-type", "--random", "--version", "--test", "--raw"
+    "-d", "-i", "-I", "-u", "-x", "-C", "-B", "-R", "-v", "-T", "-r"
 ]
 
 flags_that_require_position_argument = [
@@ -238,7 +249,7 @@ def print_separator():
     print("-" * TERMINAL_WIDTH)
     print()
 
-def check_for_termination(user_input):
+def check_for_termination_inputs(user_input):
     if user_input in ["quit", "q", "abort", "exit", "terminate", "stop"]:
         animate_print("Okay. Exiting...")
         logger.abort("User exited interactive input.")
@@ -424,29 +435,6 @@ def check_for_updates():
         animate_print(fore("Looks like the update script is missing. Please check for any missing files.", RED))
         logger.abort("Failed to find the update script.")
 
-def view_table():
-    logger.info("User gave --table flag; redirecting to another logic.")
-
-    COLUMNS = 18 * 4
-    ROWS = 7 * 3
-    if TERMINAL_WIDTH < COLUMNS:
-        animate_print(f"Well, the terminal is way too small to display the table. Please run this on a larger window.\n{bold(f"At least a terminal size of {COLUMNS} x {ROWS} is required to display the content.")}")
-        logger.abort("Terminal too small to display the table.")
-        sys.exit(0)
-
-    if TERMINAL_HEIGHT < ROWS:
-        animate_print(f"Well, the terminal is way too small to display the table. Please run this on a larger window.\n{bold(f"At least a terminal size of {COLUMNS} x {ROWS} is required to display the content.")}")
-        logger.abort("Terminal too small to display the table.")
-        sys.exit(0)
-
-    clear_screen()
-
-    # TODO: Continue the logic. Way too busy to refactor and fix stuff for now.
-    # NOTE: Either give the option to show the minimal style or the full style with the table
-    ...
-
-    sys.exit(0)
-
 def export_element():
     global EXPORT_ENABLED, positional_arguments
 
@@ -469,7 +457,7 @@ def export_element():
         while element is None:
             user_input = input("> ").strip()
 
-            check_for_termination(user_input)
+            check_for_termination_inputs(user_input)
 
             element, suggestion = process_isotope_input(user_input)
             if element is None and not suggestion:
@@ -512,7 +500,7 @@ def export_element():
     sys.exit(0)
 
 def compare_by_factor():
-    global full_data, positional_arguments, compare_tip, valid_sorting_methods
+    global full_element_data, positional_arguments, compare_tip, valid_sorting_methods
     logger.info("User gave --compare flag; redirecting to another logic.")
 
     factors = [
@@ -662,14 +650,14 @@ def compare_by_factor():
                 logger.warn(f"No direct match found for '{factor_candidate}'.")
 
         factor_candidate = "_".join(input("> ").strip().lower().split(" "))
-        check_for_termination(factor_candidate)
+        check_for_termination_inputs(factor_candidate)
 
     clear_screen()
     animate_print(f"\nComparing all elements by factor {bold(factor)} with sorting by {bold(sorting_method)}... {dim('(Please note that some elements may be missing, and the data is trimmed up to 4 digits of float numbers.)')}\n")
     logger.info(f"Comparing all elements by factor {factor}...")
 
     result: dict[str, float | int | None] = {}
-    for name, value in full_data.items():
+    for name, value in full_element_data.items():
         result[name] = get_key_by_input(value, factor)
 
     valid_results = [(name, value) for name, value in result.items() if value is not None]
@@ -722,7 +710,7 @@ def compare_by_factor():
     sys.exit(0)
 
 def compare_bond_type():
-    global full_data, positional_arguments
+    global full_element_data, positional_arguments
     logger.info("User gave --bond-type flag; redirecting to bond type logic.")
 
     primary_element = None
@@ -744,7 +732,7 @@ def compare_bond_type():
         while True:
             user_input = input("> ").strip().lower()
             logger.info(f"Primary input: \"{user_input}\"")
-            check_for_termination(user_input)
+            check_for_termination_inputs(user_input)
 
             primary_element, suggestion = find_element(user_input)
             if primary_element:
@@ -761,7 +749,7 @@ def compare_bond_type():
         while True:
             user_input = input("> ").strip().lower()
             logger.info(f"Secondary input: \"{user_input}\"")
-            check_for_termination(user_input)
+            check_for_termination_inputs(user_input)
 
             secondary_element, suggestion = find_element(user_input)
             if secondary_element:
@@ -796,13 +784,13 @@ def compare_bond_type():
     sys.exit(0)
 
 def select_random_element():
-    global element_data
+    global current_element_data
     animate_print("Picking a random element for you...")
     logger.info("Picking a random element...")
 
-    element_data = random.choice(list(full_data.values()))
-    animate_print(f"I pick {bold(element_data["general"]["fullname"])} for you!")
-    logger.info(f"Picked {element_data["general"]["fullname"]} as a random element.")
+    current_element_data = random.choice(list(full_element_data.values()))
+    animate_print(f"I pick {bold(current_element_data["general"]["fullname"])} for you!")
+    logger.info(f"Picked {current_element_data["general"]["fullname"]} as a random element.")
 
 def enable_debugging():
     global DEBUG_MODE, logger
@@ -823,9 +811,23 @@ def enable_debugging():
     if positional_arguments:
         logger.info(f"Other positional arguments given: {", ".join(positional_arguments)}")
 
+def enable_raw_output():
+    global RAW_OUTPUT, animate_print, fore, back, bold, dim, italic, inverse_color, gradient
+    RAW_OUTPUT = True
+    logger.info("Enabled raw output mode.")
+    animate_print = functools.partial(animate_print, animation="none")
+
+    funclist = ['fore', 'back', 'bold', 'dim', 'italic', 'inverse_color', 'gradient']
+    for name in funclist:
+        globals()[name] = functools.partial(globals()[name], disable=True)
+
 # Debugging is the first priority, therefore enable it ASAP when it gets activated to avoid syntax checking
 if ("--debug" in flag_arguments or "-d" in flag_arguments) or constant_debugging:
     enable_debugging()
+
+# This is another priority
+if ("--raw" in flag_arguments or "-r" in flag_arguments) or constant_debugging:
+    enable_raw_output()
 
 def fetch_version():
     global PYPROJECT_FILE
@@ -953,7 +955,7 @@ def find_isotope(element_identifier, mass_number, search_query):
     search_query = search_query.lower()
     logger.info(f"Searching for isotope: {element_identifier}, mass number: {mass_number}, query: {search_query}")
 
-    for element_data in full_data.values():
+    for element_data in full_element_data.values():
         element_symbol = element_data["general"]["symbol"].lower()
         element_name = element_data["general"]["fullname"].lower()
 
@@ -1010,16 +1012,16 @@ def find_element(candidate) -> typing.Tuple[dict | None, str | None]:
     candidate = candidate.lower()
     possible_names = []
 
-    for _, element_candidate in enumerate(full_data.values()):
-        name = element_candidate["general"]["fullname"].lower()
-        symbol = element_candidate["general"]["symbol"].lower()
-        atomic_number = str(element_candidate["general"]["atomic_number"])
+    for _, element_candidate_data in enumerate(full_element_data.values()):
+        name = element_candidate_data["general"]["fullname"].lower()
+        symbol = element_candidate_data["general"]["symbol"].lower()
+        identifiers = element_candidate_data["general"]["identifiers"]
 
         possible_names.extend([name, symbol])
 
-        if candidate in (name, symbol, atomic_number):
+        if candidate in identifiers:
             logger.info(f"Exact match found: {name} ({symbol})")
-            return element_candidate, None
+            return element_candidate_data, None
 
     suggestion = difflib.get_close_matches(candidate, possible_names, n=1, cutoff=0.6)
     if suggestion:
@@ -1032,7 +1034,7 @@ def find_element(candidate) -> typing.Tuple[dict | None, str | None]:
 def process_isotope_input(user_input):
     try:
         index = int(user_input) - 1
-        search_result = full_data[list(full_data.keys())[index]]
+        search_result = full_element_data[list(full_element_data.keys())[index]]
         return search_result, None
     except (ValueError, IndexError):
         symbol_or_name, mass_number = match_isotope_input(user_input)
@@ -1086,7 +1088,7 @@ There are also other flags you can provide to this CLI. (The ones marked after t
 - {bold("--bond-type")} / -B
 - Compare two elements and get their bond type
 
-- {bold("--random")} / -r
+- {bold("--random")} / -R
 - Pick a random element
 
 - {bold("--test")} / -T
@@ -1101,36 +1103,46 @@ Anyways, I hope you enjoy this small CLI. {bold("Please read the README.md file 
 logger.info("Program initialized.")
 
 try:
-    with open(DATA_FILE, 'r', encoding="utf-8") as file:
-        full_data = json.load(file)
-        logger.info("data.json file was successfully found.")
-except json.JSONDecodeError:
-    logger.warn("data.json file was modified, please do not do so no matter what.")
-    animate_print("The data.json file was modified and malformed. Please do not do so, no matter what.\nThis means you need a fresh new data.json file, is it okay for me to get the file for you on GitHub? (y/N)")
-    elementdata_malformed = True
-except FileNotFoundError:
-    logger.warn("data.json file was not found.")
-    animate_print("The data.json file was not found. Is it okay for me to get the file for you on GitHub? (y/N)")
-    elementdata_malformed = True
+    with open(ELEMENT_DATA_FILE, 'r', encoding="utf-8") as file:
+        full_element_data = json.load(file)
+        logger.info("elements.json file was successfully found.")
 
-if elementdata_malformed:
+    with open(ISOTOPE_DATA_FILE, 'r', encoding="utf-8") as file:
+        full_isotope_data = json.load(file)
+        logger.info("isotopes.json file was successfully found.")
+except json.JSONDecodeError:
+    logger.warn("The data JSON files were modified, please do not do so no matter what.")
+    animate_print("The data JSON files were modified and malformed. Please do not do so, no matter what.\nThis means you need fresh data JSON files, is it okay for me to get the file for you on GitHub? (y/N)")
+    data_malformed = True
+except FileNotFoundError:
+    logger.warn("The data JSON files were not found.")
+    animate_print("The data JSON files were not found. Is it okay for me to get the file for you on GitHub? (y/N)")
+    data_malformed = True
+
+if data_malformed:
     confirmation = input("> ").strip().lower()
     if confirmation not in ["y", "yes"]:
         animate_print("Okay, exiting...")
-        logger.abort("User denied confirmation for fetching the data.json file.")
+        logger.abort(f"User denied confirmation for fetching the correct data JSON files.")
 
-    url = "https://raw.githubusercontent.com/Lanzoor/periodictable/main/src/data.json"
-    animate_print(f"Getting content from {url}, this should not take a while...")
+    element_url = "https://raw.githubusercontent.com/Lanzoor/periodica/main/src/elements.json"
+    isotope_url = "https://raw.githubusercontent.com/Lanzoor/periodica/main/src/isotopes.json"
 
-    response = get_response(url)
-
-    animate_print("Successfully got the data.json file! Replacing it...")
-
-    full_data = json.loads(response.text)
-    with open(DATA_FILE, "w", encoding="utf-8") as file:
+    animate_print(f"(1/2) Getting content from {element_url}.")
+    response = get_response(element_url)
+    animate_print("(1/2) Successfully got the elements.json file. Replacing it...")
+    full_element_data = json.loads(response.text)
+    with open(ELEMENT_DATA_FILE, "w", encoding="utf-8") as file:
         file.write(response.text)
+    logger.info(f"(1/2) Successfully got the elements.json file from {isotope_url}.")
 
-    logger.info(f"Successfully got the data.json file from {url}.")
+    animate_print(f"(2/2) Getting content from {isotope_url}.")
+    response = get_response(isotope_url)
+    animate_print("(2/2) Successfully got the isotopes.json file. Replacing it...")
+    full_isotope_data = json.loads(response.text)
+    with open(ISOTOPE_DATA_FILE, "w", encoding="utf-8") as file:
+        file.write(response.text)
+    logger.info(f"(2/2) Successfully got the isotopes.json file from {isotope_url}.")
 
 # Getting element / isotope
 easter_eggs = [
@@ -1154,13 +1166,13 @@ try:
     TERMINAL_HEIGHT = os.get_terminal_size().lines
     logger.info(f"Terminal size: {TERMINAL_WIDTH}x{TERMINAL_HEIGHT} (width x height)")
 except OSError:
-    animate_print(bold("What?? So apparently, you aren't running this on a terminal, which is very weird. We will try to ignore this issue, and will determine your terminal width as 80. Please move on and ignore this message."))
+    animate_print(bold("You aren't running this on a terminal, which is very weird. We will try to ignore this issue, and will determine your terminal width as 80. Please move on like nothing ever happened."))
     logger.warn("The script ran without a terminal, so failback to reasonable terminal width variable.")
     TERMINAL_WIDTH = 80
     TERMINAL_HEIGHT = 40
 
 if TERMINAL_WIDTH < 80:
-    animate_print(fore(f"You are running this program in a terminal that has a width of {bold(TERMINAL_WIDTH)},\nwhich may be too compact to display and provide the information.\nPlease try resizing your terminal.", RED))
+    animate_print(fore(f"You are running this program in a terminal that has a width of {bold(TERMINAL_WIDTH)},\nwhich may be too compact to display and provide the information.\nPlease try resizing your terminal.\nThis will still display content, but it may look broken or unintended.", RED))
     logger.warn("Not enough width for terminal.")
 
 if len(sys.argv) > 1:
@@ -1195,30 +1207,29 @@ if len(sys.argv) > 1:
             create_flag_event("--info", "-i", callable=get_information) or
             create_flag_event("--init", "-I", callable=configurate) or
             create_flag_event("--update", "-u", callable=check_for_updates) or
-            create_flag_event("--table", callable=view_table) or
             create_flag_event("--export", "-x", callable=export_element) or
             create_flag_event("--compare", "-C", callable=compare_by_factor) or
             create_flag_event("--bond-type", "-B", callable=compare_bond_type) or
-            create_flag_event("--random", "-r", callable=select_random_element) or
+            create_flag_event("--random", "-R", callable=select_random_element) or
             create_flag_event("--version", "-v", callable=fetch_version) or
             create_flag_event("--test", "-T", callable=import_testing)
         )
 
     if user_input:
         logger.info(f"Element positional argument entry given: \"{user_input}\"")
-        element_data, element_suggestion = process_isotope_input(user_input)
+        current_element_data, current_element_suggestion = process_isotope_input(user_input)
         if ISOTOPE_LOGIC:
             sys.exit(0)
-        if element_data is None:
-            message = f"Invalid element or isotope.{' Did you mean \"' + bold(element_suggestion) + '\"?' if element_suggestion else ' Falling back to interactive input.'}"
-            animate_print(fore(message, YELLOW if element_suggestion else RED))
+        if current_element_data is None:
+            message = f"Invalid element or isotope.{' Did you mean \"' + bold(current_element_suggestion) + '\"?' if current_element_suggestion else ' Falling back to interactive input.'}"
+            animate_print(fore(message, YELLOW if current_element_suggestion else RED))
             logger.warn("No valid element or isotope provided from argv, fallback to interactive.")
     else:
         logger.warn("Element argument entry not given, falling back to interactive input.")
 else:
     logger.warn("No arguments provided, falling back to interactive input.")
 
-if element_data is None:
+if current_element_data is None:
     animate_print(f"Search for an element by name, symbol, or atomic number. {dim(tip)}")
     while True:
         user_input = input("> ").strip().lower()
@@ -1231,32 +1242,32 @@ if element_data is None:
                     exec(base64.b64decode("cmFpc2UgUmVjdXJzaW9uRXJyb3IoIm1heGltdW0gZGVwdGggcmVhY2hlZCB3aGlsc3QgdHJ5aW5nIHRvIGZpbmQgcGVyaW9kaWNhIGluc2lkZSBwZXJpb2RpY2EgaW5zaWRlIHBlcmlvZGljYSBpbnNpZGUgcGVyaW9kaWNhIGluc2lkZS4uLiIpIGZyb20gTm9uZQ=="))
                 sys.exit(0)
 
-        check_for_termination(user_input)
+        check_for_termination_inputs(user_input)
 
-        element_data, element_suggestion = process_isotope_input(user_input)
+        current_element_data, current_element_suggestion = process_isotope_input(user_input)
 
         if ISOTOPE_LOGIC:
             sys.exit(0)
 
-        if element_data is not None:
+        if current_element_data is not None:
             break
 
         message = "Not a valid element or isotope."
-        if element_suggestion:
-            message += f" Did you mean \"{bold(element_suggestion)}\"?"
-        animate_print(fore(message, YELLOW if element_suggestion else RED))
+        if current_element_suggestion:
+            message += f" Did you mean \"{bold(current_element_suggestion)}\"?"
+        animate_print(fore(message, YELLOW if current_element_suggestion else RED))
 
 if DEBUG_MODE:
     animate_print("Printing data...")
-    pprint(element_data, indent = 2, width=TERMINAL_WIDTH, sort_dicts=False, underscore_numbers=True)
+    pprint(current_element_data, indent = 2, width=TERMINAL_WIDTH, sort_dicts=False, underscore_numbers=True)
 
 # Dividing categories
-general = element_data["general"]
-historical = element_data["historical"]
-nuclear = element_data["nuclear"]
-electronic = element_data["electronic"]
-physical = element_data["physical"]
-measurements = element_data["measurements"]
+general = current_element_data["general"]
+historical = current_element_data["historical"]
+nuclear = current_element_data["nuclear"]
+electronic = current_element_data["electronic"]
+physical = current_element_data["physical"]
+measurements = current_element_data["measurements"]
 
 # General properties
 fullname: str = general["fullname"]
@@ -1344,7 +1355,7 @@ down_quarks = protons + (neutrons * 2)
 mass_number = protons + neutrons
 shells = electronic["shells"]
 subshells = electronic["subshells"]
-isotopes = nuclear["isotopes"]
+isotopes = full_isotope_data[fullname.capitalize()]
 
 possible_shells = "klmnopqrstuvwxyz"
 shell_result = ""

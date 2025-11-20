@@ -1,0 +1,497 @@
+{
+    "Hydrogen": {
+        "general": {
+            "fullname": "Hydrogen",
+            "symbol": "H",
+            "atomic_number": 1,
+            "description": "Hydrogen is the lightest and most abundant element in the universe. It is a colorless, odorless, and highly flammable diatomic gas at room temperature.\nHydrogen is the primary fuel for stars and the sun, playing a crucial role in the synthesis of heavier elements through nuclear fusion.\nIt forms compounds with most nonmetals and is essential in organic chemistry and industrial processes, including ammonia production and petroleum refining.",
+            "appearance": {
+                "color": null,
+                "phase": "gas"
+            },
+            "period": 1,
+            "group": 1,
+            "block": "s",
+            "type": "Reactive nonmetal",
+            "radioactive": false,
+            "half_life": null,
+            "cas_number": "CAS1333-74-0",
+            "identifiers": ["h", "hydrogen", "1"]
+        },
+        "nuclear": {
+            "protons": 1,
+            "neutrons": 0,
+            "electrons": 1,
+            "valence_electrons": 1
+        },
+        "physical": {
+            "atomic_mass": 1.00797094202593,
+            "melt": -259.16,
+            "boil": -252.879
+        },
+        "electronic": {
+            "electronegativity": 2.2,
+            "electron_affinity": 0.754,
+            "ionization_energy": 13.598,
+            "shells": [1],
+            "subshells": ["1s1"],
+            "oxidation_states": [-1, 1],
+            "conductivity_type": "Insulator"
+        },
+        "measurements": {
+            "radius": {
+                "calculated": 53,
+                "empirical": 25,
+                "covalent": 32,
+                "van_der_waals": 120
+            },
+            "hardness": {
+                "brinell": null,
+                "mohs": null,
+                "vickers": null
+            },
+            "moduli": {
+                "bulk": null,
+                "young": null,
+                "shear": null,
+                "poissons_ratio": null
+            },
+            "density": {
+                "STP": 0.0899,
+                "liquid": null
+            },
+            "sound_transmission_speed": 1310
+        },
+        "historical": {
+            "discoverers": {
+                "Henry Cavendish": "male"
+            },
+            "date": "1766 AD"
+        }
+    },
+    "Helium": {
+        "general": {
+            "fullname": "Helium",
+            "symbol": "He",
+            "atomic_number": 2,
+            "description": "Helium is a colorless, odorless, tasteless, non-toxic, inert monatomic gas. It is the second lightest and second most abundant element in the observable universe. Helium is used in cryogenics, deep-sea breathing systems, and as a protective gas in industrial processes. It has the lowest boiling and melting points of all elements and does not solidify at standard pressure.",
+            "appearance": {
+                "color": null,
+                "phase": "gas"
+            },
+            "period": 1,
+            "group": 18,
+            "block": "s",
+            "type": "Noble gas",
+            "radioactive": false,
+            "half_life": null,
+            "cas_number": "CAS7440-59-7",
+            "identifiers": ["he", "helium", "2"]
+        },
+        "nuclear": {
+            "protons": 2,
+            "neutrons": 2,
+            "electrons": 2,
+            "valence_electrons": 2
+        },
+        "physical": {
+            "atomic_mass": 4.00260128098301,
+            "melt": -272.2,
+            "boil": -268.93
+        },
+        "electronic": {
+            "electronegativity": null,
+            "electron_affinity": 0.0,
+            "ionization_energy": 24.587,
+            "shells": [2],
+            "subshells": ["1s2"],
+            "oxidation_states": [0],
+            "conductivity_type": "Insulator"
+        },
+        "measurements": {
+            "radius": {
+                "calculated": 31,
+                "empirical": 28,
+                "covalent": 37,
+                "van_der_waals": 140
+            },
+            "hardness": {
+                "brinell": null,
+                "mohs": null,
+                "vickers": null
+            },
+            "moduli": {
+                "bulk": null,
+                "young": null,
+                "shear": null,
+                "poissons_ratio": null
+            },
+            "density": {
+                "STP": 0.1785,
+                "liquid": null
+            },
+            "sound_transmission_speed": 965
+        },
+        "historical": {
+            "discoverers": {
+                "Pierre Janssen": "male",
+                "Joseph Norman Lockyer": "male"
+            },
+            "date": "1868 AD"
+        }
+    },
+    "Lithium": {
+        "general": {
+            "fullname": "Lithium",
+            "symbol": "Li",
+            "atomic_number": 3,
+            "description": "Lithium is a soft, silvery-white alkali metal. Under standard conditions it is the lightest metal and the least dense solid element.\nIt has important industrial applications in batteries, ceramics, and pharmaceuticals, and it is highly reactive—especially in water.",
+            "appearance": {
+                "color": [192, 192, 192],
+                "color_description": "Light Grey",
+                "phase": "solid"
+            },
+            "period": 2,
+            "group": 1,
+            "block": "s",
+            "type": "Alkali metal",
+            "radioactive": false,
+            "half_life": null,
+            "cas_number": "CAS7439-93-2",
+            "identifiers": ["li", "lithium", "3"]
+        },
+        "nuclear": {
+            "protons": 3,
+            "neutrons": 4,
+            "electrons": 3,
+            "valence_electrons": 1
+        },
+        "physical": {
+            "atomic_mass": 6.941765353712,
+            "melt": 180.54,
+            "boil": 1342
+        },
+        "electronic": {
+            "electronegativity": 0.98,
+            "electron_affinity": 0.618,
+            "ionization_energy": 5.3917,
+            "shells": [2, 1],
+            "subshells": ["1s2", "2s1"],
+            "oxidation_states": [1],
+            "conductivity_type": "Conductor"
+        },
+        "measurements": {
+            "radius": {
+                "calculated": 152,
+                "empirical": 145,
+                "covalent": 128,
+                "van_der_waals": 182
+            },
+            "hardness": {
+                "brinell": 5.0,
+                "mohs": 0.6,
+                "vickers": null
+            },
+            "moduli": {
+                "bulk": 11,
+                "young": 4.9,
+                "shear": 4.2,
+                "poissons_ratio": 0.381
+            },
+            "density": {
+                "STP": 535,
+                "liquid": 512
+            },
+            "sound_transmission_speed": 6000
+        },
+        "historical": {
+            "discoverers": {
+                "Johan August Arfwedson": "male"
+            },
+            "date": "1817 AD"
+        }
+    },
+    "Beryllium": {
+        "general": {
+            "fullname": "Beryllium",
+            "symbol": "Be",
+            "atomic_number": 4,
+            "description": "Beryllium is a chemical element; it has symbol Be and atomic number 4. It is a steel-gray, strong, lightweight, and brittle alkaline earth metal. It occurs naturally only in combination with other elements in minerals like beryl. Beryllium has important applications in aerospace, nuclear, and X-ray equipment due to its stiffness, low density, and transparency to X-rays.",
+            "appearance": {
+                "color": [150, 150, 150],
+                "color_description": "Light Grey",
+                "phase": "solid"
+            },
+            "period": 2,
+            "group": 2,
+            "block": "s",
+            "type": "Alkali earth metal",
+            "radioactive": false,
+            "half_life": null,
+            "cas_number": "CAS7440-41-7",
+            "identifiers": ["be", "beryllium", "4"]
+        },
+        "nuclear": {
+            "protons": 4,
+            "neutrons": 5,
+            "electrons": 4,
+            "valence_electrons": 2
+        },
+        "physical": {
+            "atomic_mass": 9.01218306156802,
+            "melt": 1287,
+            "boil": 2470
+        },
+        "electronic": {
+            "electronegativity": 1.57,
+            "electron_affinity": 0.0,
+            "ionization_energy": 9.3227,
+            "shells": [2, 2],
+            "subshells": ["1s2", "2s2"],
+            "oxidation_states": [2],
+            "conductivity_type": "Conductor"
+        },
+        "measurements": {
+            "radius": {
+                "calculated": 112,
+                "empirical": 105,
+                "covalent": 90,
+                "van_der_waals": null
+            },
+            "hardness": {
+                "brinell": 600,
+                "mohs": 5.5,
+                "vickers": 1670
+            },
+            "moduli": {
+                "bulk": 130,
+                "young": 287,
+                "shear": 132,
+                "poissons_ratio": 0.032
+            },
+            "density": {
+                "STP": 1848,
+                "liquid": 1690
+            },
+            "sound_transmission_speed": 13000
+        },
+        "historical": {
+            "discoverers": {
+                "Louis Nicolas Vauquelin": "male"
+            },
+            "date": "1798 AD"
+        }
+    },
+    "Boron": {
+        "general": {
+            "fullname": "Boron",
+            "symbol": "B",
+            "atomic_number": 5,
+            "description": "Boron is a chemical element with symbol B and atomic number 5. It is a brittle, dark, lustrous metalloid (solid) that occurs naturally only in compounds (e.g. borate minerals). Boron’s compounds are used in high-strength, lightweight materials (boron fibers, ceramics), in borosilicate glass, and as additives in fiberglass and detergents. The isotope boron-10 is an important neutron-absorbing agent in nuclear reactors.",
+            "appearance": {
+                "color": [60, 30, 30],
+                "color_description": "Dark Brown",
+                "phase": "solid"
+            },
+            "period": 2,
+            "group": 13,
+            "block": "p",
+            "type": "Metalloid",
+            "radioactive": false,
+            "half_life": null,
+            "cas_number": "CAS7440-42-8",
+            "identifiers": ["b", "boron", "5"]
+        },
+        "nuclear": {
+            "protons": 5,
+            "neutrons": 6,
+            "electrons": 5,
+            "valence_electrons": 3
+        },
+        "physical": {
+            "atomic_mass": 10.8135187949825,
+            "melt": 2349,
+            "boil": 4200
+        },
+        "electronic": {
+            "electronegativity": 2.04,
+            "electron_affinity": 0.277,
+            "ionization_energy": 8.298,
+            "shells": [2, 3],
+            "subshells": ["1s2", "2s2", "2p1"],
+            "oxidation_states": [3],
+            "conductivity_type": "Semiconductor"
+        },
+        "measurements": {
+            "radius": {
+                "calculated": 87,
+                "empirical": 85,
+                "covalent": 82,
+                "van_der_waals": null
+            },
+            "hardness": {
+                "brinell": null,
+                "mohs": 9.3,
+                "vickers": 4900
+            },
+            "moduli": {
+                "bulk": 320,
+                "young": null,
+                "shear": null,
+                "poissons_ratio": null
+            },
+            "density": {
+                "STP": 2460,
+                "liquid": 2080
+            },
+            "sound_transmission_speed": 16200
+        },
+        "historical": {
+            "discoverers": {
+                "Joseph Louis Gay-Lussac": "male",
+                "Louis Jacques Thénard": "male"
+            },
+            "date": "1798 ~ 1808 AD"
+        }
+    },
+    "Carbon": {
+        "general": {
+            "fullname": "Carbon",
+            "symbol": "C",
+            "atomic_number": 6,
+            "description": "Carbon is a nonmetallic chemical element with the symbol C and atomic number 6. It's the backbone of all known life, forming the basis of organic molecules like proteins, DNA, and carbohydrates. In its pure forms, carbon appears as graphite (soft and black), diamond (hard and transparent), and amorphous carbon (like charcoal or soot).",
+            "appearance": {
+                "color": null,
+                "phase": "solid"
+            },
+            "period": 2,
+            "group": 14,
+            "block": "p",
+            "type": "Reactive nonmetal",
+            "radioactive": false,
+            "half_life": null,
+            "cas_number": "CAS7440-44-0",
+            "identifiers": ["c", "carbon", "6"]
+        },
+        "nuclear": {
+            "protons": 6,
+            "neutrons": 6,
+            "electrons": 6,
+            "valence_electrons": 4
+        },
+        "physical": {
+            "atomic_mass": 12.011,
+            "melt": 3823,
+            "boil": 4300
+        },
+        "electronic": {
+            "electronegativity": 2.55,
+            "electron_affinity": 1.594,
+            "ionization_energy": 11.26,
+            "shells": [2, 4],
+            "subshells": ["1s2", "2s2", "2p2"],
+            "oxidation_states": [4, 2, -4],
+            "conductivity_type": "Semiconductor"
+        },
+        "measurements": {
+            "radius": {
+                "calculated": 67,
+                "empirical": 70,
+                "covalent": 77,
+                "van_der_waals": 170
+            },
+            "hardness": {
+                "brinell": null,
+                "mohs": 0.5,
+                "vickers": null
+            },
+            "moduli": {
+                "bulk": 33,
+                "young": null,
+                "shear": null,
+                "poissons_ratio": 0.2
+            },
+            "density": {
+                "STP": 2260,
+                "liquid": null
+            },
+            "sound_transmission_speed": 12000
+        },
+        "historical": {
+            "discoverers": {
+                "Antoine Lavoisier": "male"
+            },
+            "date": "1772 AD"
+        }
+    },
+    "Nitrogen": {
+        "general": {
+            "fullname": "Nitrogen",
+            "symbol": "N",
+            "atomic_number": 7,
+            "description": "Nitrogen is a colorless, odorless gas that constitutes 78% of the Earth's atmosphere. It is a nonmetal and the lightest member of group 15 of the periodic table.\nNitrogen is essential for life, forming the building blocks of proteins and nucleic acids, and is widely used in fertilizers, explosives, and industrial processes.",
+            "appearance": {
+                "color": null,
+                "phase": "gas"
+            },
+            "period": 2,
+            "group": 15,
+            "block": "p",
+            "type": "Reactive nonmetal",
+            "radioactive": false,
+            "half_life": null,
+            "cas_number": "CAS7727-37-9",
+            "identifiers": ["n", "nitrogen", "7"]
+        },
+        "nuclear": {
+            "protons": 7,
+            "neutrons": 7,
+            "electrons": 7,
+            "valence_electrons": 5
+        },
+        "physical": {
+            "atomic_mass": 14.0067,
+            "melt": -210.0,
+            "boil": -195.8
+        },
+        "electronic": {
+            "electronegativity": 3.04,
+            "electron_affinity": -0.073,
+            "ionization_energy": 14.534,
+            "shells": [2, 5],
+            "subshells": ["1s2", "2s2", "2p3"],
+            "oxidation_states": [-3, -2, -1, 0, 1, 2, 3, 4, 5],
+            "conductivity_type": "Insulator"
+        },
+        "measurements": {
+            "radius": {
+                "calculated": 65,
+                "empirical": null,
+                "covalent": 71,
+                "van_der_waals": 155
+            },
+            "hardness": {
+                "brinell": null,
+                "mohs": null,
+                "vickers": null
+            },
+            "moduli": {
+                "bulk": null,
+                "young": null,
+                "shear": null,
+                "poissons_ratio": null
+            },
+            "density": {
+                "STP": 1.2506,
+                "liquid": 808
+            },
+            "sound_transmission_speed": 343
+        },
+        "historical": {
+            "discoverers": {
+                "Daniel Rutherford": "male"
+            },
+            "date": "1772 AD"
+        }
+    }
+}

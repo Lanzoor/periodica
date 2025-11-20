@@ -5,3 +5,4 @@ src/output.json
 **/__pycache__/
 **/.ropeproject/
 **/a.out
+**/template.json

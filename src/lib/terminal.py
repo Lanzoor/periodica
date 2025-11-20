@@ -26,7 +26,7 @@ BRIGHT_MAGENTA = 5 + 60
 BRIGHT_CYAN = 6 + 60
 BRIGHT_WHITE = 7 + 60
 
-def fore(string, color: int | list[int] | tuple[int, int, int]) -> str:
+def fore(string, color: int | list[int] | tuple[int, int, int], *, disable: bool = False) -> str:
     if isinstance(color, int):
         processed = str(string)
         if (color > 7 and color != 9 and color < 60) or (color > 67): raise Exception("Unsupported default terminal color.")
@@ -40,71 +40,77 @@ def fore(string, color: int | list[int] | tuple[int, int, int]) -> str:
         red, green, blue = color
         return f"\033[38;2;{red};{green};{blue}m{processed}\033[39m"
 
-def back(string, color: int | list[int] | tuple[int, int, int]) -> str:
-    if isinstance(color, int):
-        processed = str(string)
-        if (color > 7 and color != 9 and color < 60) or (color > 67): raise Exception("Unsupported default terminal color.")
-        try:
-            return f"\033[{(40 + color)}m{processed}\033[49m"
-        except ValueError:
-            logging.warning(f"{color} was an invalid default terminal color. To the developers, please diagnose this issue.")
+def back(string, color: int | list[int] | tuple[int, int, int], *, disable: bool = False) -> str:
+    if not disable:
+        if isinstance(color, int):
+            processed = str(string)
+            if (color > 7 and color != 9 and color < 60) or (color > 67): raise Exception("Unsupported default terminal color.")
+            try:
+                return f"\033[{(40 + color)}m{processed}\033[49m"
+            except ValueError:
+                logging.warning(f"{color} was an invalid default terminal color. To the developers, please diagnose this issue.")
             return processed
-    else:
-        processed = str(string)
-        red, green, blue = color
-        return f"\033[48;2;{red};{green};{blue}m{processed}\033[49m"
+        else:
+            processed = str(string)
+            red, green, blue = color
+            return f"\033[48;2;{red};{green};{blue}m{processed}\033[49m"
+    return string
 
-def bold(string) -> str:
-    return f"\033[1m{string}\033[22m"
+def bold(string, *, disable: bool = False) -> str:
+    return f"\033[1m{string}\033[22m" if not disable else string
 
-def dim(string) -> str:
+def dim(string, *, disable: bool = False) -> str:
+    return f"\033[2m{string}\033[22m" if support_effects or (not disable) else string
+
+def italic(string, *, disable: bool = False) -> str:
     if support_effects:
-        return f"\033[2m{string}\033[22m"
+        return f"\033[3m{string}\033[23m"
+    elif not disable:
+        return bold(string)
     else:
         return string
 
-def italic(string) -> str:
-    if support_effects:
-        return f"\033[3m{string}\033[23m"
-    else:
-        return bold(string)
-
-def underline(string) -> str:
+def underline(string, *, disable: bool = False) -> str:
     if support_effects:
         return f"\033[4m{string}\033[24m"
-    else:
+    elif not disable:
         return bold(string)
+    else:
+        return string
 
-def inverse_color(string) -> str:
-    return f"\033[7m{string}\033[27m"
+def inverse_color(string, *, disable: bool = False) -> str:
+    return f"\033[7m{string}\033[27m" if not disable else string
 
-def gradient(message, start_rgb: list[int] | tuple[int, int, int], end_rgb: list[int] | tuple[int, int, int]):
-    start_hue, start_lightness, start_saturation = colorsys.rgb_to_hls(
-        start_rgb[0] / 255, start_rgb[1] / 255, start_rgb[2] / 255
-    )
-    end_hue, end_lightness, end_saturation = colorsys.rgb_to_hls(
-        end_rgb[0] / 255, end_rgb[1] / 255, end_rgb[2] / 255
-    )
+def gradient(message, start_rgb: list[int] | tuple[int, int, int], end_rgb: list[int] | tuple[int, int, int], *, disable: bool = False):
+    if not disable:
+        start_hue, start_lightness, start_saturation = colorsys.rgb_to_hls(
+            start_rgb[0] / 255, start_rgb[1] / 255, start_rgb[2] / 255
+        )
+        end_hue, end_lightness, end_saturation = colorsys.rgb_to_hls(
+            end_rgb[0] / 255, end_rgb[1] / 255, end_rgb[2] / 255
+        )
 
-    string_length = len(message)
-    if string_length == 0:
-        return ""
+        string_length = len(message)
+        if string_length == 0:
+            return ""
 
-    result_characters = list(message)
+        result_characters = list(message)
 
-    for index, character in enumerate(result_characters):
-        interpolation_factor = index / (string_length - 1) if string_length > 1 else 0
-        interpolated_hue = start_hue + (end_hue - start_hue) * interpolation_factor
-        interpolated_lightness = start_lightness + (end_lightness - start_lightness) * interpolation_factor
-        interpolated_saturation = start_saturation + (end_saturation - start_saturation) * interpolation_factor
+        for index, character in enumerate(result_characters):
+            interpolation_factor = index / (string_length - 1) if string_length > 1 else 0
+            interpolated_hue = start_hue + (end_hue - start_hue) * interpolation_factor
+            interpolated_lightness = start_lightness + (end_lightness - start_lightness) * interpolation_factor
+            interpolated_saturation = start_saturation + (end_saturation - start_saturation) * interpolation_factor
 
-        red, green, blue = [
-            int(value * 255)
-            for value in colorsys.hls_to_rgb(interpolated_hue, interpolated_lightness, interpolated_saturation)
-        ]
+            red, green, blue = [
+                int(value * 255)
+                for value in colorsys.hls_to_rgb(interpolated_hue, interpolated_lightness, interpolated_saturation)
+            ]
 
-        result_characters[index] = fore(character, (red, green, blue))
-    return "".join(result_characters)
+            result_characters[index] = fore(character, (red, green, blue))
+        return "".join(result_characters)
+    else:
+        return message
 
 def clear_screen():
     if support_effects:
@@ -114,9 +120,12 @@ def clear_line():
     if support_effects:
         print("\r\033[2K", end='', flush=True)
 
-def animate_print(message: str = "", delay: float = animation_delay, *, end: str = "\n"):
+def animate_print(message: str = "", delay: float = animation_delay, *, end: str = "\n", animation: str = ""):
     global animation_type
-    if animation_type == "char":
+
+    used_animation_type = animation if animation else animation_type
+
+    if used_animation_type == "char":
         ansi_escape = re.compile(r'(\x1b\[[0-9;]*m)')
         parts = ansi_escape.split(message)
         active_styles = ""
@@ -130,12 +139,12 @@ def animate_print(message: str = "", delay: float = animation_delay, *, end: str
                     sys.stdout.write(f"{active_styles}{char}")
                     sys.stdout.flush()
                     time.sleep(delay)
-    elif animation_type == "line":
+    elif used_animation_type == "line":
         for line in message.splitlines():
             sys.stdout.write(line + "\n")
             sys.stdout.flush()
             time.sleep(delay)
-    elif animation_type == "none":
+    elif used_animation_type == "none":
         print(message, end="")
 
     print(end, end="")
