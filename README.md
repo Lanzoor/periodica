@@ -1,17 +1,12 @@
-# IMPORTANT NOTE
-
-**DO NOT DOWNLOAD THIS PROGRAM RIGHT NOW.** This program is about to undergo a massive change in code structure and overall performance. Please wait more for the more stable versions.
-
 # Installation
 
-Of course, this is a Python script, which means you will need to run it with a Python interpreter.
-However, for most cases, I recommend you run the following methods;
+Of course, this is a Python script, which means you will need to run it with a Python interpreter. However, for most cases, I recommend you run the following methods;
 
 ## 🐧 Linux
 
-**Run these commands, one-by-one.** The method below is heavily recommended, instead of downloading the zipped source code.
+**Run these commands, one-by-one.** The method below is heavily recommended, instead of downloading the zipped source code. If you hate the terminal way below, **you can still manually download the ZIP file from GitHub.** **_Please do note that you still need to run the `~/dev/periodica/build.py` file to finish the setup._** The GitHub method is not recommended.
 
-> Make sure that you have the latest version of Python in your machine! It usually comes with Linux, but just be sure.
+> Make sure that you have the stable version of Python in your machine! It usually comes with Linux, but just be sure.
 
 ```bash
 # Clone the GitHub repository into a proper workspace directory.
@@ -29,8 +24,7 @@ periodica
 
 ### 1. Install Python
 
-Windows doesn’t come with Python by default — and even if it does, it’s probably outdated.
-Go to the official Python download page:
+Windows doesn’t come with Python by default — and even if it does, it’s probably outdated. Go to the official Python download page:
 
 👉 https://www.python.org/downloads/
 
@@ -47,8 +41,7 @@ py -m pip --version
 
 ### 2. Get the Source Code
 
-Click the **"<> Code ▼"** button on the GitHub repo, then choose **"🗂️ Download ZIP"**.
-Extract the contents somewhere convenient, then open a terminal in that folder.
+Click the **"<> Code ▼"** button on the GitHub repo, then choose **"🗂️ Download ZIP"**. You can also download the ZIP file in the [latest releases](https://github.com/Lanzoor/periodica/releases/tag/latest) and follow the steps below. Extract the contents somewhere convenient, then open a terminal in that folder.
 
 ### 3. Install the required dependencies
 
@@ -76,4 +69,4 @@ Or open the folder and double-click `main.py` — then select the Python interpr
 
 Go mess around with stuff, find some bugs, contribute improvements, or just enjoy playing with the element database!
 
-> The data.json file is public domain — feel free to use it however you like. **But giving credit helps and shows respect to the effort behind it.** (Just don’t say that you made it, or use it to get profit. That's some real legal trouble right there.)
+> The JSON files are public domain - feel free to use it _for yourself_, however you like. **But giving credit helps and shows respect to the effort behind it.** (Just don’t say that you made it, or use it to get profit / benefits. That's some real legal trouble right there.)
