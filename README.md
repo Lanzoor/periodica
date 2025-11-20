@@ -1,8 +1,6 @@
-# Important Note!
+# IMPORTANT NOTE
 
-So, this tool is still a good option, except for the fact that the database is incomplete and therefore is not ready for production.
-Please, DO NOT DOWNLOAD THIS SOFTWARE before it gets to the "stable" branch. We do not want random issues popping up in our source code.
-Only try and download this if you are testing the existing elements. But until the database gets completed? Yeah. Thanks for your understanding.
+**DO NOT DOWNLOAD THIS PROGRAM RIGHT NOW.** This program is about to undergo a massive change in code structure and overall performance. Please wait more for the more stable versions.
 
 # Installation
 
@@ -79,5 +77,3 @@ Or open the folder and double-click `main.py` — then select the Python interpr
 Go mess around with stuff, find some bugs, contribute improvements, or just enjoy playing with the element database!
 
 > The data.json file is public domain — feel free to use it however you like. **But giving credit helps and shows respect to the effort behind it.** (Just don’t say that you made it, or use it to get profit. That's some real legal trouble right there.)
-
-# IMPORTANT NOTE: Since how the program validates isotope names, any unadded isotope names will result in weird behaviours. Please, DO NOT TRUST THE DAUGHTER ISOTOPES OF RECENTLY ADDED ELEMENTS.
