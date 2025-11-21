@@ -17,9 +17,9 @@ except ImportError:
     print("The utils helper library or its scripts was not found. Please ensure all required files are present.")
     sys.exit(0)
 
-from lib.loader import get_config, get_response, Logger, import_failsafe, valid_sorting_methods
+from lib.loader import get_response, Logger, import_failsafe
 from lib.terminal import RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, DEFAULT_COLOR, BRIGHT_BLACK, BRIGHT_GREEN, BRIGHT_RED
-from lib.terminal import fore, back, inverse_color, bold, dim, italic, animate_print, clear_screen, gradient
+from lib.terminal import fore, back, inverse_color, bold, dim, italic, gradient
 from lib.directories import ELEMENT_DATA_FILE, ISOTOPE_DATA_FILE, OUTPUT_FILE, CONFIG_SCRIPT, UPDATE_SCRIPT
 from pprint import pprint
 
@@ -30,7 +30,7 @@ import_failsafe()
 EXPORT_ENABLED = False
 DEBUG_MODE = False
 ISOTOPE_LOGIC = False
-RAW_OUTPUT = False
+VERBOSE = True
 
 recognized_flag = False
 data_malformed = False
@@ -45,30 +45,20 @@ current_isotope_data = None
 
 logger = Logger(enable_debugging=DEBUG_MODE)
 
-# Configuration variables
-config = get_config()
-
-use_unicode = config["use_unicode"]
-support_effects = config["terminal_effects"]
-isotope_format = config["isotope_format"]
-animation_type = config["animation_type"]
-animation_delay = config["animation_delay"]
-constant_debugging = config["constant_debugging"]
-default_sorting_method = config["default_sorting_method"]
-
 # Defining unicode symbols
-def update_symbols(allow: bool = use_unicode):
-    global cm3, m3, mm2, pos, neg, neutral, pm, decay, energy, rho, chi, full_block, up_arrow, down_arrow, sigma, double_line, single_line, PHASE_TYPE_SYMBOLS, CONDUCTIVITY_TYPE_SYMBOLS
+def update_symbols(allow: bool = VERBOSE):
+    global cm3, m3, mm2, superscript_pos, superscript_neg, superscript_new, pm, emoji_chains, emoji_energy, rho, chi, full_block, up_arrow, down_arrow, sigma, double_line, single_line, PHASE_TYPE_SYMBOLS, CONDUCTIVITY_TYPE_SYMBOLS, emoji_exchange, emoji_speaker, emoji_radioactive
 
     cm3 = "cm³" if allow else "cm3"
     m3 = "m³" if allow else "m3"
     mm2 = "mm²" if allow else "mm2"
-    pos = "⁺" if allow else "+"
-    neg = "⁻" if allow else "-"
-    neutral = "⁰" if allow else "0"
-    pm = "±" if allow else "+-"
-    decay = "⛓️" if allow else "d"
-    energy = "⚡️" if allow else "E"
+
+    emoji_chains = "⛓️" if allow else "d"
+    emoji_energy = "⚡️" if allow else "E"
+    emoji_exchange = "🔃" if allow else "<->"
+    emoji_speaker = "📢" if allow else "->"
+    emoji_radioactive = "☢️" if allow else "!"
+
     rho = "ρ" if allow else "p"
     chi = "χ" if allow else "x"
     full_block = "█" if allow else "-"
@@ -77,6 +67,10 @@ def update_symbols(allow: bool = use_unicode):
     sigma = "σ" if allow else "s"
     double_line = "═" if allow else "="
     single_line = "─" if allow else "-"
+    superscript_pos = "⁺" if allow else "+"
+    superscript_neg = "⁻" if allow else "-"
+    superscript_new = "⁰" if allow else "0"
+    pm = "±" if allow else "+-"
 
     if allow:
         PHASE_TYPE_SYMBOLS = {
@@ -99,7 +93,7 @@ def update_symbols(allow: bool = use_unicode):
 update_symbols()
 
 # Defining custom colors (if terminal_effects is enabled)
-def update_color_configs(allow: bool = support_effects):
+def update_color_configs(allow: bool = VERBOSE):
     global VALENCE_ELECTRONS_COL, ELECTRONEG_COL, TURQUOISE, PINK, MELT_COL, BOIL_COL, ORANGE, INDIGO, NULL, EXCITED, PERIWINKLE, GOLD, ELEMENT_TYPE_COLORS, PHASE_TYPE_COLORS, CONDUCTIVITY_TYPE_COLORS, SUBSHELL_COLORS
 
     VALENCE_ELECTRONS_COL = (248, 255, 166) if allow else YELLOW
@@ -163,7 +157,6 @@ def pick_tip(tips: list[str]) -> str:
 normal_tips = [
     "(Tip: You can give this program argv to directly search an element from there. You can even give argv to the periodica.sh file too!)",
     "(Tip: Run this script with the --info flag to get information about flags.)",
-    "(Tip: Run this script with the --init flag to configure options like using unicode or terminal effects.)"
     "(Tip: In an input field, you can input quit (as well as a few more keywords) to exit the interactive input session.)",
     "(Tip: There are shorthand aliases to common flags, run the script with the --info (or -i) flag to get information about them.)",
 ]
@@ -193,13 +186,16 @@ positional_arguments = [arg.strip() for arg in get_positional_args()]
 flag_arguments = [arg.strip() for arg in get_flags()]
 
 valid_flags = [
-    "--debug", "--info", "--init", "--update", "--export",
-    "--compare", "--bond-type", "--random", "--version", "--test", "--raw"
-    "-d", "-i", "-I", "-u", "-x", "-C", "-B", "-R", "-v", "-T", "-r"
+    "--debug", "--info", "--update", "--export",
+    "--compare", "--bond-type", "--random", "--version", "--test", "--raw",
+
+    "-d", "-i", "-u", "-x",
+    "-C", "-B", "-R", "-v", "-T", "-r"
 ]
 
 flags_that_require_position_argument = [
     "--export", "--compare", "--bond-type",
+
     "-x", "-C", "-B"
 ]
 
@@ -230,7 +226,6 @@ def eV_to_kJpermol(eV):
 def format_energy(variable):
     return f"{bold(variable)}eV ≈ {bold(eV_to_kJpermol(variable))}kJ/mol"
 
-# Print helpers (they use print instead of animate_print since it takes a long time)
 def print_header(title, double=False):
     dash = double_line if double else single_line
     dashes = dash * (TERMINAL_WIDTH - len(title) - 4)
@@ -243,7 +238,7 @@ def print_separator():
 
 def check_for_termination(user_input):
     if user_input in ["quit", "q", "abort", "exit", "terminate", "stop"]:
-        animate_print("Okay. Exiting...")
+        print("Okay. Exiting...")
         logger.abort("User exited interactive input.")
 
 def ordinal(number):
@@ -351,7 +346,7 @@ def calculate_ionization_series(subshells: list[str], atomic_number: int, ioniza
             uncertainty = f"{pm}25eV"
 
         formatted_subshell = f"{subshell_str}1"
-        formatted_subshell = formatted_subshell[:-1] + convert_superscripts(formatted_subshell[-1]) if use_unicode else formatted_subshell
+        formatted_subshell = formatted_subshell[:-1] + convert_superscripts(formatted_subshell[-1]) if VERBOSE else formatted_subshell
 
         # Appending to the output
         lines.append(
@@ -405,17 +400,8 @@ def create_flag_event(*flags: str, callable):
 # Below are functions that get triggered by create_flag_event when flags are given
 def get_information():
     logger.info("User gave --info flag; redirecting to information logic.")
-    animate_print(program_information)
+    print(program_information)
     sys.exit(0)
-
-def configurate():
-    logger.info("User gave --init flag; redirecting to another script.")
-    if CONFIG_SCRIPT.is_file():
-        import configuration
-        sys.exit(0)
-    else:
-        animate_print(fore("Looks like the configuration script is missing. Please check for any missing files.", RED))
-        logger.abort("Failed to find the configuration script.")
 
 def check_for_updates():
     logger.info("User gave --update flag; redirecting to update logic.")
@@ -424,7 +410,7 @@ def check_for_updates():
         update_main()
         sys.exit(0)
     else:
-        animate_print(fore("Looks like the update script is missing. Please check for any missing files.", RED))
+        print(fore("Looks like the update script is missing. Please check for any missing files.", RED))
         logger.abort("Failed to find the update script.")
 
 def export_element():
@@ -440,12 +426,12 @@ def export_element():
     if user_input is not None:
         element, suggestion = process_isotope_input(user_input)
         if element is None and not suggestion:
-            animate_print(fore("Could not find that element or isotope. Please enter one manually.", RED))
+            print(fore("Could not find that element or isotope. Please enter one manually.", RED))
         elif element is None:
-            animate_print(fore(f"Could not find that element or isotope. Did you mean {suggestion}?", YELLOW))
+            print(fore(f"Could not find that element or isotope. Did you mean {suggestion}?", YELLOW))
 
     if element is None:
-        animate_print(f"Search for an element {italic('to export')} by name, symbol, or atomic number.")
+        print(f"Search for an element {italic('to export')} by name, symbol, or atomic number.")
         while element is None:
             user_input = input("> ").strip()
 
@@ -453,9 +439,9 @@ def export_element():
 
             element, suggestion = process_isotope_input(user_input)
             if element is None and not suggestion:
-                animate_print(fore("Could not find that element or isotope. Please enter one manually.", RED))
+                print(fore("Could not find that element or isotope. Please enter one manually.", RED))
             elif element is None:
-                animate_print(fore(f"Could not find that element or isotope. Did you mean {suggestion}?", YELLOW))
+                print(fore(f"Could not find that element or isotope. Did you mean {suggestion}?", YELLOW))
 
 
     is_isotope = "info" in element and "symbol" in element
@@ -465,7 +451,7 @@ def export_element():
     else:
         name = element["general"]["fullname"].capitalize()
 
-    animate_print(f"Saving data of {bold(name)} to {OUTPUT_FILE}...")
+    print(f"Saving data of {bold(name)} to {OUTPUT_FILE}...")
 
     with open(OUTPUT_FILE, "w", encoding="utf-8") as file:
         if is_isotope:
@@ -488,7 +474,7 @@ def export_element():
                 ensure_ascii=False
             )
 
-    animate_print(f"Successfully saved to {OUTPUT_FILE}.")
+    print(f"Successfully saved to {OUTPUT_FILE}.")
     sys.exit(0)
 
 def compare_by_factor():
@@ -525,13 +511,18 @@ def compare_by_factor():
         "sound_transmission_speed"
     ]
 
+    valid_sorting_methods = [
+        "ascending",
+        "descending",
+        "name"
+    ]
     determiner = ""
-    sorting_method = default_sorting_method
+    sorting_method = "ascending"
 
     for index, argument in enumerate(positional_arguments):
         if argument in valid_sorting_methods:
             sorting_method = argument
-            animate_print(f"Using the sorting method {bold(argument)} for sorting...")
+            print(f"Using the sorting method {bold(argument)} for sorting...")
             logger.info(f"Using {argument} sorting for sorting.")
             del positional_arguments[index]
             break
@@ -541,11 +532,11 @@ def compare_by_factor():
     if factor_candidate and factor_candidate not in factors:
         suggestion = difflib.get_close_matches(factor_candidate, factors, n=1, cutoff=0.6)
         if suggestion:
-            animate_print(fore(f"Not a valid factor. Did you mean \"{bold(suggestion[0])}\"?", YELLOW))
+            print(fore(f"Not a valid factor. Did you mean \"{bold(suggestion[0])}\"?", YELLOW))
             logger.warn(f"No direct match found for '{factor_candidate}'. Found a close match; '{suggestion[0]}'?")
             factor_candidate = None
         else:
-            animate_print(fore("Not a valid factor. Please provide one manually.", RED))
+            print(fore("Not a valid factor. Please provide one manually.", RED))
             logger.warn(f"No direct match found for '{factor_candidate}'.")
             factor_candidate = None
 
@@ -624,7 +615,7 @@ def compare_by_factor():
     ) + "\n"
 
     if factor_candidate not in factors:
-        animate_print(f"Please enter a factor to compare all the elements with. The valid factors are:\n  {formatted_factors}{dim(compare_tip)}")
+        print(f"Please enter a factor to compare all the elements with. The valid factors are:\n  {formatted_factors}{dim(compare_tip)}")
 
     while True:
         if factor_candidate and factor_candidate in factors:
@@ -635,17 +626,17 @@ def compare_by_factor():
         if factor_candidate:
             suggestion = difflib.get_close_matches(factor_candidate, factors, n=1, cutoff=0.6)
             if suggestion:
-                animate_print(fore(f"Not a valid factor. Did you mean \"{bold(suggestion[0])}\"?", YELLOW))
+                print(fore(f"Not a valid factor. Did you mean \"{bold(suggestion[0])}\"?", YELLOW))
                 logger.warn(f"No direct match found for '{factor_candidate}'. Found a close match; '{suggestion[0]}'?")
             else:
-                animate_print(fore("Not a valid factor. Please try again.", RED))
+                print(fore("Not a valid factor. Please try again.", RED))
                 logger.warn(f"No direct match found for '{factor_candidate}'.")
 
         factor_candidate = "_".join(input("> ").strip().lower().split(" "))
         check_for_termination(factor_candidate)
 
     clear_screen()
-    animate_print(f"\nComparing all elements by factor {bold(factor)} in a(n) {bold(sorting_method)} order... {dim('(Please note that some elements may be missing, and the data is trimmed up to 4 digits of float numbers.)')}\n")
+    print(f"\nComparing all elements by factor {bold(factor)} in a(n) {bold(sorting_method)} order... {dim('(Please note that some elements may be missing, and the data is trimmed up to 4 digits of float numbers.)')}\n")
     logger.info(f"Comparing all elements by factor {factor}...")
 
     result: dict[str, float | int | None] = {}
@@ -656,7 +647,7 @@ def compare_by_factor():
 
     valid_results = [(name, value) for name, value in result.items() if value is not None]
     if not valid_results:
-        animate_print(fore(f"No valid data for {factor}", RED))
+        print(fore(f"No valid data for {factor}", RED))
         logger.error(f"No elements have valid {factor} data")
         sys.exit(0)
 
@@ -681,11 +672,11 @@ def compare_by_factor():
             bar_space = max(TERMINAL_WIDTH - padding, 10)
             bar_length = int((value / max_value) * bar_space)
             bar = fore(full_block * bar_length, CYAN)
-            animate_print(f"{name:<12} {str(round(value, 4)) + determiner:<12} [{bar}]")
+            print(f"{name:<12} {str(round(value, 4)) + determiner:<12} [{bar}]")
         elif value is None:
             none_counter += 1
             none_list.append(name)
-            animate_print(f"{name:<12} {fore("None", NULL) + " " * 8} []")
+            print(f"{name:<12} {fore("None", NULL) + " " * 8} []")
 
     # Calculate stats
     valid_values = [value for _, value in valid_results]
@@ -694,13 +685,13 @@ def compare_by_factor():
     lowest_pair = min(valid_results, key=lambda item: item[1])
     formatted_nones = ', '.join(map(lambda element: bold(element), none_list))
 
-    animate_print()
-    animate_print(f"Average - {bold(round(average, 4))}{determiner}")
-    animate_print(f"Element with the highest {factor} is {bold(highest_pair[0])}, with {bold(highest_pair[1])}{determiner}.")
-    animate_print(f"Element with the lowest {factor} is {bold(lowest_pair[0])}, with {bold(lowest_pair[1])}{determiner}.")
+    print()
+    print(f"Average - {bold(round(average, 4))}{determiner}")
+    print(f"Element with the highest {factor} is {bold(highest_pair[0])}, with {bold(highest_pair[1])}{determiner}.")
+    print(f"Element with the lowest {factor} is {bold(lowest_pair[0])}, with {bold(lowest_pair[1])}{determiner}.")
 
     if none_counter > 0:
-        animate_print(fore(f"{none_counter} element(s) do not have a value in {bold(factor)}, and they are;\n  {formatted_nones}", NULL))
+        print(fore(f"{none_counter} element(s) do not have a value in {bold(factor)}, and they are;\n  {formatted_nones}", NULL))
     sys.exit(0)
 
 def compare_bond_type():
@@ -715,14 +706,14 @@ def compare_bond_type():
         secondary_element, _ = find_element(positional_arguments[1])
 
         if primary_element is None or secondary_element is None:
-            animate_print(fore("One or both elements could not be resolved from the arguments. Please provide them manually.", YELLOW))
+            print(fore("One or both elements could not be resolved from the arguments. Please provide them manually.", YELLOW))
             primary_element = None
             secondary_element = None
         else:
             logger.info(f"Resolved both elements from CLI args: {positional_arguments[0]}, {positional_arguments[1]}")
 
     if primary_element is None:
-        animate_print(f"Search for the primary element {italic('to compare the bond type')} with by name, symbol, or atomic number.")
+        print(f"Search for the primary element {italic('to compare the bond type')} with by name, symbol, or atomic number.")
         while True:
             user_input = input("> ").strip().lower()
             logger.info(f"Primary input: \"{user_input}\"")
@@ -732,14 +723,14 @@ def compare_bond_type():
             if primary_element:
                 break
             if suggestion:
-                animate_print(fore(f"Not a valid element. Did you mean \"{bold(suggestion)}\"?", YELLOW))
+                print(fore(f"Not a valid element. Did you mean \"{bold(suggestion)}\"?", YELLOW))
             else:
-                animate_print(fore(f"Not a valid element.", RED))
+                print(fore(f"Not a valid element.", RED))
 
     primary_element_name = primary_element["general"]["fullname"]
 
     if secondary_element is None:
-        animate_print(f"Now, please enter the secondary element {italic('to compare the bond type')} with {bold(primary_element_name)}.")
+        print(f"Now, please enter the secondary element {italic('to compare the bond type')} with {bold(primary_element_name)}.")
         while True:
             user_input = input("> ").strip().lower()
             logger.info(f"Secondary input: \"{user_input}\"")
@@ -749,56 +740,49 @@ def compare_bond_type():
             if secondary_element:
                 break
             if suggestion:
-                animate_print(fore(f"Not a valid element. Did you mean \"{bold(suggestion)}\"?", YELLOW))
+                print(fore(f"Not a valid element. Did you mean \"{bold(suggestion)}\"?", YELLOW))
             else:
-                animate_print(fore(f"Not a valid element.", RED))
+                print(fore(f"Not a valid element.", RED))
 
     secondary_element_name = secondary_element["general"]["fullname"]
     primary_en = primary_element["electronic"]["electronegativity"]
     secondary_en = secondary_element["electronic"]["electronegativity"]
 
     if primary_en is None or secondary_en is None:
-        animate_print(fore("Failed to fetch bond type; one or both elements lack electronegativity values (likely inert).", YELLOW))
+        print(fore("Failed to fetch bond type; one or both elements lack electronegativity values (likely inert).", YELLOW))
         sys.exit(0)
 
     diff = abs(primary_en - secondary_en)
     if diff < 0.4:
         bond_type_str = fore("Nonpolar Covalent", BLUE) + " -"
     elif diff < 1.7:
-        bond_type_str = fore("Polar Covalent", YELLOW) + (" δ" if use_unicode else " d")
+        bond_type_str = fore("Polar Covalent", YELLOW) + (" δ" if VERBOSE else " d")
     else:
-        bond_type_str = fore("Ionic", RED) + (" →" if use_unicode else " >")
+        bond_type_str = fore("Ionic", RED) + (" →" if VERBOSE else " >")
 
-    animate_print()
-    animate_print(f"Primary element ({primary_element_name})'s electronegativity: {bold(primary_en)}")
-    animate_print(f"Secondary element ({secondary_element_name})'s electronegativity: {bold(secondary_en)}")
-    animate_print(f"Difference: {primary_en} - {secondary_en} = {bold(f'{diff:.3f}')}")
-    animate_print(f"Bond type: {bond_type_str} (According to Pauling's Electronegativity Method)")
-    animate_print()
+    print()
+    print(f"Primary element ({primary_element_name})'s electronegativity: {bold(primary_en)}")
+    print(f"Secondary element ({secondary_element_name})'s electronegativity: {bold(secondary_en)}")
+    print(f"Difference: {primary_en} - {secondary_en} = {bold(f'{diff:.3f}')}")
+    print(f"Bond type: {bond_type_str} (According to Pauling's Electronegativity Method)")
+    print()
     sys.exit(0)
 
 def select_random_element():
     global current_element_data
-    animate_print("Picking a random element for you...")
+    print("Picking a random element for you...")
     logger.info("Picking a random element...")
 
     current_element_data = random.choice(list(full_element_data.values()))
-    animate_print(f"I pick {bold(current_element_data["general"]["fullname"])} for you!")
+    print(f"I pick {bold(current_element_data["general"]["fullname"])} for you!")
     logger.info(f"Picked {current_element_data["general"]["fullname"]} as a random element.")
 
 def enable_debugging():
     global DEBUG_MODE, logger
     DEBUG_MODE = True
-    animate_print(gradient("Debug mode enabled. Have fun...", ELECTRONEG_COL, NULL)) # type: ignore
+    print(gradient("Debug mode enabled. Have fun...", ELECTRONEG_COL, NULL) if VERBOSE else fore("Debug mode enabled. Have fun...", BLUE)) # type: ignore
     logger = Logger(enable_debugging=DEBUG_MODE)
     logger.info("Enabled debug mode.")
-    if constant_debugging:
-        logger.info("Debug mode was enabled due to the constant_debugging configuration.")
-
-    logger.info(f"Configuration overview: use_unicode={use_unicode}, terminal_effects={support_effects}, "
-                f"isotope_format={isotope_format}, animation={animation_type}, "
-                f"animation_delay={animation_delay}s, constant_debugging={constant_debugging}, default_sorting_method={default_sorting_method}")
-
     if flag_arguments:
         logger.info(f"Given flags: {", ".join(flag_arguments)}")
 
@@ -806,10 +790,9 @@ def enable_debugging():
         logger.info(f"Other positional arguments given: {", ".join(positional_arguments)}")
 
 def enable_raw_output():
-    global RAW_OUTPUT, animate_print, fore, back, bold, dim, italic, inverse_color, gradient
-    RAW_OUTPUT = True
+    global VERBOSE, print, fore, back, bold, dim, italic, inverse_color, gradient
+    VERBOSE = False
     logger.info("Enabled raw output mode.")
-    animate_print = functools.partial(animate_print, animation="none")
 
     funclist = ['fore', 'back', 'bold', 'dim', 'italic', 'inverse_color', 'gradient']
     for name in funclist:
@@ -819,11 +802,11 @@ def enable_raw_output():
     update_color_configs(False)
 
 # Debugging is the first priority, therefore enable it ASAP when it gets activated to avoid syntax checking
-if ("--debug" in flag_arguments or "-d" in flag_arguments) or constant_debugging:
+if ("--debug" in flag_arguments or "-d" in flag_arguments):
     enable_debugging()
 
 # This is another priority
-if ("--raw" in flag_arguments or "-r" in flag_arguments) or constant_debugging:
+if ("--raw" in flag_arguments or "-r" in flag_arguments):
     enable_raw_output()
 
 def fetch_version():
@@ -834,8 +817,8 @@ def fetch_version():
 
     local_version = fetch_toml()
 
-    animate_print(f"Version: {local_version}")
-    animate_print(f"Python Interpreter: {".".join(platform.python_version_tuple())}")
+    print(f"Version: {local_version}")
+    print(f"Python Interpreter: {".".join(platform.python_version_tuple())}")
 
     sys.exit(0)
 
@@ -845,7 +828,7 @@ def import_testing():
         import lib.testing
         sys.exit(0)
     except ImportError:
-        animate_print(fore("Looks like the testing script is missing. Please check for any missing files.", RED))
+        print(fore("Looks like the testing script is missing. Please check for any missing files.", RED))
         logger.abort("Failed to find the testing script.")
 
 # Extract symbol and number from an isotope
@@ -862,27 +845,26 @@ def extract_isotope_factors(user_input: str) -> typing.Tuple[str | None, str | N
 
 def print_isotope(norm_iso, info, fullname):
     global animation_delay
-    animation_delay /= 4
 
     match = re.match(r"^(\d+)\s*([A-Za-z]+)$", remove_superscripts(norm_iso))
     display_name = format_isotope(norm_iso, fullname) if match else norm_iso
 
     name_display = f" ({info['name']})" if 'name' in info else ""
-    animate_print(f"  - {bold(display_name)}{name_display}:")
+    print(f"  - {bold(display_name)}{name_display}:")
 
     protons = info['protons']
     neutrons = info['neutrons']
-    animate_print(f"      p{pos}, e{neg} - {fore('Protons', RED)} and {fore('Electrons', YELLOW)}: {bold(protons)}")
-    animate_print(f"      n{neutral} - {fore('Neutrons', BLUE)}: {bold(neutrons)}")
+    print(f"      p{superscript_pos}, e{superscript_neg} - {fore('Protons', RED)} and {fore('Electrons', YELLOW)}: {bold(protons)}")
+    print(f"      n{superscript_new} - {fore('Neutrons', BLUE)}: {bold(neutrons)}")
 
     up_quarks = protons * 2 + neutrons
     down_quarks = protons + neutrons * 2
-    animate_print(f"      u - {fore('Up Quarks', GREEN)}: ({fore(protons, RED)} * 2) + {fore(neutrons, BLUE)} = {bold(up_quarks)}")
-    animate_print(f"      d - {fore('Down Quarks', CYAN)}: {fore(protons, RED)} + ({fore(neutrons, BLUE)} * 2) = {bold(down_quarks)}")
+    print(f"      u - {fore('Up Quarks', GREEN)}: ({fore(protons, RED)} * 2) + {fore(neutrons, BLUE)} = {bold(up_quarks)}")
+    print(f"      d - {fore('Down Quarks', CYAN)}: {fore(protons, RED)} + ({fore(neutrons, BLUE)} * 2) = {bold(down_quarks)}")
 
     half_life = info.get('half_life')
-    animate_print(f"      t1/2 - {fore("Half Life", PERIWINKLE)}: {bold(half_life) if half_life else fore('Stable', NULL)}")
-    animate_print(f"      u - {fore("Isotope Weight", BRIGHT_RED)}: {bold(info['isotope_weight'])}g/mol")
+    print(f"      t1/2 - {fore("Half Life", PERIWINKLE)}: {bold(half_life) if half_life else fore('Stable', NULL)}")
+    print(f"      u - {fore("Isotope Weight", BRIGHT_RED)}: {bold(info['isotope_weight'])}g/mol")
 
     def show_decay(decays, indent=12):
         padding = " " * indent
@@ -906,25 +888,23 @@ def print_isotope(norm_iso, info, fullname):
             out = ", ".join(bold(format_isotope(product, fullname)) for product in products)
             arrow = "->" if products else ""
 
-            animate_print(f"{padding}{bold(display_name)} -> {bold(mode)} {arrow} {out} {chance}")
+            print(f"{padding}{bold(display_name)} -> {bold(mode)} {arrow} {out} {chance}")
 
     if isinstance(info.get("decay"), list):
-        animate_print(f"      {decay} - {fore("Possible Decays", GOLD)}:")
+        print(f"      {emoji_chains} - {fore("Possible Decays", GOLD)}:")
         show_decay(info["decay"])
 
     if isinstance(info.get("metastable"), dict):
-        animate_print(f"      m - {fore("Metastable Isotopes", EXCITED)}:")
+        print(f"      m - {fore("Metastable Isotopes", EXCITED)}:")
         for state, data in info["metastable"].items():
             display_meta = format_isotope(norm_iso, fullname, metastable=state)
-            animate_print(f"        {bold(display_meta)}:")
+            print(f"        {bold(display_meta)}:")
             if "half_life" in data:
-                animate_print(f"          t1/2 - {fore("Half Life", PERIWINKLE)}: {bold(data['half_life'])}")
-            animate_print(f"          {energy} - {fore("Excitation Energy", EXCITED)}: {bold(data['energy'])}keV")
+                print(f"          t1/2 - {fore("Half Life", PERIWINKLE)}: {bold(data['half_life'])}")
+            print(f"          {emoji_energy} - {fore("Excitation Energy", EXCITED)}: {bold(data['energy'])}keV")
             if "decay" in data:
-                animate_print(f"          {decay} - {fore("Possible Decays", GOLD)}:")
+                print(f"          {emoji_chains} - {fore("Possible Decays", GOLD)}:")
                 show_decay(data["decay"], indent=14)
-
-    animation_delay *= 4
 
 # Formats an isotope respecting the isotope format
 def format_isotope(norm_iso, fullname, *, metastable = ""):
@@ -936,18 +916,7 @@ def format_isotope(norm_iso, fullname, *, metastable = ""):
     else:
         number, symbol = match.groups()
         symbol = symbol.capitalize()
-        if isotope_format == "fullname-number":
-            return f"{fullname.capitalize()}-{number}{metastable}"
-        elif isotope_format == "symbol-number":
-            return f"{symbol}-{number}{metastable}"
-        elif isotope_format == "numbersymbol":
-            number = convert_superscripts(str(number)) if use_unicode else number
-            return f"{number}{metastable}{symbol}"
-        elif isotope_format == "number-symbol":
-            number = convert_superscripts(str(number)) if use_unicode else number
-            return f"{number}{metastable}-{symbol}"
-        else:
-            return f"{symbol}-{number}{metastable}"
+        return f"{fullname.capitalize()}-{number}{metastable}"
 
 def recognize_isotope(element_identifier, mass_number, search_query):
     def use_isotope(isotopes, element_symbol, element_name, mass_number, search_query) -> dict | bool:
@@ -974,7 +943,7 @@ def recognize_isotope(element_identifier, mass_number, search_query):
                 print_separator()
                 return True
 
-        animate_print(fore(f"No isotope match found for mass number {mass_number} in element {element_name}. Please provide one manually.", YELLOW))
+        print(fore(f"No isotope match found for mass number {mass_number} in element {element_name}. Please provide one manually.", YELLOW))
         logger.warn(f"No isotope match found for mass number {mass_number} in element {element_name}")
         return False
 
@@ -1057,7 +1026,7 @@ def safe_format(value, measurement = "", *, placeholder = "None"):
     return fore(placeholder, NULL)
 
 # Information
-periodica_logo = bold(gradient("Periodica", (156, 140, 255), (140, 255, 245)) if support_effects else fore("periodica", BLUE))
+periodica_logo = bold(gradient("Periodica", (156, 140, 255), (140, 255, 245)) if VERBOSE else fore("periodica", BLUE))
 
 program_information = f"""
 Welcome to {periodica_logo}!
@@ -1076,9 +1045,6 @@ There are also other flags you can provide to this CLI. (The ones marked after t
 
 - {bold("--version")} / -v
 - Check the version
-
-- {bold("--init")} / -I
-- Edit the settings
 
 - {bold("--update")} / -u
 - Check for updates
@@ -1117,33 +1083,33 @@ try:
         logger.info("isotopes.json file was successfully found.")
 except json.JSONDecodeError:
     logger.warn("The data JSON files were modified, please do not do so no matter what.")
-    animate_print("The data JSON files were modified and malformed. Please do not do so, no matter what.\nThis means you need fresh data JSON files, is it okay for me to get the file for you on GitHub? (y/N)")
+    print("The data JSON files were modified and malformed. Please do not do so, no matter what.\nThis means you need fresh data JSON files, is it okay for me to get the file for you on GitHub? (y/N)")
     data_malformed = True
 except FileNotFoundError:
     logger.warn("The data JSON files were not found.")
-    animate_print("The data JSON files were not found. Is it okay for me to get the file for you on GitHub? (y/N)")
+    print("The data JSON files were not found. Is it okay for me to get the file for you on GitHub? (y/N)")
     data_malformed = True
 
 if data_malformed:
     confirmation = input("> ").strip().lower()
     if confirmation not in ["y", "yes"]:
-        animate_print("Okay, exiting...")
+        print("Okay, exiting...")
         logger.abort(f"User denied confirmation for fetching the correct data JSON files.")
 
     element_url = "https://raw.githubusercontent.com/Lanzoor/periodica/main/src/elements.json"
     isotope_url = "https://raw.githubusercontent.com/Lanzoor/periodica/main/src/isotopes.json"
 
-    animate_print(f"(1/2) Getting content from {element_url}.")
+    print(f"(1/2) Getting content from {element_url}.")
     response = get_response(element_url)
-    animate_print("(1/2) Successfully got the elements.json file. Replacing it...")
+    print("(1/2) Successfully got the elements.json file. Replacing it...")
     full_element_data = json.loads(response.text)
     with open(ELEMENT_DATA_FILE, "w", encoding="utf-8") as file:
         file.write(response.text)
     logger.info(f"(1/2) Successfully got the elements.json file from {isotope_url}.")
 
-    animate_print(f"(2/2) Getting content from {isotope_url}.")
+    print(f"(2/2) Getting content from {isotope_url}.")
     response = get_response(isotope_url)
-    animate_print("(2/2) Successfully got the isotopes.json file. Replacing it...")
+    print("(2/2) Successfully got the isotopes.json file. Replacing it...")
     full_isotope_data = json.loads(response.text)
     with open(ISOTOPE_DATA_FILE, "w", encoding="utf-8") as file:
         file.write(response.text)
@@ -1155,13 +1121,13 @@ try:
     TERMINAL_HEIGHT = os.get_terminal_size().lines
     logger.info(f"Terminal size: {TERMINAL_WIDTH}x{TERMINAL_HEIGHT} (width x height)")
 except OSError:
-    animate_print(bold("You aren't running this on a terminal, which is very weird. We will try to ignore this issue, and will determine your terminal width as 80. Please move on like nothing ever happened."))
+    print(bold("You aren't running this on a terminal, which is very weird. We will try to ignore this issue, and will determine your terminal width as 80. Please move on like nothing ever happened."))
     logger.warn("The script ran without a terminal, so failback to reasonable terminal width variable.")
     TERMINAL_WIDTH = 80
     TERMINAL_HEIGHT = 40
 
 if TERMINAL_WIDTH < 80:
-    animate_print(fore(f"You are running this program in a terminal that has a width of {bold(TERMINAL_WIDTH)},\nwhich may be too compact to display and provide the information.\nPlease try resizing your terminal.\nThis will still display content, but it may look broken or unintended.", RED))
+    print(fore(f"You are running this program in a terminal that has a width of {bold(TERMINAL_WIDTH)},\nwhich may be too compact to display and provide the information.\nPlease try resizing your terminal.\nThis will still display content, but it may look broken or unintended.", RED))
     logger.warn("Not enough width for terminal.")
 
 if len(sys.argv) > 1:
@@ -1169,7 +1135,7 @@ if len(sys.argv) > 1:
     unrecognized_flags = [f for f in separated_flags if f not in valid_flags]
 
     if unrecognized_flags:
-        animate_print("Unrecognizable flags detected. Run the script with the --info flag for more information.")
+        print("Unrecognizable flags detected. Run the script with the --info flag for more information.")
         logger.abort("Unrecognizable flags detected.")
 
     logger.info(f"Primary flags (after separation and filtering): {filtered_flags}")
@@ -1180,21 +1146,20 @@ if len(sys.argv) > 1:
     if len(filtered_flags) == 0:
         user_input = positional_arguments[0] if positional_arguments else None
     elif len(filtered_flags) != 1:
-        animate_print("Multiple main flags detected. Run the script with the --info flag for more information.")
+        print("Multiple main flags detected. Run the script with the --info flag for more information.")
         logger.abort("Multiple main flags detected.")
     else:
         primary_flag = filtered_flags[0]
         if primary_flag in flags_that_require_position_argument:
             if len(positional_arguments) == 0:
-                animate_print(f"Flag {primary_flag} requires a positional argument. Refer to --info.")
+                print(f"Flag {primary_flag} requires a positional argument. Refer to --info.")
                 logger.abort(f"Missing positional argument for {primary_flag}.")
             user_input = positional_arguments[0]
         elif len(positional_arguments) > 0:
-            animate_print("Unexpected positional argument. Refer to --info.")
+            print("Unexpected positional argument. Refer to --info.")
             logger.abort("Unexpected additional arguments.")
         recognized_flag = (
             create_flag_event("--info", "-i", callable=get_information) or
-            create_flag_event("--init", "-I", callable=configurate) or
             create_flag_event("--update", "-u", callable=check_for_updates) or
             create_flag_event("--export", "-x", callable=export_element) or
             create_flag_event("--compare", "-C", callable=compare_by_factor) or
@@ -1211,7 +1176,7 @@ if len(sys.argv) > 1:
             sys.exit(0)
         if current_element_data is None:
             message = f"Invalid element or isotope.{' Did you mean \"' + bold(current_element_suggestion) + '\"?' if current_element_suggestion else ' Falling back to interactive input.'}"
-            animate_print(fore(message, YELLOW if current_element_suggestion else RED))
+            print(fore(message, YELLOW if current_element_suggestion else RED))
             logger.warn("No valid element or isotope provided from argv, fallback to interactive.")
     else:
         logger.warn("Element argument entry not given, falling back to interactive input.")
@@ -1219,7 +1184,7 @@ else:
     logger.warn("No arguments provided, falling back to interactive input.")
 
 if current_element_data is None:
-    animate_print(f"Search for an element by name, symbol, or atomic number. {dim(tip)}")
+    print(f"Search for an element by name, symbol, or atomic number. {dim(tip)}")
     while True:
         user_input = input("> ").strip().lower()
         logger.info(f"User gave input: \"{user_input}\"")
@@ -1237,10 +1202,10 @@ if current_element_data is None:
         message = "Not a valid element or isotope."
         if current_element_suggestion:
             message += f" Did you mean \"{bold(current_element_suggestion)}\"?"
-        animate_print(fore(message, YELLOW if current_element_suggestion else RED))
+        print(fore(message, YELLOW if current_element_suggestion else RED))
 
 if DEBUG_MODE:
-    animate_print("Printing data...")
+    print("Printing data...")
     pprint(current_element_data, indent = 2, width=TERMINAL_WIDTH, sort_dicts=False, underscore_numbers=True)
 
 # Dividing categories
@@ -1359,7 +1324,7 @@ for index, subshell in enumerate(subshells):
         logger.warn(f"To the developers, a malformed subshell was detected in {fullname.capitalize()}. Issue: {subshell}")
         continue
 
-    formatted_subshell = subshell[:-1] + (convert_superscripts(subshell[-1]) if use_unicode else subshell[-1])
+    formatted_subshell = subshell[:-1] + (convert_superscripts(subshell[-1]) if VERBOSE else subshell[-1])
     match = pattern.match(subshell)
     if match:
         energy_level, subshell_type, electron_count = match.groups()
@@ -1429,7 +1394,7 @@ if subshells:
 
         effective_nuclear_charge = atomic_number - shielding_constant
 
-        last_subshell = last_subshell[:-1] + convert_superscripts(last_subshell[-1]) if use_unicode else last_subshell
+        last_subshell = last_subshell[:-1] + convert_superscripts(last_subshell[-1]) if VERBOSE else last_subshell
         last_subshell = fore(last_subshell, SUBSHELL_COLORS.get(subshell_type, (255, 255, 255)))
 
         subshell_visualisation += f"\n\n      {fore("Valence Subshell", VALENCE_ELECTRONS_COL)} ({inverse_color(last_subshell)}):"
@@ -1499,14 +1464,14 @@ sound_transmission_speed = measurements["sound_transmission_speed"]
 
 logger.info("Starting output.")
 
-animate_print()
+print()
 print_header("General")
-animate_print()
+print()
 
-animate_print(f" 🔡 - Element Name: {bold(fullname)} ({bold(symbol)})")
-animate_print(f" Z - Atomic Number: {bold(atomic_number)}")
-animate_print(f" 📃 - Description: {description}\n")
-animate_print(f" 🔡 - STP Phase: {formatted_phase}")
+print(f" 🔡 - Element Name: {bold(fullname)} ({bold(symbol)})")
+print(f" Z - Atomic Number: {bold(atomic_number)}")
+print(f" 📃 - Description: {description}\n")
+print(f" 🔡 - STP Phase: {formatted_phase}")
 
 if color is not None:
     try:
@@ -1514,29 +1479,29 @@ if color is not None:
     except (KeyError, ValueError):
         logger.warn(f"No color description for {fullname.capitalize()} given when the color was present. Please pay attention.")
         color_description = "not given"
-    if support_effects:
+    if VERBOSE:
         r, g, b = color
         colored_block = fore(full_block * 2, (r, g, b))
-        animate_print(f" 🎨 - Standard Color: {colored_block} ({bold(color_description)})")
+        print(f" 🎨 - Standard Color: {colored_block} ({bold(color_description)})")
     else:
-        animate_print(f" 🎨 - Standard Color: {color_description}")
+        print(f" 🎨 - Standard Color: {color_description}")
 else:
-    animate_print(f" 🎨 - Standard Color: {fore("Colorless", NULL)}")
+    print(f" 🎨 - Standard Color: {fore("Colorless", NULL)}")
 
-animate_print(f" 🔍 - Discoverer(s): {discoverers}")
-animate_print(f" 🔍 - Discovery Date: {bold(discovery_date)}")
-animate_print(f" ↔️ - Period (Row): {bold(period)}")
-animate_print(f" ↕️ - Group (Column): {bold(group)}")
+print(f" 🔍 - Discoverer(s): {discoverers}")
+print(f" 🔍 - Discovery Date: {bold(discovery_date)}")
+print(f" ↔️ - Period (Row): {bold(period)}")
+print(f" ↕️ - Group (Column): {bold(group)}")
 
 try:
-    animate_print(f" 🎨 - Type: {bold(fore(element_type, ELEMENT_TYPE_COLORS[element_type]))}")
+    print(f" 🎨 - Type: {bold(fore(element_type, ELEMENT_TYPE_COLORS[element_type]))}")
 except KeyError:
     logger.warn(f"Invalid element type for {fullname.capitalize()}. Please pay attention.")
 
-animate_print(f" 🧱 - Block: {bold(block)}")
-animate_print(f" 📇 - CAS Number: {bold(cas_number)}")
+print(f" 🧱 - Block: {bold(block)}")
+print(f" 📇 - CAS Number: {bold(cas_number)}")
 
-if use_unicode:
+if VERBOSE:
     print()
 
     print("  ", end="")
@@ -1561,81 +1526,81 @@ print()
 print_header("Nuclear Properties")
 print()
 
-animate_print(f" p{pos} - {fore('Protons', RED)}: {bold(protons)}")
-animate_print(f" n{neutral} - {fore('Neutrons', BLUE)}: {bold(neutrons)}")
-animate_print(f" e{neg} - {fore('Electrons', YELLOW)}: {bold(electrons)}")
-animate_print(f" nv - {fore('Valence Electrons', VALENCE_ELECTRONS_COL)}: {bold(valence_electrons)}")
+print(f" p{superscript_pos} - {fore('Protons', RED)}: {bold(protons)}")
+print(f" n{superscript_new} - {fore('Neutrons', BLUE)}: {bold(neutrons)}")
+print(f" e{superscript_neg} - {fore('Electrons', YELLOW)}: {bold(electrons)}")
+print(f" nv - {fore('Valence Electrons', VALENCE_ELECTRONS_COL)}: {bold(valence_electrons)}")
 
 up_quarks_calculation = f"({fore(protons, RED)} * 2) + {fore(neutrons, BLUE)} = {bold(up_quarks)}"
-animate_print(f" u - {fore('Up Quarks', GREEN)}: {up_quarks_calculation}")
+print(f" u - {fore('Up Quarks', GREEN)}: {up_quarks_calculation}")
 
 down_quarks_calculation = f"{fore(protons, RED)} + ({fore(neutrons, BLUE)} * 2) = {bold(down_quarks)}"
-animate_print(f" d - {fore('Down Quarks', CYAN)}: {down_quarks_calculation}")
+print(f" d - {fore('Down Quarks', CYAN)}: {down_quarks_calculation}")
 
 shell_tip = dim(f'(Valence electrons in {fore('yellow', VALENCE_ELECTRONS_COL)})')
-animate_print(f" ⚛️ - {fore('Shells', EXCITED)} {shell_tip}:\n    {shell_result}")
+print(f" ⚛️ - {fore('Shells', EXCITED)} {shell_tip}:\n    {shell_result}")
 
 subshell_tip = dim(f'(Colored by type: {subshell_examples}, the valence subshell has its color inversed)')
-animate_print(f" 🌀 - {fore('Subshells', PERIWINKLE)} {subshell_tip}:\n    {subshell_result}")
-animate_print(f"      {bold('Breakdown')}:\n\n{subshell_visualisation}\n")
+print(f" 🌀 - {fore('Subshells', PERIWINKLE)} {subshell_tip}:\n    {subshell_result}")
+print(f"      {bold('Breakdown')}:\n\n{subshell_visualisation}\n")
 
 isotope_tip = dim(f"(Decay processes in {fore("red", RED)} need verification. Do not trust them!)")
-animate_print(f" 🪞 - Isotopes ({len(isotopes.keys())}): {isotope_tip}:")
+print(f" 🪞 - Isotopes ({len(isotopes.keys())}): {isotope_tip}:")
 
 for isotope, information in isotopes.items():
-    animate_print()
+    print()
     print_isotope(isotope, information, fullname)
 
-animate_print()
+print()
 print_header("Physical Properties")
-animate_print()
+print()
 
-animate_print(f" 💧 - {fore("Melting Point", MELT_COL)}: {format_temperature(melting_point)}")
-animate_print(f" 💨 - {fore("Boiling Point", BOIL_COL)}: {format_temperature(boiling_point)}")
-animate_print(f" A - {fore("Mass Number", GOLD)}: {fore(protons, RED)} + {fore(neutrons, BLUE)} = {bold(protons + neutrons)}")
-animate_print(f" u - {fore("Atomic Mass", BRIGHT_RED)}: {bold(atomic_mass)}g/mol")
-animate_print(f" ☢️ - {fore("Radioactive", ORANGE)}: {fore("Yes", GREEN) if radioactive else fore("No", RED)}")
-animate_print(f" t1/2 - {fore("Half Life", PERIWINKLE)}: {safe_format(half_life, placeholder="Stable")}")
+print(f" 💧 - {fore("Melting Point", MELT_COL)}: {format_temperature(melting_point)}")
+print(f" 💨 - {fore("Boiling Point", BOIL_COL)}: {format_temperature(boiling_point)}")
+print(f" A - {fore("Mass Number", GOLD)}: {fore(protons, RED)} + {fore(neutrons, BLUE)} = {bold(protons + neutrons)}")
+print(f" u - {fore("Atomic Mass", BRIGHT_RED)}: {bold(atomic_mass)}g/mol")
+print(f" {emoji_radioactive} - {fore("Radioactive", ORANGE)}: {fore("Yes", GREEN) if radioactive else fore("No", RED)}")
+print(f" t1/2 - {fore("Half Life", PERIWINKLE)}: {safe_format(half_life, placeholder="Stable")}")
 
-animate_print()
+print()
 print_header("Electronic Properties")
-animate_print()
+print()
 
-animate_print(f" {chi} - {fore("Electronegativity", ELECTRONEG_COL)}: {bold(electronegativity)}")
-animate_print(f" EA - {fore("Electron Affinity", EXCITED)}: {format_energy(electron_affinity)}")
-animate_print(f" IE - {fore("Ionization Energy", PINK)}: {format_energy(ionization_energy)}")
+print(f" {chi} - {fore("Electronegativity", ELECTRONEG_COL)}: {bold(electronegativity)}")
+print(f" EA - {fore("Electron Affinity", EXCITED)}: {format_energy(electron_affinity)}")
+print(f" IE - {fore("Ionization Energy", PINK)}: {format_energy(ionization_energy)}")
 
 ionization_energy_series_tip = bold("(THIS IS A VERY HUGE SIMPLIFICATION. Do not rely on them.)")
-animate_print(f"      {bold("ESTIMATED")} Ionization Energy Series {ionization_energy_series_tip}:")
-animate_print(f"\n{calculate_ionization_series(subshells, atomic_number, ionization_energy)}\n")
+print(f"      {bold("ESTIMATED")} Ionization Energy Series {ionization_energy_series_tip}:")
+print(f"\n{calculate_ionization_series(subshells, atomic_number, ionization_energy)}\n")
 
 oxidation_states_tip = dim(f"(Only the ones that have {fore("color", BLUE)} are activated)")
-animate_print(f" {energy} - {fore("Oxidation States", YELLOW)} {oxidation_states_tip}:\n{"   " + negatives_result}\n{"   " + positives_result}\n")
-animate_print(f" c - {fore("Conductivity Type", BRIGHT_BLACK)}: {bold(formatted_conductivity)}")
+print(f" {emoji_energy} - {fore("Oxidation States", YELLOW)} {oxidation_states_tip}:\n{"   " + negatives_result}\n{"   " + positives_result}\n")
+print(f" c - {fore("Conductivity Type", BRIGHT_BLACK)}: {bold(formatted_conductivity)}")
 
-animate_print()
+print()
 print_header("Measurements")
-animate_print()
+print()
 
-animate_print(f" r - {fore("Radius", PINK)}: ")
-animate_print(f"   r_calc - Calculated: {safe_format(radius['calculated'], 'pm', placeholder='N/A')}")
-animate_print(f"   r_emp - Empirical: {safe_format(radius['empirical'], 'pm', placeholder='N/A')}")
-animate_print(f"   r_cov - Covalent: {safe_format(radius['covalent'], 'pm', placeholder='N/A')}")
-animate_print(f"   rvdW - Van der Waals: {safe_format(radius['van_der_waals'], 'pm', placeholder='N/A')}\n")
-animate_print(f" H - {fore("Hardness", PERIWINKLE)}: ")
-animate_print(f"   HB - Brinell: {safe_format(hardness['brinell'], f'kgf/{mm2}')}")
-animate_print(f"   H - Mohs: {safe_format(hardness['mohs'], '')}")
-animate_print(f"   HV - Vickers: {safe_format(hardness['vickers'], f'kgf/{mm2}')}\n")
-animate_print(f" 🔃 - {fore("Moduli", EXCITED)}: ")
-animate_print(f"   K - Bulk Modulus: {safe_format(moduli['bulk'], 'GPa')}")
-animate_print(f"   E - Young's Modulus: {safe_format(moduli['young'], 'GPa')}")
-animate_print(f"   G - Shear Modulus: {safe_format(moduli['shear'], 'GPa')}")
-animate_print(f"   ν - Poisson's Ratio: {safe_format(moduli['poissons_ratio'], '')}\n")
-animate_print(f" {rho} - {fore("Density", CYAN)}: ")
-animate_print(f"   STP Density: {safe_format(density['STP'], f'kg/{m3}')}")
-animate_print(f"   Liquid Density: {safe_format(density['liquid'], f'kg/{m3}')}\n")
+print(f" r - {fore("Radius", PINK)}: ")
+print(f"   r_calc - Calculated: {safe_format(radius['calculated'], 'pm', placeholder='N/A')}")
+print(f"   r_emp - Empirical: {safe_format(radius['empirical'], 'pm', placeholder='N/A')}")
+print(f"   r_cov - Covalent: {safe_format(radius['covalent'], 'pm', placeholder='N/A')}")
+print(f"   rvdW - Van der Waals: {safe_format(radius['van_der_waals'], 'pm', placeholder='N/A')}\n")
+print(f" H - {fore("Hardness", PERIWINKLE)}: ")
+print(f"   HB - Brinell: {safe_format(hardness['brinell'], f'kgf/{mm2}')}")
+print(f"   H - Mohs: {safe_format(hardness['mohs'], '')}")
+print(f"   HV - Vickers: {safe_format(hardness['vickers'], f'kgf/{mm2}')}\n")
+print(f" {emoji_exchange} - {fore("Moduli", EXCITED)}: ")
+print(f"   K - Bulk Modulus: {safe_format(moduli['bulk'], 'GPa')}")
+print(f"   E - Young's Modulus: {safe_format(moduli['young'], 'GPa')}")
+print(f"   G - Shear Modulus: {safe_format(moduli['shear'], 'GPa')}")
+print(f"   ν - Poisson's Ratio: {safe_format(moduli['poissons_ratio'], '')}\n")
+print(f" {rho} - {fore("Density", CYAN)}: ")
+print(f"   STP Density: {safe_format(density['STP'], f'kg/{m3}')}")
+print(f"   Liquid Density: {safe_format(density['liquid'], f'kg/{m3}')}\n")
 
-animate_print(f" 📢 - Speed of Sound Transmission: {bold(sound_transmission_speed)}m/s = {bold(sound_transmission_speed / 1000)}km/s")
+print(f" {emoji_speaker} - Speed of Sound Transmission: {bold(sound_transmission_speed)}m/s = {bold(sound_transmission_speed / 1000)}km/s")
 
 print_separator()
 

@@ -1,7 +1,7 @@
 import sys, os
-from lib.terminal import BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE, DEFAULT_COLOR
+from lib.terminal import BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE
 from lib.terminal import BRIGHT_BLACK, BRIGHT_RED, BRIGHT_GREEN, BRIGHT_YELLOW, BRIGHT_BLUE, BRIGHT_MAGENTA, BRIGHT_CYAN, BRIGHT_WHITE
-from lib.terminal import fore, back, bold, italic, dim, underline, inverse_color, gradient, clear_screen, clear_line, animate_print
+from lib.terminal import fore, back, bold, italic, dim, underline, inverse_color, gradient
 
 if __name__ == "__main__":
     print("Please refrain from running this script manually. Instead, please run the periodica.sh file with the --test flag.")
@@ -10,11 +10,9 @@ if __name__ == "__main__":
 try:
     TERMINAL_WIDTH = os.get_terminal_size().columns
     TERMINAL_HEIGHT = os.get_terminal_size().lines
-    animate_print(f"Terminal size: {TERMINAL_WIDTH}x{TERMINAL_HEIGHT}")
+    print(f"Terminal size: {TERMINAL_WIDTH}x{TERMINAL_HEIGHT}")
 except OSError:
-    animate_print("You are not running this script in a terminal.")
-
-clear_screen()
+    print("You are not running this script in a terminal.")
 
 colors = [
     BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE

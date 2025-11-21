@@ -1,5 +1,5 @@
-import json, logging, time, sys, subprocess
-from lib.directories import LOGGING_FILE, VENV_DIR, PERIODICA_DIR, BUILD_SCRIPT
+import logging, time, sys, subprocess
+from lib.directories import LOGGING_FILE, VENV_DIR, BUILD_SCRIPT
 
 with open(LOGGING_FILE, 'w', encoding="utf-8"):
     pass
@@ -54,51 +54,6 @@ class Logger():
 
 log = Logger(enable_debugging=False)
 
-default_config = {
-    "use_unicode": True,
-    "terminal_effects": True,
-    "isotope_format": "fullname-number",
-    "animation_type": "none",
-    "animation_delay": 0.0005,
-    "constant_debugging": False,
-    "default_sorting_method": "ascending"
-}
-
-valid_formats = ["fullname-number", "symbol-number", "numbersymbol", "number-symbol"]
-valid_animation_types = ["char", "line", "none"]
-valid_sorting_methods = ["ascending", "descending", "name"]
-
-_config = None
-
-def get_config():
-    global _config
-    if _config is not None:
-        return _config
-
-    try:
-        with open(PERIODICA_DIR / "src" / "config.json", "r", encoding="utf-8") as file:
-            _config = json.load(file)
-    except (json.JSONDecodeError, FileNotFoundError):
-        _config = default_config.copy()
-        save_config()
-
-    for key, default in default_config.items():
-        if key == "isotope_format" and _config.get(key) not in valid_formats:
-            _config[key] = default
-        elif key == "animation_type" and _config.get(key) not in valid_animation_types:
-            _config[key] = default
-        elif key == "default_sorting_method" and _config.get(key) not in valid_sorting_methods:
-            _config[key] = default
-        else:
-            _config.setdefault(key, default)
-
-    return _config
-
-def save_config():
-    global _config
-    with open(PERIODICA_DIR / "src" / "config.json", "w", encoding="utf-8") as file:
-        json.dump(_config or default_config, file, indent=4)
-
 def get_response(url: str):
     try:
         import requests
@@ -132,4 +87,3 @@ def import_failsafe():
         else:
             print("The build script was not found. Please read the README.md for more information. (If that even exists, that is.)")
             sys.exit(0)
-

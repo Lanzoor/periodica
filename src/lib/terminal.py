@@ -1,10 +1,5 @@
-from lib.loader import get_config, logging
+from lib.loader import logging
 import re, sys, time, colorsys
-
-config = get_config()
-animation_type = config["animation_type"]
-animation_delay = config["animation_delay"]
-support_effects = config["terminal_effects"]
 
 # Default supported terminal colors
 BLACK = 0
@@ -60,21 +55,17 @@ def bold(string, *, disable: bool = False) -> str:
     return f"\033[1m{string}\033[22m" if not disable else string
 
 def dim(string, *, disable: bool = False) -> str:
-    return f"\033[2m{string}\033[22m" if support_effects or (not disable) else string
+    return f"\033[2m{string}\033[22m" if not disable else string
 
 def italic(string, *, disable: bool = False) -> str:
-    if support_effects:
+    if not disable:
         return f"\033[3m{string}\033[23m"
-    elif not disable:
-        return bold(string)
     else:
         return string
 
 def underline(string, *, disable: bool = False) -> str:
-    if support_effects:
+    if not disable:
         return f"\033[4m{string}\033[24m"
-    elif not disable:
-        return bold(string)
     else:
         return string
 
@@ -111,40 +102,3 @@ def gradient(message, start_rgb: list[int] | tuple[int, int, int], end_rgb: list
         return "".join(result_characters)
     else:
         return message
-
-def clear_screen():
-    if support_effects:
-        print("\r\033[2J\033[H", end='', flush=True)
-
-def clear_line():
-    if support_effects:
-        print("\r\033[2K", end='', flush=True)
-
-def animate_print(message: str = "", delay: float = animation_delay, *, end: str = "\n", animation: str = ""):
-    global animation_type
-
-    used_animation_type = animation if animation else animation_type
-
-    if used_animation_type == "char":
-        ansi_escape = re.compile(r'(\x1b\[[0-9;]*m)')
-        parts = ansi_escape.split(message)
-        active_styles = ""
-        for part in parts:
-            if ansi_escape.fullmatch(part):
-                active_styles = part
-                sys.stdout.write(part)
-                sys.stdout.flush()
-            else:
-                for char in part:
-                    sys.stdout.write(f"{active_styles}{char}")
-                    sys.stdout.flush()
-                    time.sleep(delay)
-    elif used_animation_type == "line":
-        for line in message.splitlines():
-            sys.stdout.write(line + "\n")
-            sys.stdout.flush()
-            time.sleep(delay)
-    elif used_animation_type == "none":
-        print(message, end="")
-
-    print(end, end="")
