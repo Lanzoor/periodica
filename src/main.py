@@ -56,100 +56,95 @@ animation_delay = config["animation_delay"]
 constant_debugging = config["constant_debugging"]
 default_sorting_method = config["default_sorting_method"]
 
-# Defining custom colors (if terminal_effects is enabled)
-if support_effects:
-    VALENCE_ELECTRONS_COL = (248, 255, 166)
-    ELECTRONEG_COL = (131, 122, 255)
-    TURQUOISE = (109, 214, 237)
-    PINK = (255, 133, 245)
-    MELT_COL = (52, 110, 235)
-    BOIL_COL = (189, 165, 117)
-    ORANGE = (245, 164, 66)
-    INDIGO = (94, 52, 235)
-    NULL = (115, 255, 225)
-    EXCITED = (185, 255, 128)
-    PERIWINKLE = (159, 115, 255)
-    GOLD = (255, 209, 102)
-else:
-    VALENCE_ELECTRONS_COL = YELLOW
-    ELECTRONEG_COL = BLUE
-    TURQUOISE = CYAN
-    PINK = MAGENTA
-    MELT_COL = BLUE
-    BOIL_COL = YELLOW
-    ORANGE = YELLOW
-    INDIGO = BLUE
-    NULL = CYAN
-    EXCITED = BRIGHT_GREEN
-    PERIWINKLE = CYAN
-    GOLD = YELLOW
-
 # Defining unicode symbols
-cm3 = "cm³" if use_unicode else "cm3"
-m3 = "m³" if use_unicode else "m3"
-mm2 = "mm²" if use_unicode else "mm2"
-pos = "⁺" if use_unicode else "+"
-neg = "⁻" if use_unicode else "-"
-neutral = "⁰" if use_unicode else "0"
-pm = "±" if use_unicode else "+-"
-decay = "⛓️" if use_unicode else "d"
-energy = "⚡️" if use_unicode else "E"
-rho = "ρ" if use_unicode else "p"
-chi = "χ" if use_unicode else "x"
-full_block = "█" if use_unicode else "-"
-up_arrow = "↑" if use_unicode else "^"
-down_arrow = "↓" if use_unicode else "_"
-sigma = "σ" if use_unicode else "s"
-double_line = "═" if use_unicode else "="
-single_line = "─" if use_unicode else "-"
+def update_symbols(allow: bool = use_unicode):
+    global cm3, m3, mm2, pos, neg, neutral, pm, decay, energy, rho, chi, full_block, up_arrow, down_arrow, sigma, double_line, single_line, PHASE_TYPE_SYMBOLS, CONDUCTIVITY_TYPE_SYMBOLS
 
-# Color configurations for specific outputs
-ELEMENT_TYPE_COLORS = {
-	"Reactive nonmetal": (130, 255, 151) if support_effects else BRIGHT_GREEN,
-	"Noble gas": YELLOW,
-	"Alkali metal": (215, 215, 215) if support_effects else BRIGHT_BLACK,
-	"Alkali earth metal": ORANGE,
-	"Metalloid": CYAN
-}
+    cm3 = "cm³" if allow else "cm3"
+    m3 = "m³" if allow else "m3"
+    mm2 = "mm²" if allow else "mm2"
+    pos = "⁺" if allow else "+"
+    neg = "⁻" if allow else "-"
+    neutral = "⁰" if allow else "0"
+    pm = "±" if allow else "+-"
+    decay = "⛓️" if allow else "d"
+    energy = "⚡️" if allow else "E"
+    rho = "ρ" if allow else "p"
+    chi = "χ" if allow else "x"
+    full_block = "█" if allow else "-"
+    up_arrow = "↑" if allow else "^"
+    down_arrow = "↓" if allow else "_"
+    sigma = "σ" if allow else "s"
+    double_line = "═" if allow else "="
+    single_line = "─" if allow else "-"
 
-PHASE_TYPE_COLORS = {
-    "Solid": (156, 156, 156) if support_effects else BRIGHT_BLACK,
-    "Gas": YELLOW,
-    "Liquid": CYAN
-}
+    if allow:
+        PHASE_TYPE_SYMBOLS = {
+            "Solid": "🧊",
+            "Gas": "💨",
+            "Liquid": "💦"
+        }
 
-CONDUCTIVITY_TYPE_COLORS = {
-    "Superconductor": NULL,
-    "Semiconductor": CYAN,
-    "Insulator": RED,
-    "Conductor": GOLD,
-    "Unsure": EXCITED
-}
+        CONDUCTIVITY_TYPE_SYMBOLS = {
+            "Superconductor": "💨",
+            "Semiconductor": "🔗",
+            "Insulator": "🫧",
+            "Conductor": "🔃",
+            "Unsure": "❓"
+        }
+    else:
+        PHASE_TYPE_SYMBOLS = None
+        CONDUCTIVITY_TYPE_SYMBOLS = None
 
-if use_unicode:
-    PHASE_TYPE_SYMBOLS = {
-        "Solid": "🧊",
-        "Gas": "💨",
-        "Liquid": "💦"
+update_symbols()
+
+# Defining custom colors (if terminal_effects is enabled)
+def update_color_configs(allow: bool = support_effects):
+    global VALENCE_ELECTRONS_COL, ELECTRONEG_COL, TURQUOISE, PINK, MELT_COL, BOIL_COL, ORANGE, INDIGO, NULL, EXCITED, PERIWINKLE, GOLD, ELEMENT_TYPE_COLORS, PHASE_TYPE_COLORS, CONDUCTIVITY_TYPE_COLORS, SUBSHELL_COLORS
+
+    VALENCE_ELECTRONS_COL = (248, 255, 166) if allow else YELLOW
+    ELECTRONEG_COL = (131, 122, 255) if allow else BLUE
+    TURQUOISE = (109, 214, 237) if allow else CYAN
+    PINK = (255, 133, 245) if allow else MAGENTA
+    MELT_COL = (52, 110, 235) if allow else BLUE
+    BOIL_COL = (189, 165, 117) if allow else YELLOW
+    ORANGE = (245, 164, 66) if allow else YELLOW
+    INDIGO = (94, 52, 235) if allow else BLUE
+    NULL = (115, 255, 225) if allow else CYAN
+    EXCITED = (185, 255, 128) if allow else BRIGHT_GREEN
+    PERIWINKLE = (159, 115, 255) if allow else CYAN
+    GOLD = (255, 209, 102) if allow else YELLOW
+
+    ELEMENT_TYPE_COLORS = {
+        "Reactive nonmetal": (130, 255, 151) if allow else BRIGHT_GREEN,
+        "Noble gas": YELLOW,
+        "Alkali metal": (215, 215, 215) if allow else BRIGHT_BLACK,
+        "Alkali earth metal": ORANGE,
+        "Metalloid": CYAN
     }
 
-    CONDUCTIVITY_TYPE_SYMBOLS = {
-        "Superconductor": "💨",
-        "Semiconductor": "🔗",
-        "Insulator": "🫧",
-        "Conductor": "🔃",
-        "Unsure": "❓"
+    PHASE_TYPE_COLORS = {
+        "Solid": (156, 156, 156) if allow else BRIGHT_BLACK,
+        "Gas": YELLOW,
+        "Liquid": CYAN
     }
-else:
-    PHASE_TYPE_SYMBOLS = None
-    CONDUCTIVITY_TYPE_SYMBOLS = None
 
-SUBSHELL_COLORS = {
-    's': RED,
-    'p': GREEN,
-    'd': CYAN,
-    'f': MAGENTA
-}
+    CONDUCTIVITY_TYPE_COLORS = {
+        "Superconductor": NULL,
+        "Semiconductor": CYAN,
+        "Insulator": RED,
+        "Conductor": GOLD,
+        "Unsure": EXCITED
+    }
+
+    SUBSHELL_COLORS = {
+        's': RED,
+        'p': GREEN,
+        'd': CYAN,
+        'f': MAGENTA
+    }
+
+update_color_configs()
 
 # For ionization calculations
 SUBSHELL_AZIMUTHALS = {
@@ -160,31 +155,28 @@ SUBSHELL_AZIMUTHALS = {
 }
 
 # Selecting random tips
-match random.randint(0, 6):
-    case 0:
-        tip = "(Tip: You can give this program argv to directly search an element from there. You can even give argv to the periodica.sh file too!)"
-    case 1:
-        tip = "(Tip: Run this script with the --info flag to get information about flags.)"
-    case 2:
-        tip = "(Tip: Run this script with the --init flag to configure options like using unicode or terminal effects.)"
-    case 3:
-        tip = "(Tip: In an input field, you can input quit to exit the interactive input session.)"
-    case 4:
-        tip = f"(Tip: In the main interactive input field, you can input, {italic("certain")} things to trigger an easter egg message.)"
-    case 5:
-        tip = f"(Tip: There are shorthand aliases to common flags, run the script with the --info (or -i) flag to get information about them.)"
-    case _:
-        tip = ""
+def pick_tip(tips: list[str]) -> str:
+    tips_copy = tips[:]
+    tips_copy.append("")
+    return random.choice(tips_copy)
 
-match random.randint(0, 3):
-    case 0:
-        compare_tip = "(Tip: You can give the arguments 'ascending', 'descending', and 'name' to change sort behavior.)"
-    case 1:
-        compare_tip = "(Tip: You can still input factors without underscores in the interactive text input field. Just not in arguments.)"
-    case 2:
-        compare_tip = "(Tip: If you \"\"accidentally\"\" give two or more sorting methods in argv, only the first one will be used.)"
-    case _:
-        compare_tip = ""
+normal_tips = [
+    "(Tip: You can give this program argv to directly search an element from there. You can even give argv to the periodica.sh file too!)",
+    "(Tip: Run this script with the --info flag to get information about flags.)",
+    "(Tip: Run this script with the --init flag to configure options like using unicode or terminal effects.)"
+    "(Tip: In an input field, you can input quit (as well as a few more keywords) to exit the interactive input session.)",
+    "(Tip: There are shorthand aliases to common flags, run the script with the --info (or -i) flag to get information about them.)",
+]
+
+tip = pick_tip(normal_tips)
+
+compare_tips = [
+    "(Tip: You can give the arguments 'ascending', 'descending', and 'name' to change sort behavior.)",
+    "(Tip: You can still input factors without underscores in the interactive text input field. Just not in arguments.)",
+    "(Tip: If you accidentally give two or more sorting methods as input in argv, only the first one will be used.)"
+]
+
+compare_tip = pick_tip(compare_tips)
 
 # Fetch arguments that are not flags (removes --export, --compare, etc.)
 def get_positional_args() -> list[str]:
@@ -249,7 +241,7 @@ def print_separator():
     print("-" * TERMINAL_WIDTH)
     print()
 
-def check_for_termination_inputs(user_input):
+def check_for_termination(user_input):
     if user_input in ["quit", "q", "abort", "exit", "terminate", "stop"]:
         animate_print("Okay. Exiting...")
         logger.abort("User exited interactive input.")
@@ -457,7 +449,7 @@ def export_element():
         while element is None:
             user_input = input("> ").strip()
 
-            check_for_termination_inputs(user_input)
+            check_for_termination(user_input)
 
             element, suggestion = process_isotope_input(user_input)
             if element is None and not suggestion:
@@ -527,7 +519,7 @@ def compare_by_factor():
         "bulk_modulus",
         "young_modulus",
         "shear_modulus",
-        "poissons_ratio"
+        "poissons_ratio",
         "stp_density",
         "liquid_density",
         "sound_transmission_speed"
@@ -557,64 +549,64 @@ def compare_by_factor():
             logger.warn(f"No direct match found for '{factor_candidate}'.")
             factor_candidate = None
 
-    def get_key_by_input(data: dict[str, dict], factor):
+    def get_key_by_input(element_data: dict[str, dict], isotope_data: dict[str, dict], factor: str):
         nonlocal determiner
         result = None
         try:
             match factor:
                 case "protons":
-                    result = data["nuclear"]["protons"]
+                    result = element_data["nuclear"]["protons"]
                 case "electrons":
-                    result = data["nuclear"]["electrons"]
+                    result = element_data["nuclear"]["electrons"]
                 case "neutrons":
-                    result = data["nuclear"]["neutrons"]
+                    result = element_data["nuclear"]["neutrons"]
                 case "mass_number":
-                    result = data["nuclear"]["protons"] + data["nuclear"]["neutrons"]
+                    result = element_data["nuclear"]["protons"] + element_data["nuclear"]["neutrons"]
                 case "up_quarks":
-                    result = (data["nuclear"]["protons"] * 2) + data["nuclear"]["neutrons"]
+                    result = (element_data["nuclear"]["protons"] * 2) + element_data["nuclear"]["neutrons"]
                 case "down_quarks":
-                    result = data["nuclear"]["protons"] + (data["nuclear"]["neutrons"] * 2)
+                    result = element_data["nuclear"]["protons"] + (element_data["nuclear"]["neutrons"] * 2)
                 case "isotopes":
-                    result = len(list(data["nuclear"]["isotopes"].keys()))
+                    result = len(list(isotope_data.keys()))
                 case "melting_point":
                     determiner = "°C"
-                    result = data["physical"]["melt"]
+                    result = element_data["physical"]["melt"]
                 case "boiling_point":
                     determiner = "°C"
-                    result = data["physical"]["boil"]
+                    result = element_data["physical"]["boil"]
                 case "atomic_mass":
                     determiner = "g/mol"
-                    result = data["physical"]["atomic_mass"]
+                    result = element_data["physical"]["atomic_mass"]
                 case "electronegativity":
-                    result = data["electronic"]["electronegativity"]
+                    result = element_data["electronic"]["electronegativity"]
                 case "electron_affinity":
                     determiner = "eV"
-                    result = data["electronic"]["electronegativity"]
+                    result = element_data["electronic"]["electronegativity"]
                 case "ionization_energy":
                     determiner = "eV"
-                    result = data["electronic"]["ionization_energy"]
+                    result = element_data["electronic"]["ionization_energy"]
                 case "calculated_radius" | "empirical_radius" | "covalent_radius" | "van_der_waals_radius":
                     determiner = "pm"
-                    result = data["measurements"]["radius"][factor.replace("_radius", "")]
+                    result = element_data["measurements"]["radius"][factor.replace("_radius", "")]
                 case "brinell_hardness" | "mohs_hardness" | "vickers_hardness":
                     determiner = f"kgf/{mm2}" if determiner != "mohs_hardness" else ""
-                    result = data["measurements"]["hardness"][factor.replace("_hardness", "")]
+                    result = element_data["measurements"]["hardness"][factor.replace("_hardness", "")]
                 case "bulk_modulus" | "young_modulus" | "shear_modulus":
                     determiner = "GPa"
-                    result = data["measurements"]["moduli"][factor.replace("_modulus", "")]
+                    result = element_data["measurements"]["moduli"][factor.replace("_modulus", "")]
                 case "poissons_ratio":
-                    result = data["measurements"]["moduli"]["poissons_ratio"]
+                    result = element_data["measurements"]["moduli"]["poissons_ratio"]
                 case "stp_density":
                     determiner = f"kg/{m3}"
-                    result = data["measurements"]["density"]["STP"]
+                    result = element_data["measurements"]["density"]["STP"]
                 case "liquid_density":
                     determiner = f"kg/{m3}"
-                    result = data["measurements"]["density"]["liquid"]
+                    result = element_data["measurements"]["density"]["liquid"]
                 case "sound_transmission_speed":
                     determiner = "m/s"
-                    result = data["measurements"]["sound_transmission_speed"]
+                    result = element_data["measurements"]["sound_transmission_speed"]
         except (KeyError, ValueError) as error:
-            logger.warn(f"Missing or invalid {factor} for {data['general']['fullname']}: {error}")
+            logger.warn(f"Missing or invalid {factor} for {element_data['general']['fullname']}: {error}")
             return None
 
         try:
@@ -650,15 +642,17 @@ def compare_by_factor():
                 logger.warn(f"No direct match found for '{factor_candidate}'.")
 
         factor_candidate = "_".join(input("> ").strip().lower().split(" "))
-        check_for_termination_inputs(factor_candidate)
+        check_for_termination(factor_candidate)
 
     clear_screen()
-    animate_print(f"\nComparing all elements by factor {bold(factor)} with sorting by {bold(sorting_method)}... {dim('(Please note that some elements may be missing, and the data is trimmed up to 4 digits of float numbers.)')}\n")
+    animate_print(f"\nComparing all elements by factor {bold(factor)} in a(n) {bold(sorting_method)} order... {dim('(Please note that some elements may be missing, and the data is trimmed up to 4 digits of float numbers.)')}\n")
     logger.info(f"Comparing all elements by factor {factor}...")
 
     result: dict[str, float | int | None] = {}
-    for name, value in full_element_data.items():
-        result[name] = get_key_by_input(value, factor)
+
+    for element_name, element_value in full_element_data.items():
+        isotope_value = full_isotope_data.get(element_name, {})
+        result[element_name] = get_key_by_input(element_value, isotope_value, factor)
 
     valid_results = [(name, value) for name, value in result.items() if value is not None]
     if not valid_results:
@@ -732,7 +726,7 @@ def compare_bond_type():
         while True:
             user_input = input("> ").strip().lower()
             logger.info(f"Primary input: \"{user_input}\"")
-            check_for_termination_inputs(user_input)
+            check_for_termination(user_input)
 
             primary_element, suggestion = find_element(user_input)
             if primary_element:
@@ -749,7 +743,7 @@ def compare_bond_type():
         while True:
             user_input = input("> ").strip().lower()
             logger.info(f"Secondary input: \"{user_input}\"")
-            check_for_termination_inputs(user_input)
+            check_for_termination(user_input)
 
             secondary_element, suggestion = find_element(user_input)
             if secondary_element:
@@ -821,6 +815,9 @@ def enable_raw_output():
     for name in funclist:
         globals()[name] = functools.partial(globals()[name], disable=True)
 
+    update_symbols(False)
+    update_color_configs(False)
+
 # Debugging is the first priority, therefore enable it ASAP when it gets activated to avoid syntax checking
 if ("--debug" in flag_arguments or "-d" in flag_arguments) or constant_debugging:
     enable_debugging()
@@ -852,13 +849,15 @@ def import_testing():
         logger.abort("Failed to find the testing script.")
 
 # Extract symbol and number from an isotope
-def match_isotope_input(user_input: str) -> typing.Tuple[str | None, str | None]:
+def extract_isotope_factors(user_input: str) -> typing.Tuple[str | None, str | None]:
     match = re.match(r"^(\d+)([A-Za-z]+)$", user_input)
     if match:
         return match.group(2), match.group(1)
+
     match = re.match(r"^([A-Za-z]+)[\s\-]*(\d+)$", user_input)
     if match:
         return match.group(1), match.group(2)
+
     return None, None
 
 def print_isotope(norm_iso, info, fullname):
@@ -950,7 +949,35 @@ def format_isotope(norm_iso, fullname, *, metastable = ""):
         else:
             return f"{symbol}-{number}{metastable}"
 
-def find_isotope(element_identifier, mass_number, search_query):
+def recognize_isotope(element_identifier, mass_number, search_query):
+    def use_isotope(isotopes, element_symbol, element_name, mass_number, search_query) -> dict | bool:
+        global ISOTOPE_LOGIC
+
+        normalized_mass_symbol = f"{mass_number}{element_symbol}"
+        normalized_symbol_mass = f"{element_symbol}{mass_number}"
+
+        for isotope, isotope_info in isotopes.items():
+            normalized_isotope = normalize_isotope(isotope).lower()
+
+            if (normalized_isotope in [normalized_mass_symbol, normalized_symbol_mass, search_query]):
+                logger.info(f"Found isotope match: {isotope} ({mass_number}{element_symbol}) in {element_name}")
+                if EXPORT_ENABLED:
+                    return {
+                        "isotope": isotope,
+                        "symbol": element_symbol,
+                        "fullname": element_name,
+                        "info": isotope_info
+                    }
+                ISOTOPE_LOGIC = True
+                print_separator()
+                print_isotope(isotope, isotope_info, element_name)
+                print_separator()
+                return True
+
+        animate_print(fore(f"No isotope match found for mass number {mass_number} in element {element_name}. Please provide one manually.", YELLOW))
+        logger.warn(f"No isotope match found for mass number {mass_number} in element {element_name}")
+        return False
+
     element_identifier = element_identifier.lower()
     search_query = search_query.lower()
     logger.info(f"Searching for isotope: {element_identifier}, mass number: {mass_number}, query: {search_query}")
@@ -963,8 +990,14 @@ def find_isotope(element_identifier, mass_number, search_query):
             continue
 
         logger.info(f"Element match found for '{element_identifier}': {element_name} ({element_symbol})")
-        return search_isotope(
-            element_data["nuclear"]["isotopes"],
+
+        isotope_data = full_isotope_data.get(element_name.capitalize(), {})
+
+        if not isotope_data:
+            continue
+
+        return use_isotope(
+            isotope_data,
             element_symbol,
             element_name,
             mass_number,
@@ -972,34 +1005,6 @@ def find_isotope(element_identifier, mass_number, search_query):
         )
 
     logger.warn(f"No element found for symbol or name: {element_identifier}")
-    return False
-
-def search_isotope(isotopes, element_symbol, element_name, mass_number, search_query):
-    global ISOTOPE_LOGIC
-
-    normalized_mass_symbol = f"{mass_number}{element_symbol}"
-    normalized_symbol_mass = f"{element_symbol}{mass_number}"
-
-    for isotope, isotope_info in isotopes.items():
-        normalized_isotope = normalize_isotope(isotope).lower()
-
-        if (normalized_isotope in [normalized_mass_symbol, normalized_symbol_mass, search_query]):
-            logger.info(f"Found isotope match: {isotope} ({mass_number}{element_symbol}) in {element_name}")
-            if EXPORT_ENABLED:
-                return {
-                    "isotope": isotope,
-                    "symbol": element_symbol,
-                    "fullname": element_name,
-                    "info": isotope_info
-                }
-            ISOTOPE_LOGIC = True
-            print_separator()
-            print_isotope(isotope, isotope_info, element_name)
-            print_separator()
-            return True
-
-    animate_print(fore(f"No isotope match found for mass number {mass_number} in element {element_name}. Please provide one manually.", YELLOW))
-    logger.warn(f"No isotope match found for mass number {mass_number} in element {element_name}")
     return False
 
 def normalize_isotope(isotope):
@@ -1037,9 +1042,9 @@ def process_isotope_input(user_input):
         search_result = full_element_data[list(full_element_data.keys())[index]]
         return search_result, None
     except (ValueError, IndexError):
-        symbol_or_name, mass_number = match_isotope_input(user_input)
+        symbol_or_name, mass_number = extract_isotope_factors(user_input)
         if symbol_or_name and mass_number:
-            result = find_isotope(symbol_or_name, mass_number, user_input)
+            result = recognize_isotope(symbol_or_name, mass_number, user_input)
             if isinstance(result, dict):
                 return result, None
             return None, None
@@ -1145,22 +1150,6 @@ if data_malformed:
     logger.info(f"(2/2) Successfully got the isotopes.json file from {isotope_url}.")
 
 # Getting element / isotope
-easter_eggs = [
-    ("vibranium", "🦾 WAKANDA FOREVER"),
-    (["veritasium", "ve"], "The element of truth. Not real tho, but I really love that channel tho fr"),
-    ("lanzoor", fore("do not try to find me, please try to find my sanity", ELECTRONEG_COL)),
-    ("periodica", "Hey, that's me! Why are you trying to search me from myself? That's me! Why are you trying to search from myself?\nWhat? That's me... why are you trying to search myself whilst in myself? Hey! That's literally me. Why are you trying so hard to search myself from myself?"),
-    ("answer", f"It's {bold("1/137")}. No questions, just that."),
-    ("1/137", "Yeah, that's right! That's the answer!"),
-    ("403", fore("Element access not granted", YELLOW)),
-    ("404", fore("Element not found", YELLOW)),
-    ("recursion", f"See: {bold("recursion")}."),
-    ("your mom", "She's not on the periodic table, but she probably will crash the entire table if she was."),
-    ("sudo", "You don't need root access to learn chemistry. You need a brain."),
-    ("carbonara", "Monsieur?? This isn't an italian restaurant. GET OUT!!!")
-]
-
-# TODO: Add a stable, fixed "script output" that will print out a specific data of an element / isotope when given the key
 try:
     TERMINAL_WIDTH = os.get_terminal_size().columns
     TERMINAL_HEIGHT = os.get_terminal_size().lines
@@ -1235,14 +1224,7 @@ if current_element_data is None:
         user_input = input("> ").strip().lower()
         logger.info(f"User gave input: \"{user_input}\"")
 
-        for keys, response in easter_eggs:
-            if (user_input in keys and isinstance(keys, list)) or user_input == keys:
-                animate_print(response)
-                if user_input == "periodica":
-                    exec(base64.b64decode("cmFpc2UgUmVjdXJzaW9uRXJyb3IoIm1heGltdW0gZGVwdGggcmVhY2hlZCB3aGlsc3QgdHJ5aW5nIHRvIGZpbmQgcGVyaW9kaWNhIGluc2lkZSBwZXJpb2RpY2EgaW5zaWRlIHBlcmlvZGljYSBpbnNpZGUgcGVyaW9kaWNhIGluc2lkZS4uLiIpIGZyb20gTm9uZQ=="))
-                sys.exit(0)
-
-        check_for_termination_inputs(user_input)
+        check_for_termination(user_input)
 
         current_element_data, current_element_suggestion = process_isotope_input(user_input)
 
