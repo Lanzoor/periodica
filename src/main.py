@@ -233,7 +233,7 @@ def print_header(title, double=False):
 
 def print_separator():
     print()
-    print("-" * TERMINAL_WIDTH)
+    print(single_line * TERMINAL_WIDTH)
     print()
 
 def check_for_termination(user_input):
@@ -635,7 +635,6 @@ def compare_by_factor():
         factor_candidate = "_".join(input("> ").strip().lower().split(" "))
         check_for_termination(factor_candidate)
 
-    clear_screen()
     print(f"\nComparing all elements by factor {bold(factor)} in a(n) {bold(sorting_method)} order... {dim('(Please note that some elements may be missing, and the data is trimmed up to 4 digits of float numbers.)')}\n")
     logger.info(f"Comparing all elements by factor {factor}...")
 
