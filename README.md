@@ -67,6 +67,4 @@ Or open the folder and double-click `main.py` — then select the Python interpr
 
 ## 🎉 You're Done!
 
-Go mess around with stuff, find some bugs, contribute improvements, or just enjoy playing with the element database!
-
 > The JSON files are public domain - feel free to use it _for yourself_, however you like. **But giving credit helps and shows respect to the effort behind it.** (Just don’t say that you made it, or use it to get profit / benefits. That's some real legal trouble right there.)

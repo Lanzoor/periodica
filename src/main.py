@@ -1,18 +1,15 @@
 #!/usr/bin/env python3
 
 try:
-    import platform, sys, json, os, re, difflib, random, typing, textwrap, copy, base64, functools, pprint
+    import platform, sys, json, os, re, difflib, random, typing, textwrap, copy, functools, pprint
 except ImportError:
     print("It seems like some of the standard libraries are missing. Please make sure you have the right version of the Python interpreter installed.")
     sys.exit(0)
 
-import platform, sys, json, os, re, difflib, random, typing, textwrap, copy, base64, functools
+import platform, sys, json, os, re, difflib, random, typing, textwrap, copy, functools
 
 try:
-    import lib
-    import lib.loader
-    import lib.terminal
-    import lib.directories
+    import lib, lib.loader, lib.terminal, lib.directories
 except ImportError:
     print("The utils helper library or its scripts was not found. Please ensure all required files are present.")
     sys.exit(0)
@@ -20,7 +17,7 @@ except ImportError:
 from lib.loader import get_response, Logger, import_failsafe
 from lib.terminal import RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, DEFAULT_COLOR, BRIGHT_BLACK, BRIGHT_GREEN, BRIGHT_RED
 from lib.terminal import fore, back, inverse_color, bold, dim, italic, gradient
-from lib.directories import ELEMENT_DATA_FILE, ISOTOPE_DATA_FILE, OUTPUT_FILE, CONFIG_SCRIPT, UPDATE_SCRIPT
+from lib.directories import ELEMENT_DATA_FILE, ISOTOPE_DATA_FILE, OUTPUT_FILE, UPDATE_SCRIPT
 from pprint import pprint
 
 # Just in case when the venv does not exist
@@ -47,7 +44,7 @@ logger = Logger(enable_debugging=DEBUG_MODE)
 
 # Defining unicode symbols
 def update_symbols(allow: bool = VERBOSE):
-    global cm3, m3, mm2, superscript_pos, superscript_neg, superscript_new, pm, emoji_chains, emoji_energy, rho, chi, full_block, up_arrow, down_arrow, sigma, double_line, single_line, PHASE_TYPE_SYMBOLS, CONDUCTIVITY_TYPE_SYMBOLS, emoji_exchange, emoji_speaker, emoji_radioactive
+    global cm3, m3, mm2, superscript_pos, superscript_neg, superscript_zero, pm, emoji_chains, emoji_energy, rho, chi, full_block, up_arrow, down_arrow, sigma, double_line, single_line, PHASE_TYPE_SYMBOLS, CONDUCTIVITY_TYPE_SYMBOLS, emoji_exchange, emoji_speaker, emoji_radioactive
 
     cm3 = "cm³" if allow else "cm3"
     m3 = "m³" if allow else "m3"
@@ -69,7 +66,7 @@ def update_symbols(allow: bool = VERBOSE):
     single_line = "─" if allow else "-"
     superscript_pos = "⁺" if allow else "+"
     superscript_neg = "⁻" if allow else "-"
-    superscript_new = "⁰" if allow else "0"
+    superscript_zero = "⁰" if allow else "0"
     pm = "±" if allow else "+-"
 
     if allow:
@@ -363,7 +360,6 @@ def calculate_ionization_series(subshells: list[str], atomic_number: int, ioniza
 
     return "\n".join(lines)
 
-# Superscript functions
 def convert_superscripts(text: str) -> str:
     superscript_map = {
         "0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴",
@@ -371,14 +367,6 @@ def convert_superscripts(text: str) -> str:
         "+": "⁺", "-": "⁻"
     }
     return "".join(superscript_map.get(char, char) for char in text)
-
-def remove_superscripts(text: str) -> str:
-    normal_map = {
-        "⁰": "0", "¹": "1", "²": "2", "³": "3", "⁴": "4",
-        "⁵": "5", "⁶": "6", "⁷": "7", "⁸": "8", "⁹": "9",
-        "⁺": "+", "⁻": "-"
-    }
-    return "".join(normal_map.get(char, char) for char in text)
 
 def conjunction_join(entries: list) -> str:
     if not entries:
@@ -821,15 +809,6 @@ def fetch_version():
 
     sys.exit(0)
 
-def import_testing():
-    logger.info("User gave --test flag; redirecting to another script.")
-    try:
-        import lib.testing
-        sys.exit(0)
-    except ImportError:
-        print(fore("Looks like the testing script is missing. Please check for any missing files.", RED))
-        logger.abort("Failed to find the testing script.")
-
 # Extract symbol and number from an isotope
 def extract_isotope_factors(user_input: str) -> typing.Tuple[str | None, str | None]:
     match = re.match(r"^(\d+)([A-Za-z]+)$", user_input)
@@ -845,16 +824,20 @@ def extract_isotope_factors(user_input: str) -> typing.Tuple[str | None, str | N
 def print_isotope(norm_iso, info, fullname):
     global animation_delay
 
-    match = re.match(r"^(\d+)\s*([A-Za-z]+)$", remove_superscripts(norm_iso))
+    match = re.match(r"^(\d+)\s*([A-Za-z]+)$", norm_iso)
     display_name = format_isotope(norm_iso, fullname) if match else norm_iso
 
-    name_display = f" ({info['name']})" if 'name' in info else ""
-    print(f"  - {bold(display_name)}{name_display}:")
+    symbol, number = extract_isotope_factors(norm_iso)
+    superscript_name = convert_superscripts(number) + symbol
+
+    alt_name_display = ", " + info['name'] if 'name' in info else ""
+    name_display = f"({superscript_name}{italic(alt_name_display)})"
+    print(f"  - {bold(display_name)} {name_display}:")
 
     protons = info['protons']
     neutrons = info['neutrons']
     print(f"      p{superscript_pos}, e{superscript_neg} - {fore('Protons', RED)} and {fore('Electrons', YELLOW)}: {bold(protons)}")
-    print(f"      n{superscript_new} - {fore('Neutrons', BLUE)}: {bold(neutrons)}")
+    print(f"      n{superscript_zero} - {fore('Neutrons', BLUE)}: {bold(neutrons)}")
 
     up_quarks = protons * 2 + neutrons
     down_quarks = protons + neutrons * 2
@@ -909,7 +892,7 @@ def print_isotope(norm_iso, info, fullname):
 def format_isotope(norm_iso, fullname, *, metastable = ""):
     global isotope_format
 
-    match = re.match(r"^(\d+)\s*([A-Za-z]+)$", remove_superscripts(norm_iso))
+    match = re.match(r"^(\d+)\s*([A-Za-z]+)$", norm_iso)
     if not match:
         return norm_iso
     else:
@@ -978,7 +961,7 @@ def recognize_isotope(element_identifier, mass_number, search_query):
 def normalize_isotope(isotope):
     match = re.match(r"^(.*?)(?:\s*-\s*.*)?$", isotope)
     normalized = match.group(1) if match else isotope
-    return remove_superscripts(normalized)
+    return normalized
 
 def find_element(candidate) -> typing.Tuple[dict | None, str | None]:
     logger.info(f"Searching for element match: {candidate}")
@@ -1029,12 +1012,12 @@ periodica_logo = bold(gradient("Periodica", (156, 140, 255), (140, 255, 245)) if
 
 program_information = f"""
 Welcome to {periodica_logo}!
-This CLI provides useful information about the periodic elements, and pretty much everything here was made by the Discord user {bold(fore("Lanzoor", INDIGO))}!
+This CLI provides useful information about the periodic elements, and pretty much everything here was made by the Discord user {bold(fore("Lanzoor", INDIGO))}.
 This project started as a fun hobby at around {bold("March 2025")}, but ended up getting taken seriously.
 This CLI was built with {fore("Python", CYAN)}, and uses {fore("JSON", YELLOW)} for configuration files / element database.
 The vibrant colors and visuals were done with the help of {italic(bold("ANSI escape codes"))}, although you should note that {bold("some terminals may lack support.")}
-{dim("(You can disable this anytime in the config.json file, or using the --init flag.)")}
-There are also other flags you can provide to this CLI. (The ones marked after the slash are shortcut flags. {bold("They behave the same as the original flags.")})
+{dim("(You can disable all styles by using the --raw or -r flag.)")}
+There are also other flags you can provide to this CLI. (The ones marked after the slash are shortcut flags. {italic("They behave the same as the original flags.")}) {italic("All flags are case-sensitive.")}
 
 - {bold("--debug")} / -d
 - Enable debug mode for testing (always the first priority)
@@ -1060,9 +1043,6 @@ There are also other flags you can provide to this CLI. (The ones marked after t
 
 - {bold("--random")} / -R
 - Pick a random element
-
-- {bold("--test")} / -T
-- Test the terminal effects
 
 Also, for flags that import other scripts, debug mode does not apply. Sorry!
 
@@ -1164,8 +1144,7 @@ if len(sys.argv) > 1:
             create_flag_event("--compare", "-C", callable=compare_by_factor) or
             create_flag_event("--bond-type", "-B", callable=compare_bond_type) or
             create_flag_event("--random", "-R", callable=select_random_element) or
-            create_flag_event("--version", "-v", callable=fetch_version) or
-            create_flag_event("--test", "-T", callable=import_testing)
+            create_flag_event("--version", "-v", callable=fetch_version)
         )
 
     if user_input:
@@ -1526,7 +1505,7 @@ print_header("Nuclear Properties")
 print()
 
 print(f" p{superscript_pos} - {fore('Protons', RED)}: {bold(protons)}")
-print(f" n{superscript_new} - {fore('Neutrons', BLUE)}: {bold(neutrons)}")
+print(f" n{superscript_zero} - {fore('Neutrons', BLUE)}: {bold(neutrons)}")
 print(f" e{superscript_neg} - {fore('Electrons', YELLOW)}: {bold(electrons)}")
 print(f" nv - {fore('Valence Electrons', VALENCE_ELECTRONS_COL)}: {bold(valence_electrons)}")
 
