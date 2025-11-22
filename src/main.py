@@ -168,46 +168,44 @@ compare_tips = [
 
 compare_tip = pick_tip(compare_tips)
 
-# Fetch arguments that are not flags (removes --export, --compare, etc.)
+modifier_flags = {"--debug", "-d", "--raw", "-r"}
+
+positionarg_req_flags = {
+    "--export", "-x",
+    "--compare", "-C",
+    "--bond-type", "-B",
+}
+
+positionarg_nreq_flags = {
+    "--info", "-i",
+    "--random", "-R",
+    "--version", "-v",
+    "--update", "-u",
+}
+
+valid_flags = modifier_flags | positionarg_req_flags | positionarg_nreq_flags
+
 def get_positional_args() -> list[str]:
     return [arg for arg in sys.argv[1:] if not arg.startswith("-")]
 
-# The opposite of get_positional_args
 def get_flags() -> list[str]:
     return [arg for arg in sys.argv[1:] if arg.startswith("-")]
 
-# Other arguments that are NOT flags
 positional_arguments = [arg.strip() for arg in get_positional_args()]
-
-# Defining flag arguments to use everywhere
 flag_arguments = [arg.strip() for arg in get_flags()]
 
-valid_flags = [
-    "--debug", "--info", "--update", "--export",
-    "--compare", "--bond-type", "--random", "--version", "--test", "--raw",
-
-    "-d", "-i", "-u", "-x",
-    "-C", "-B", "-R", "-v", "-T", "-r"
-]
-
-flags_that_require_position_argument = [
-    "--export", "--compare", "--bond-type",
-
-    "-x", "-C", "-B"
-]
-
-separated_flags = []
+# Expand combined short flags
+separated_flags: list[str] = []
 for flag in flag_arguments:
     if flag.startswith("--"):
         separated_flags.append(flag)
-    elif flag.startswith("-") and len(flag) > 1:
+    elif flag.startswith("-") and len(flag) > 2:
         for char in flag[1:]:
-            shorthand_flag = f"-{char}"
-            separated_flags.append(shorthand_flag)
+            separated_flags.append(f"-{char}")
     else:
         separated_flags.append(flag)
 
-# Unit conversions
+# Unit conversion functions
 def celcius_to_kelvin(celsius):
 	return round((celsius + 273.15), 5)
 
@@ -447,7 +445,7 @@ def export_element():
                 {
                     "symbol": element["symbol"].capitalize(),
                     "fullname": element["fullname"].capitalize(),
-                    "isotope": element["isotope"],
+                    "isotope_name": element["isotope"],
                     "data": element["info"],
                 },
                 file,
@@ -456,7 +454,10 @@ def export_element():
             )
         else:
             json.dump(
-                element,
+                {
+                    **element,
+                    "isotopes": full_isotope_data.get(element["general"]["fullname"], {}),
+                },
                 file,
                 indent=4,
                 ensure_ascii=False
@@ -788,14 +789,6 @@ def enable_raw_output():
     update_symbols(False)
     update_color_configs(False)
 
-# Debugging is the first priority, therefore enable it ASAP when it gets activated to avoid syntax checking
-if ("--debug" in flag_arguments or "-d" in flag_arguments):
-    enable_debugging()
-
-# This is another priority
-if ("--raw" in flag_arguments or "-r" in flag_arguments):
-    enable_raw_output()
-
 def fetch_version():
     global PYPROJECT_FILE
     from update import fetch_toml
@@ -1110,33 +1103,44 @@ if TERMINAL_WIDTH < 80:
     logger.warn("Not enough width for terminal.")
 
 if len(sys.argv) > 1:
-    filtered_flags = [f for f in separated_flags if f in valid_flags and f not in ["-d", "--debug"]]
     unrecognized_flags = [f for f in separated_flags if f not in valid_flags]
-
     if unrecognized_flags:
         print("Unrecognizable flags detected. Run the script with the --info flag for more information.")
-        logger.abort("Unrecognizable flags detected.")
+        logger.abort(f"Unrecognizable flags detected: {unrecognized_flags}")
 
-    logger.info(f"Primary flags (after separation and filtering): {filtered_flags}")
+    modifier_used = [f for f in separated_flags if f in modifier_flags]
+    primary_flags = [f for f in separated_flags if f not in modifier_flags]
 
+    logger.info(f"Modifiers: {modifier_used}")
+    logger.info(f"Primary flags: {primary_flags}")
+    logger.info(f"Positional args: {positional_arguments}")
+
+    create_flag_event("--debug", "-d", callable=enable_debugging)
+    create_flag_event("--raw", "-r", callable=enable_raw_output)
+
+    primary_flag = None
     user_input = None
-    recognized_flag = False
 
-    if len(filtered_flags) == 0:
-        user_input = positional_arguments[0] if positional_arguments else None
-    elif len(filtered_flags) != 1:
+    if len(primary_flags) > 1:
         print("Multiple main flags detected. Run the script with the --info flag for more information.")
-        logger.abort("Multiple main flags detected.")
-    else:
-        primary_flag = filtered_flags[0]
-        if primary_flag in flags_that_require_position_argument:
-            if len(positional_arguments) == 0:
-                print(f"Flag {primary_flag} requires a positional argument. Refer to --info.")
-                logger.abort(f"Missing positional argument for {primary_flag}.")
-            user_input = positional_arguments[0]
-        elif len(positional_arguments) > 0:
-            print("Unexpected positional argument. Refer to --info.")
-            logger.abort("Unexpected additional arguments.")
+        logger.abort(f"Multiple main flags detected: {primary_flags}")
+    elif len(primary_flags) == 1:
+        primary_flag = primary_flags[0]
+
+        # Case 1: primary flag requires a positional argument
+        if primary_flag in positionarg_req_flags:
+            if len(positional_arguments) > 1 and primary_flag not in ['-C', '-B', '--compare', '--bond-type']:
+                print(fore("Too many positional arguments. Refer to --info.", RED))
+                logger.abort("Too many positional arguments.")
+
+            user_input = positional_arguments[0] if positional_arguments else None
+
+        # Case 2: primary flag must not have positional arguments
+        elif primary_flag in positionarg_nreq_flags:
+            if len(positional_arguments) > 0:
+                print(fore("Unexpected positional argument. Refer to --info.", RED))
+                logger.abort("Unexpected additional arguments.")
+
         recognized_flag = (
             create_flag_event("--info", "-i", callable=get_information) or
             create_flag_event("--update", "-u", callable=check_for_updates) or
@@ -1147,13 +1151,25 @@ if len(sys.argv) > 1:
             create_flag_event("--version", "-v", callable=fetch_version)
         )
 
+        if recognized_flag and primary_flag in positionarg_nreq_flags:
+            sys.exit(0)
+
+    else:
+        if len(positional_arguments) > 1:
+            print(fore("Too many positional arguments. Refer to --info.", RED))
+            logger.abort("Too many positional arguments.")
+        user_input = positional_arguments[0] if positional_arguments else None
+
     if user_input:
         logger.info(f"Element positional argument entry given: \"{user_input}\"")
         current_element_data, current_element_suggestion = process_isotope_input(user_input)
         if ISOTOPE_LOGIC:
             sys.exit(0)
         if current_element_data is None:
-            message = f"Invalid element or isotope.{' Did you mean \"' + bold(current_element_suggestion) + '\"?' if current_element_suggestion else ' Falling back to interactive input.'}"
+            message = (
+                f"Invalid element or isotope."
+                f"{' Did you mean \"' + bold(current_element_suggestion) + '\"?' if current_element_suggestion else ' Falling back to interactive input.'}"
+            )
             print(fore(message, YELLOW if current_element_suggestion else RED))
             logger.warn("No valid element or isotope provided from argv, fallback to interactive.")
     else:
@@ -1396,30 +1412,6 @@ electron_affinity = electronic["electron_affinity"]
 ionization_energy = electronic["ionization_energy"]
 oxidation_states = electronic["oxidation_states"]
 
-negatives_template = [0, -1, -2, -3, -4, -5]
-positives_template = [1, 2, 3, 4, 5, 6, 7, 8, 9]
-
-negatives = []
-positives = []
-
-for state in negatives_template:
-    if state in oxidation_states:
-        if state == 0:
-            negatives.append(bold(fore(state, GREEN)))
-        else:
-            negatives.append(bold(fore(state, BLUE)))
-    else:
-        negatives.append(dim(str(state)))
-
-for state in positives_template:
-    if state in oxidation_states:
-        positives.append(bold(fore(state, RED)))
-    else:
-        positives.append(dim(str(state)))
-
-negatives_result = ", ".join(negatives)
-positives_result = ", ".join(positives)
-
 conductivity_type = electronic["conductivity_type"]
 
 try:
@@ -1552,8 +1544,39 @@ ionization_energy_series_tip = bold("(THIS IS A VERY HUGE SIMPLIFICATION. Do not
 print(f"      {bold("ESTIMATED")} Ionization Energy Series {ionization_energy_series_tip}:")
 print(f"\n{calculate_ionization_series(subshells, atomic_number, ionization_energy)}\n")
 
-oxidation_states_tip = dim(f"(Only the ones that have {fore("color", BLUE)} are activated)")
-print(f" {emoji_energy} - {fore("Oxidation States", YELLOW)} {oxidation_states_tip}:\n{"   " + negatives_result}\n{"   " + positives_result}\n")
+if VERBOSE:
+    negatives_template = [0, -1, -2, -3, -4, -5]
+    positives_template = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+    negatives = []
+    positives = []
+
+    for state in negatives_template:
+        if state in oxidation_states:
+            if state == 0:
+                negatives.append(bold(fore(state, GREEN)))
+            else:
+                negatives.append(bold(fore(state, BLUE)))
+        else:
+            negatives.append(dim(str(state)))
+
+    for state in positives_template:
+        if state in oxidation_states:
+            positives.append(bold(fore(state, RED)))
+        else:
+            positives.append(dim(str(state)))
+
+    negatives_result = ", ".join(negatives)
+    positives_result = ", ".join(positives)
+    oxidation_states_result = f"\n{"   " + negatives_result}\n{"   " + positives_result}\n"
+    oxidation_states_tip = dim(f"(Only the ones that have {fore("color", BLUE)} are activated)")
+else:
+    raw_oxidation_states = map(str, oxidation_states[:])
+    raw_oxidation_states = ", ".join(raw_oxidation_states)
+    oxidation_states_result = f"\n{raw_oxidation_states}\n"
+    oxidation_states_tip = ""
+
+print(f" {emoji_energy} - {fore("Oxidation States", YELLOW)} {oxidation_states_tip}:{oxidation_states_result}")
 print(f" c - {fore("Conductivity Type", BRIGHT_BLACK)}: {bold(formatted_conductivity)}")
 
 print()
