@@ -1013,26 +1013,39 @@ The vibrant colors and visuals were done with the help of {italic(bold("ANSI esc
 There are also other flags you can provide to this CLI. (The ones marked after the slash are shortcut flags. {italic("They behave the same as the original flags.")}) {italic("All flags are case-sensitive.")}
 
 - {bold("--debug")} / -d
-- Enable debug mode for testing (always the first priority)
+- Enable debug mode for testing
+- Is a modifier flag
+{bold("NOTE: The debug messages intentionally use colors to catch to the eye, even when raw mode is enabled.")}
+
+- {bold("--raw")} / -r
+- Disable almost all terminal effects, including truecolor, terminal colors, styles and unicode characters
+- Useful for scripting but may need maintenance (output style may and will vary)
+- Is a modifier flag
 
 - {bold("--info")} / -i
 - Give this information message
+- Is a main flag that requires no positional arguments
 
 - {bold("--version")} / -v
 - Check the version
+- Is a main flag that requires no positional arguments
 
 - {bold("--update")} / -u
 - Check for updates
+- Is a main flag that requires no positional arguments
 
 - {bold("--export")} [{fore("element", BLUE)}],
   {bold("--export")} [{fore("isotope", GREEN)}] / -x
 - Export {fore("element", BLUE)} or {fore("isotope", GREEN)} to a .json file
+- Is a main flag with optional positional arguments
 
 - {bold("--compare")} [{fore("factor", RED)}] / -C
 - Compare all elements with a factor of {fore("factor", RED)}
+- Is a main flag with optional positional arguments
 
 - {bold("--bond-type")} / -B
 - Compare two elements and get their bond type
+- Is a main flag with optional positional arguments
 
 - {bold("--random")} / -R
 - Pick a random element
