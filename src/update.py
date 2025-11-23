@@ -79,7 +79,7 @@ def update_main():
 
     print(
         f"This will forcefully update the repo from GitHub.\n"
-        f"{fore('This won\'t delete your config.json, output.json, and any other files that are marked in .gitignore.', BLUE)}\n"
+        f"{fore('This won\'t delete your output.json, and any other files that are marked in .gitignore.', BLUE)}\n"
         "Do you want to continue? (Y/n)"
     )
 

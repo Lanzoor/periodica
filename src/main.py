@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
 try:
-    import platform, sys, json, os, re, difflib, random, typing, textwrap, copy, functools, pprint
+    import platform, sys, json, os, re, difflib, random, typing, textwrap, copy, functools, pprint, matplotlib
 except ImportError:
     print("It seems like some of the standard libraries are missing. Please make sure you have the right version of the Python interpreter installed.")
     sys.exit(0)
 
-import platform, sys, json, os, re, difflib, random, typing, textwrap, copy, functools
+import platform, sys, json, os, re, difflib, random, typing, textwrap, copy, functools, matplotlib
 
 try:
     import lib, lib.loader, lib.terminal, lib.directories
