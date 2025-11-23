@@ -16,7 +16,7 @@ except ImportError:
 
 from lib.loader import get_response, Logger, import_failsafe
 from lib.terminal import RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, DEFAULT_COLOR, BRIGHT_BLACK, BRIGHT_GREEN, BRIGHT_RED
-from lib.terminal import fore, back, inverse_color, bold, dim, italic, gradient
+from lib.terminal import fore, back, inverse, bold, dim, italic, gradient
 from lib.directories import ELEMENT_DATA_FILE, ISOTOPE_DATA_FILE, OUTPUT_FILE, UPDATE_SCRIPT
 from pprint import pprint
 
@@ -28,6 +28,7 @@ EXPORT_ENABLED = False
 DEBUG_MODE = False
 ISOTOPE_LOGIC = False
 VERBOSE = True
+HIDE_ISOTOPES = False
 
 recognized_flag = False
 data_malformed = False
@@ -168,12 +169,17 @@ compare_tips = [
 
 compare_tip = pick_tip(compare_tips)
 
-modifier_flags = {"--debug", "-d", "--raw", "-r"}
+modifier_flags = {
+    "--debug", "-d",
+    "--raw", "-r",
+    "--hide-isotopes", "-H",
+}
 
 positionarg_req_flags = {
-    "--export", "-x",
+    "--export", "-X",
     "--compare", "-C",
     "--bond-type", "-B",
+    "--ionization", "-O",
 }
 
 positionarg_nreq_flags = {
@@ -345,18 +351,20 @@ def calculate_ionization_series(subshells: list[str], atomic_number: int, ioniza
 
         # Appending to the output
         lines.append(
-            f"  - {bold(ordinal(index + 1))} Ionization:\n"
-            f"    {fore('Removed Subshell', RED)}: {formatted_subshell}\n"
-            f"    {sigma} - {fore('Shielding Constant', PERIWINKLE)}: {shielding_constant:.2f}\n"
-            f"    Z_eff - {fore('Effective Nuclear Charge', GOLD)}: {Z_eff:.2f}\n"
-            f"    {fore('Ionization Energy', PINK)}: {bold(round(current_IE, 3))}{uncertainty}\n"
+            f"""
+  - {bold(ordinal(index + 1))} Ionization:
+    {fore('Removed Subshell', RED)}: {formatted_subshell}
+    {sigma} - {fore('Shielding Constant', PERIWINKLE)}: {shielding_constant:.2f}
+    Z_eff - {fore('Effective Nuclear Charge', GOLD)}: {Z_eff:.2f}
+    {fore('Ionization Energy', PINK)}: {bold(round(current_IE, 3))}{uncertainty}
+            """
         )
 
         if last_idx is not None:
             quantum_no, azimuthal_no, count = current_config[last_idx]
             current_config[last_idx] = (quantum_no, azimuthal_no, count - 1)
 
-    return "\n".join(lines)
+    return "".join(lines)
 
 def convert_superscripts(text: str) -> str:
     superscript_map = {
@@ -378,7 +386,6 @@ def conjunction_join(entries: list) -> str:
 def create_flag_event(*flags: str, callable):
     for flag in separated_flags:
         if flag in flags:
-            logger.debug(f"Flag matched: {flag}, calling {callable.__name__}")
             callable()
             return True
     return False
@@ -386,7 +393,9 @@ def create_flag_event(*flags: str, callable):
 # Below are functions that get triggered by create_flag_event when flags are given
 def get_information():
     logger.info("User gave --info flag; redirecting to information logic.")
+    print_separator()
     print(program_information)
+    print_separator()
     sys.exit(0)
 
 def check_for_updates():
@@ -778,16 +787,22 @@ def enable_debugging():
         logger.info(f"Other positional arguments given: {", ".join(positional_arguments)}")
 
 def enable_raw_output():
-    global VERBOSE, print, fore, back, bold, dim, italic, inverse_color, gradient
+    global VERBOSE, print, fore, back, bold, dim, italic, inverse, gradient
     VERBOSE = False
     logger.info("Enabled raw output mode.")
 
-    funclist = ['fore', 'back', 'bold', 'dim', 'italic', 'inverse_color', 'gradient']
+    funclist = ['fore', 'back', 'bold', 'dim', 'italic', 'inverse', 'gradient']
     for name in funclist:
         globals()[name] = functools.partial(globals()[name], disable=True)
 
     update_symbols(False)
     update_color_configs(False)
+
+def hide_isotopes():
+    global HIDE_ISOTOPES
+    HIDE_ISOTOPES = True
+
+    logger.info("Disabled isotope display.")
 
 def fetch_version():
     global PYPROJECT_FILE
@@ -964,11 +979,11 @@ def find_element(candidate) -> typing.Tuple[dict | None, str | None]:
     for _, element_candidate_data in enumerate(full_element_data.values()):
         name = element_candidate_data["general"]["fullname"].lower()
         symbol = element_candidate_data["general"]["symbol"].lower()
-        identifiers = element_candidate_data["general"]["identifiers"]
+        atomic_number = str(element_candidate_data["general"]["atomic_number"])
 
         possible_names.extend([name, symbol])
 
-        if candidate in identifiers:
+        if candidate in (name, symbol, atomic_number):
             logger.info(f"Exact match found: {name} ({symbol})")
             return element_candidate_data, None
 
@@ -1003,14 +1018,14 @@ def safe_format(value, measurement = "", *, placeholder = "None"):
 # Information
 periodica_logo = bold(gradient("Periodica", (156, 140, 255), (140, 255, 245)) if VERBOSE else fore("periodica", BLUE))
 
-program_information = f"""
-Welcome to {periodica_logo}!
+program_information = f"""Welcome to {periodica_logo}!
 This CLI provides useful information about the periodic elements, and pretty much everything here was made by the Discord user {bold(fore("Lanzoor", INDIGO))}.
 This project started as a fun hobby at around {bold("March 2025")}, but ended up getting taken seriously.
 This CLI was built with {fore("Python", CYAN)}, and uses {fore("JSON", YELLOW)} for configuration files / element database.
 The vibrant colors and visuals were done with the help of {italic(bold("ANSI escape codes"))}, although you should note that {bold("some terminals may lack support.")}
 {dim("(You can disable all styles by using the --raw or -r flag.)")}
-There are also other flags you can provide to this CLI. (The ones marked after the slash are shortcut flags. {italic("They behave the same as the original flags.")}) {italic("All flags are case-sensitive.")}
+There are also other flags you can provide to this CLI. (The ones marked after the slash are shortcut flags. {italic("They behave the same as the original flags, but can be stacked.")}) {italic("All flags are case-sensitive.")}
+Modifier flags can be stacked with main flags, and main flags cannot be stacked.
 
 - {bold("--debug")} / -d
 - Enable debug mode for testing
@@ -1021,6 +1036,16 @@ There are also other flags you can provide to this CLI. (The ones marked after t
 - Disable almost all terminal effects, including truecolor, terminal colors, styles and unicode characters
 - Useful for scripting but may need maintenance (output style may and will vary)
 - Is a modifier flag
+
+- {bold("--hide-isotopes")} / -H
+- Hide isotope display for elements
+- {italic("Does NOT hide isotope display when an isotope is searched")}
+- Is a modifier flag
+
+- {bold("--random")} / -R
+- Pick a random element
+- {italic("Does not work with other main flags, such as -C or -B")}
+- Is a main and modifier flag
 
 - {bold("--info")} / -i
 - Give this information message
@@ -1035,7 +1060,7 @@ There are also other flags you can provide to this CLI. (The ones marked after t
 - Is a main flag that requires no positional arguments
 
 - {bold("--export")} [{fore("element", BLUE)}],
-  {bold("--export")} [{fore("isotope", GREEN)}] / -x
+  {bold("--export")} [{fore("isotope", GREEN)}] / -X
 - Export {fore("element", BLUE)} or {fore("isotope", GREEN)} to a .json file
 - Is a main flag with optional positional arguments
 
@@ -1047,13 +1072,9 @@ There are also other flags you can provide to this CLI. (The ones marked after t
 - Compare two elements and get their bond type
 - Is a main flag with optional positional arguments
 
-- {bold("--random")} / -R
-- Pick a random element
-
 Also, for flags that import other scripts, debug mode does not apply. Sorry!
 
-Anyways, I hope you enjoy this small CLI. {bold("Please read the README.md file for more information!")}
-"""
+Anyways, I hope you enjoy this small CLI. {bold("Please read the README.md file for information related with installation!")}"""
 
 # Reading json file, and trying to get from GitHub if fails
 logger.info("Program initialized.")
@@ -1067,8 +1088,8 @@ try:
         full_isotope_data = json.load(file)
         logger.info("isotopes.json file was successfully found.")
 except json.JSONDecodeError:
-    logger.warn("The data JSON files were modified, please do not do so no matter what.")
-    print("The data JSON files were modified and malformed. Please do not do so, no matter what.\nThis means you need fresh data JSON files, is it okay for me to get the file for you on GitHub? (y/N)")
+    logger.warn("The data JSON files were modified.")
+    print("The data JSON files were modified and malformed.\nThis means you need fresh data JSON files, is it okay for me to get the file for you on GitHub? (y/N)")
     data_malformed = True
 except FileNotFoundError:
     logger.warn("The data JSON files were not found.")
@@ -1130,6 +1151,7 @@ if len(sys.argv) > 1:
 
     create_flag_event("--debug", "-d", callable=enable_debugging)
     create_flag_event("--raw", "-r", callable=enable_raw_output)
+    create_flag_event("--hide-isotopes", "-H", callable=hide_isotopes)
 
     primary_flag = None
     user_input = None
@@ -1157,15 +1179,12 @@ if len(sys.argv) > 1:
         recognized_flag = (
             create_flag_event("--info", "-i", callable=get_information) or
             create_flag_event("--update", "-u", callable=check_for_updates) or
-            create_flag_event("--export", "-x", callable=export_element) or
+            create_flag_event("--export", "-X", callable=export_element) or
             create_flag_event("--compare", "-C", callable=compare_by_factor) or
             create_flag_event("--bond-type", "-B", callable=compare_bond_type) or
             create_flag_event("--random", "-R", callable=select_random_element) or
             create_flag_event("--version", "-v", callable=fetch_version)
         )
-
-        if recognized_flag and primary_flag in positionarg_nreq_flags:
-            sys.exit(0)
 
     else:
         if len(positional_arguments) > 1:
@@ -1303,11 +1322,11 @@ discoverers = conjunction_join(entries)
 protons = nuclear["protons"]
 neutrons = nuclear["neutrons"]
 electrons = nuclear["electrons"]
-valence_electrons = nuclear["valence_electrons"]
 up_quarks = (protons * 2) + neutrons
 down_quarks = protons + (neutrons * 2)
 mass_number = protons + neutrons
 shells = electronic["shells"]
+valence_electrons = shells[-1]
 subshells = electronic["subshells"]
 isotopes = full_isotope_data[fullname.capitalize()]
 
@@ -1338,12 +1357,12 @@ for index, subshell in enumerate(subshells):
         electron_count = int(electron_count)
         max_capacity = subshell_capacities[subshell_type]
         colored_subshell = fore(formatted_subshell, SUBSHELL_COLORS.get(subshell_type, DEFAULT_COLOR))
-        colored_subshell = inverse_color(colored_subshell) if index + 1 == len(subshells) else colored_subshell
+        colored_subshell = inverse(colored_subshell) if index + 1 == len(subshells) else colored_subshell
         subshell_result += f"{colored_subshell} ({electron_count}/{max_capacity}), "
     else:
         subshell_type = subshell[1] if len(subshell) > 1 else 's'
         colored_subshell = fore(formatted_subshell, SUBSHELL_COLORS.get(subshell_type, DEFAULT_COLOR))
-        colored_subshell = inverse_color(colored_subshell) if index + 1 == len(subshells) else colored_subshell
+        colored_subshell = inverse(colored_subshell) if index + 1 == len(subshells) else colored_subshell
         subshell_result += f"{colored_subshell}, "
 
 subshell_result = subshell_result.rstrip(", ")
@@ -1404,13 +1423,14 @@ if subshells:
         last_subshell = last_subshell[:-1] + convert_superscripts(last_subshell[-1]) if VERBOSE else last_subshell
         last_subshell = fore(last_subshell, SUBSHELL_COLORS.get(subshell_type, (255, 255, 255)))
 
-        subshell_visualisation += f"\n\n      {fore("Valence Subshell", VALENCE_ELECTRONS_COL)} ({inverse_color(last_subshell)}):"
-        subshell_visualisation += f"\n        n - {fore('Principal', CYAN)}: {bold(principal_quantum_number)}"
-        subshell_visualisation += f"\n        l - {fore('Azimuthal', GREEN)}: {bold(azimuthal_quantum_number)} ({subshell_type} subshell)"
-        subshell_visualisation += f"\n        m_l - {fore('Magnetic', YELLOW)}: {bold(magnetic_quantum_number)} (approximated)"
-        subshell_visualisation += f"\n        m_s - {fore('Spin', MAGENTA)}: {bold(spin_quantum_number)} ({unpaired_electrons} unpaired electron{'s' if unpaired_electrons != 1 else ''}, {pair_determiner})"
-        subshell_visualisation += f"\n        {sigma} - {fore('Shielding Constant', PERIWINKLE)}: {bold(f'{shielding_constant:.2f}')}"
-        subshell_visualisation += f"\n        Z_eff - {fore('Effective Nuclear Charge', GOLD)}: {bold(f'{effective_nuclear_charge:.2f}')}"
+        subshell_visualisation += f"""
+
+      {fore("Valence Subshell", VALENCE_ELECTRONS_COL)} ({inverse(last_subshell)}):
+        n - {fore('Principal', CYAN)}: {bold(principal_quantum_number)}
+        l - {fore('Azimuthal', GREEN)}: {bold(azimuthal_quantum_number)} ({subshell_type} subshell)
+        m_l - {fore('Magnetic', YELLOW)}: {bold(magnetic_quantum_number)} (approximated)
+        {sigma} - {fore('Shielding Constant', PERIWINKLE)}: {bold(f'{shielding_constant:.2f}')}
+        Z_eff - {fore('Effective Nuclear Charge', GOLD)}: {bold(f'{effective_nuclear_charge:.2f}')}"""
 
 # Physical properties
 melting_point = physical["melt"]
@@ -1523,16 +1543,21 @@ print(f" d - {fore('Down Quarks', CYAN)}: {down_quarks_calculation}")
 shell_tip = dim(f'(Valence electrons in {fore('yellow', VALENCE_ELECTRONS_COL)})')
 print(f" ⚛️ - {fore('Shells', EXCITED)} {shell_tip}:\n    {shell_result}")
 
-subshell_tip = dim(f'(Colored by type: {subshell_examples}, the valence subshell has its color inversed)')
+subshell_tip = dim(f'(Colored by type: {subshell_examples}, the valence subshell has its color {inverse("inversed")})')
 print(f" 🌀 - {fore('Subshells', PERIWINKLE)} {subshell_tip}:\n    {subshell_result}")
 print(f"      {bold('Breakdown')}:\n\n{subshell_visualisation}\n")
 
-isotope_tip = dim(f"(Decay processes in {fore("red", RED)} need verification. Do not trust them!)")
-print(f" 🪞 - Isotopes ({len(isotopes.keys())}): {isotope_tip}:")
+if not HIDE_ISOTOPES:
+    isotope_tip = dim(f"(Decay processes in {fore("red", RED)} need verification. Do not trust them!)")
+else:
+    isotope_tip = dim(fore(f"(HIDDEN due to -H / --hide-isotopes flag usage)", RED))
 
-for isotope, information in isotopes.items():
-    print()
-    print_isotope(isotope, information, fullname)
+print(f" 🪞 - Isotopes ({len(isotopes.keys())}): {isotope_tip}")
+
+if not HIDE_ISOTOPES:
+    for isotope, information in isotopes.items():
+        print()
+        print_isotope(isotope, information, fullname)
 
 print()
 print_header("Physical Properties")
@@ -1542,7 +1567,9 @@ print(f" 💧 - {fore("Melting Point", MELT_COL)}: {format_temperature(melting_p
 print(f" 💨 - {fore("Boiling Point", BOIL_COL)}: {format_temperature(boiling_point)}")
 print(f" A - {fore("Mass Number", GOLD)}: {fore(protons, RED)} + {fore(neutrons, BLUE)} = {bold(protons + neutrons)}")
 print(f" u - {fore("Atomic Mass", BRIGHT_RED)}: {bold(atomic_mass)}g/mol")
-print(f" {emoji_radioactive} - {fore("Radioactive", ORANGE)}: {fore("Yes", GREEN) if radioactive else fore("No", RED)}")
+
+radioactive_determiner = fore("Yes", GREEN) if radioactive else fore("No", RED)
+print(f" {emoji_radioactive} - {fore("Radioactive", ORANGE)}: {radioactive_determiner}")
 print(f" t1/2 - {fore("Half Life", PERIWINKLE)}: {safe_format(half_life, placeholder="Stable")}")
 
 print()
@@ -1553,8 +1580,7 @@ print(f" {chi} - {fore("Electronegativity", ELECTRONEG_COL)}: {bold(electronegat
 print(f" EA - {fore("Electron Affinity", EXCITED)}: {format_energy(electron_affinity)}")
 print(f" IE - {fore("Ionization Energy", PINK)}: {format_energy(ionization_energy)}")
 
-ionization_energy_series_tip = bold("(THIS IS A VERY HUGE SIMPLIFICATION. Do not rely on them.)")
-print(f"      {bold("ESTIMATED")} Ionization Energy Series {ionization_energy_series_tip}:")
+print(f"      {bold("ESTIMATED")} Calculated Ionization Energy Series:")
 print(f"\n{calculate_ionization_series(subshells, atomic_number, ionization_energy)}\n")
 
 if VERBOSE:

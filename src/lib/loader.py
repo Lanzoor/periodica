@@ -48,7 +48,6 @@ class Logger():
 
     def abort(self, message):
         self.error(message)
-        time.sleep(1)
         self.fatal("Program terminated.")
         sys.exit(0)
 

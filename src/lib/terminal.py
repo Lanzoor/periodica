@@ -70,7 +70,7 @@ def underline(string, *, disable: bool = False) -> str:
     if disable: return string
     return f"\033[4m{string}\033[24m"
 
-def inverse_color(string, *, disable: bool = False) -> str:
+def inverse(string, *, disable: bool = False) -> str:
     if disable: return string
     return f"\033[7m{string}\033[27m"
 

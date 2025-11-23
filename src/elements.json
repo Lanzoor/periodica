@@ -15,14 +15,12 @@
             "type": "Reactive nonmetal",
             "radioactive": false,
             "half_life": null,
-            "cas_number": "CAS1333-74-0",
-            "identifiers": ["h", "hydrogen", "1"]
+            "cas_number": "CAS1333-74-0"
         },
         "nuclear": {
             "protons": 1,
             "neutrons": 0,
-            "electrons": 1,
-            "valence_electrons": 1
+            "electrons": 1
         },
         "physical": {
             "atomic_mass": 1.00797094202593,
@@ -85,14 +83,12 @@
             "type": "Noble gas",
             "radioactive": false,
             "half_life": null,
-            "cas_number": "CAS7440-59-7",
-            "identifiers": ["he", "helium", "2"]
+            "cas_number": "CAS7440-59-7"
         },
         "nuclear": {
             "protons": 2,
             "neutrons": 2,
-            "electrons": 2,
-            "valence_electrons": 2
+            "electrons": 2
         },
         "physical": {
             "atomic_mass": 4.00260128098301,
@@ -157,14 +153,12 @@
             "type": "Alkali metal",
             "radioactive": false,
             "half_life": null,
-            "cas_number": "CAS7439-93-2",
-            "identifiers": ["li", "lithium", "3"]
+            "cas_number": "CAS7439-93-2"
         },
         "nuclear": {
             "protons": 3,
             "neutrons": 4,
-            "electrons": 3,
-            "valence_electrons": 1
+            "electrons": 3
         },
         "physical": {
             "atomic_mass": 6.941765353712,
@@ -228,14 +222,12 @@
             "type": "Alkali earth metal",
             "radioactive": false,
             "half_life": null,
-            "cas_number": "CAS7440-41-7",
-            "identifiers": ["be", "beryllium", "4"]
+            "cas_number": "CAS7440-41-7"
         },
         "nuclear": {
             "protons": 4,
             "neutrons": 5,
-            "electrons": 4,
-            "valence_electrons": 2
+            "electrons": 4
         },
         "physical": {
             "atomic_mass": 9.01218306156802,
@@ -299,14 +291,12 @@
             "type": "Metalloid",
             "radioactive": false,
             "half_life": null,
-            "cas_number": "CAS7440-42-8",
-            "identifiers": ["b", "boron", "5"]
+            "cas_number": "CAS7440-42-8"
         },
         "nuclear": {
             "protons": 5,
             "neutrons": 6,
-            "electrons": 5,
-            "valence_electrons": 3
+            "electrons": 5
         },
         "physical": {
             "atomic_mass": 10.8135187949825,
@@ -370,14 +360,12 @@
             "type": "Reactive nonmetal",
             "radioactive": false,
             "half_life": null,
-            "cas_number": "CAS7440-44-0",
-            "identifiers": ["c", "carbon", "6"]
+            "cas_number": "CAS7440-44-0"
         },
         "nuclear": {
             "protons": 6,
             "neutrons": 6,
-            "electrons": 6,
-            "valence_electrons": 4
+            "electrons": 6
         },
         "physical": {
             "atomic_mass": 12.011,
@@ -440,14 +428,12 @@
             "type": "Reactive nonmetal",
             "radioactive": false,
             "half_life": null,
-            "cas_number": "CAS7727-37-9",
-            "identifiers": ["n", "nitrogen", "7"]
+            "cas_number": "CAS7727-37-9"
         },
         "nuclear": {
             "protons": 7,
             "neutrons": 7,
-            "electrons": 7,
-            "valence_electrons": 5
+            "electrons": 7
         },
         "physical": {
             "atomic_mass": 14.0067,
