@@ -73,12 +73,18 @@ def get_response(url: str):
         log.abort(f"Failed to fetch data. Status code: {response.status_code}.") # type: ignore
 
 def import_failsafe():
-    if not VENV_DIR.is_dir():
+    troublesome = False
+    try:
+        import requests, packaging, matplotlib
+    except ImportError:
+        troublesome = True
+
+    if not VENV_DIR.is_dir() or troublesome:
         print("The virtual environment was not found. Should I run the build script for you? (Y/n)")
 
         confirmation = input("> ").strip().lower()
         if confirmation not in ["y", "yes", ""]:
-            print("You denied the file execution. Please run the build script yourself.")
+            print("You denied the file execution. Please run the build script yourself, or a fresh install.")
             sys.exit(0)
         if BUILD_SCRIPT.is_file():
             subprocess.run([sys.executable, str(BUILD_SCRIPT)], check=True)

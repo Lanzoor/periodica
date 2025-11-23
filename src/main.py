@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 
 try:
-    import platform, sys, json, os, re, difflib, random, typing, textwrap, copy, functools, pprint, matplotlib
-except ImportError:
+    import platform, sys, json, os, re, difflib, random, typing, textwrap, copy, functools, pprint, typing
+except ImportError as e:
     print("It seems like some of the standard libraries are missing. Please make sure you have the right version of the Python interpreter installed.")
     sys.exit(0)
 
-import platform, sys, json, os, re, difflib, random, typing, textwrap, copy, functools, matplotlib
+import platform, sys, json, os, re, difflib, random, typing, textwrap, copy, functools
+from pprint import pprint
+from typing import Any
 
 try:
     import lib, lib.loader, lib.terminal, lib.directories
@@ -18,10 +20,11 @@ from lib.loader import get_response, Logger, import_failsafe
 from lib.terminal import RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, DEFAULT_COLOR, BRIGHT_BLACK, BRIGHT_GREEN, BRIGHT_RED
 from lib.terminal import fore, back, inverse, bold, dim, italic, gradient
 from lib.directories import ELEMENT_DATA_FILE, ISOTOPE_DATA_FILE, OUTPUT_FILE, UPDATE_SCRIPT
-from pprint import pprint
 
-# Just in case when the venv does not exist
-import_failsafe()
+try:
+    import matplotlib
+except ImportError:
+    import_failsafe()
 
 # Flags for logic altering
 EXPORT_ENABLED = False
@@ -45,7 +48,7 @@ logger = Logger(enable_debugging=DEBUG_MODE)
 
 # Defining unicode symbols
 def update_symbols(allow: bool = VERBOSE):
-    global cm3, m3, mm2, superscript_pos, superscript_neg, superscript_zero, pm, emoji_chains, emoji_energy, rho, chi, full_block, up_arrow, down_arrow, sigma, double_line, single_line, PHASE_TYPE_SYMBOLS, CONDUCTIVITY_TYPE_SYMBOLS, emoji_exchange, emoji_speaker, emoji_radioactive
+    global cm3, m3, mm2, superscript_pos, superscript_neg, superscript_zero, pm, emoji_chains, emoji_energy, rho, chi, full_block, up_arrow, down_arrow, sigma, double_line, single_line, PHASE_TYPE_SYMBOLS, CONDUCTIVITY_TYPE_SYMBOLS, emoji_exchange, emoji_speaker, emoji_radioactive, emoji_triangular
 
     cm3 = "cm³" if allow else "cm3"
     m3 = "m³" if allow else "m3"
@@ -56,6 +59,7 @@ def update_symbols(allow: bool = VERBOSE):
     emoji_exchange = "🔃" if allow else "<->"
     emoji_speaker = "📢" if allow else "->"
     emoji_radioactive = "☢️" if allow else "!"
+    emoji_triangular = "📐" if allow else "S"
 
     rho = "ρ" if allow else "p"
     chi = "χ" if allow else "x"
@@ -1235,12 +1239,12 @@ if DEBUG_MODE:
     pprint(current_element_data, indent = 2, width=TERMINAL_WIDTH, sort_dicts=False, underscore_numbers=True)
 
 # Dividing categories
-general = current_element_data["general"]
-historical = current_element_data["historical"]
-nuclear = current_element_data["nuclear"]
-electronic = current_element_data["electronic"]
-physical = current_element_data["physical"]
-measurements = current_element_data["measurements"]
+general: dict = current_element_data["general"]
+historical: dict = current_element_data["historical"]
+nuclear: dict = current_element_data["nuclear"]
+electronic: dict = current_element_data["electronic"]
+physical: dict = current_element_data["physical"]
+measurements: dict = current_element_data["measurements"]
 
 # General properties
 fullname: str = general["fullname"]
@@ -1253,7 +1257,7 @@ description = "\n\n" + "\n\n".join(
     for paragraph in description.strip().split("\n\n")
 )
 
-color: list[int] = general["appearance"]["color"]
+appearance_desc: list[int] = general["appearance"]["description"]
 
 phase: str = general["appearance"]["phase"].capitalize()
 formatted_phase: str = phase[:]
@@ -1271,8 +1275,9 @@ except (KeyError, TypeError):
 
 discoverers = historical["discoverers"]
 discovery_date = historical["date"]
-period: int = general["period"]
-group: int = general["group"]
+coordinates = general["coordinates"]
+period: int = coordinates["period"]
+group: int = coordinates["group"]
 element_type = general["type"]
 block = general["block"]
 cas_number = general["cas_number"]
@@ -1438,6 +1443,20 @@ boiling_point = physical["boil"]
 atomic_mass = physical["atomic_mass"]
 radioactive = general["radioactive"]
 half_life = general["half_life"]
+structure = physical.get("structure", None)
+
+structure_type = None
+structure_description = None
+structure_constants = None
+
+if structure is not None:
+    structure_type = structure["type"]
+    structure_description = structure["description"]
+    formatted_structure_description = bold(structure_type) + f" ({structure_description})"
+    structure_constants = structure["constants"]
+    formatted_structure_constants = [f"{key} ≈ {value}Å ≈ {float(value) * 10:2f}nm" for (key, value) in structure_constants.items()]
+    formatted_structure_constants = ",\n      ".join(formatted_structure_constants)
+    formatted_structure_constants = "      " + formatted_structure_constants
 
 # Electronic properties
 electronegativity = electronic["electronegativity"]
@@ -1475,29 +1494,14 @@ print(f" 🔡 - Element Name: {bold(fullname)} ({bold(symbol)})")
 print(f" Z - Atomic Number: {bold(atomic_number)}")
 print(f" 📃 - Description: {description}\n")
 print(f" 🔡 - STP Phase: {formatted_phase}")
-
-if color is not None:
-    try:
-        color_description = general["appearance"]["color_description"]
-    except (KeyError, ValueError):
-        logger.warn(f"No color description for {fullname.capitalize()} given when the color was present. Please pay attention.")
-        color_description = "not given"
-    if VERBOSE:
-        r, g, b = color
-        colored_block = fore(full_block * 2, (r, g, b))
-        print(f" 🎨 - Standard Color: {colored_block} ({bold(color_description)})")
-    else:
-        print(f" 🎨 - Standard Color: {color_description}")
-else:
-    print(f" 🎨 - Standard Color: {fore("Colorless", NULL)}")
-
+print(f" 🎨 - Appearance(s): {bold(appearance_desc)}")
 print(f" 🔍 - Discoverer(s): {discoverers}")
 print(f" 🔍 - Discovery Date: {bold(discovery_date)}")
 print(f" ↔️ - Period (Row): {bold(period)}")
 print(f" ↕️ - Group (Column): {bold(group)}")
 
 try:
-    print(f" 🎨 - Type: {bold(fore(element_type, ELEMENT_TYPE_COLORS[element_type]))}")
+    print(f" 🎨 - Element Type: {bold(fore(element_type, ELEMENT_TYPE_COLORS[element_type]))}")
 except KeyError:
     logger.warn(f"Invalid element type for {fullname.capitalize()}. Please pay attention.")
 
@@ -1607,7 +1611,7 @@ if VERBOSE:
 
     negatives_result = ", ".join(negatives)
     positives_result = ", ".join(positives)
-    oxidation_states_result = f"\n{"   " + negatives_result}\n{"   " + positives_result}\n"
+    oxidation_states_result = f"\n{"    " + negatives_result}\n{"    " + positives_result}\n"
     oxidation_states_tip = dim(f"(Only the ones that have {fore("color", BLUE)} are activated)")
 else:
     raw_oxidation_states = map(str, oxidation_states[:])
@@ -1615,7 +1619,7 @@ else:
     oxidation_states_result = f"\n{raw_oxidation_states}\n"
     oxidation_states_tip = ""
 
-print(f" {emoji_energy} - {fore("Oxidation States", YELLOW)} {oxidation_states_tip}:{oxidation_states_result}")
+print(f" {fore("Oxidation States", YELLOW)} {oxidation_states_tip}:{oxidation_states_result}")
 print(f" c - {fore("Conductivity Type", BRIGHT_BLACK)}: {bold(formatted_conductivity)}")
 
 print()
@@ -1623,24 +1627,34 @@ print_header("Measurements")
 print()
 
 print(f" r - {fore("Radius", PINK)}: ")
-print(f"   r_calc - Calculated: {safe_format(radius['calculated'], 'pm', placeholder='N/A')}")
-print(f"   r_emp - Empirical: {safe_format(radius['empirical'], 'pm', placeholder='N/A')}")
-print(f"   r_cov - Covalent: {safe_format(radius['covalent'], 'pm', placeholder='N/A')}")
-print(f"   rvdW - Van der Waals: {safe_format(radius['van_der_waals'], 'pm', placeholder='N/A')}\n")
-print(f" H - {fore("Hardness", PERIWINKLE)}: ")
-print(f"   HB - Brinell: {safe_format(hardness['brinell'], f'kgf/{mm2}')}")
-print(f"   H - Mohs: {safe_format(hardness['mohs'], '')}")
-print(f"   HV - Vickers: {safe_format(hardness['vickers'], f'kgf/{mm2}')}\n")
-print(f" {emoji_exchange} - {fore("Moduli", EXCITED)}: ")
-print(f"   K - Bulk Modulus: {safe_format(moduli['bulk'], 'GPa')}")
-print(f"   E - Young's Modulus: {safe_format(moduli['young'], 'GPa')}")
-print(f"   G - Shear Modulus: {safe_format(moduli['shear'], 'GPa')}")
-print(f"   ν - Poisson's Ratio: {safe_format(moduli['poissons_ratio'], '')}\n")
-print(f" {rho} - {fore("Density", CYAN)}: ")
-print(f"   STP Density: {safe_format(density['STP'], f'kg/{m3}')}")
-print(f"   Liquid Density: {safe_format(density['liquid'], f'kg/{m3}')}\n")
+print(f"    r_calc - Calculated: {safe_format(radius['calculated'], 'pm', placeholder='N/A')}")
+print(f"    r_emp - Empirical: {safe_format(radius['empirical'], 'pm', placeholder='N/A')}")
+print(f"    r_cov - Covalent: {safe_format(radius['covalent'], 'pm', placeholder='N/A')}")
+print(f"    rvdW - Van der Waals: {safe_format(radius['van_der_waals'], 'pm', placeholder='N/A')}\n")
 
-print(f" {emoji_speaker} - Speed of Sound Transmission: {bold(sound_transmission_speed)}m/s = {bold(sound_transmission_speed / 1000)}km/s")
+print(f" H - {fore("Hardness", PERIWINKLE)}: ")
+print(f"    HB - Brinell: {safe_format(hardness['brinell'], f'kgf/{mm2}')}")
+print(f"    H - Mohs: {safe_format(hardness['mohs'], '')}")
+print(f"    HV - Vickers: {safe_format(hardness['vickers'], f'kgf/{mm2}')}\n")
+
+print(f" {fore("Moduli", EXCITED)}: ")
+print(f"    K - Bulk Modulus: {safe_format(moduli['bulk'], 'GPa')}")
+print(f"    E - Young's Modulus: {safe_format(moduli['young'], 'GPa')}")
+print(f"    G - Shear Modulus: {safe_format(moduli['shear'], 'GPa')}")
+print(f"    ν - Poisson's Ratio: {safe_format(moduli['poissons_ratio'], '')}\n")
+
+if structure is not None:
+    print(f" {fore("Structure", PERIWINKLE)}: ")
+    print(f"    Structure Type: {formatted_structure_description}") # type: ignore
+    print(f"    Structure Constants:\n{formatted_structure_constants}\n") # type: ignore
+else:
+    print(f" {fore("Structure", PERIWINKLE)}: {fore('N/A', RED)}\n")
+
+print(f" {rho} - {fore("Density", CYAN)}: ")
+print(f"    STP Density: {safe_format(density['STP'], f'kg/{m3}')}")
+print(f"    Liquid Density: {safe_format(density['liquid'], f'kg/{m3}')}\n")
+
+print(f" -> - {fore("Speed of Sound Transmission", BRIGHT_BLACK)}: {bold(sound_transmission_speed)}m/s = {bold(sound_transmission_speed / 1000)}km/s")
 
 print_separator()
 

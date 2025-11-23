@@ -6,11 +6,13 @@
             "atomic_number": 1,
             "description": "Hydrogen is the lightest and most abundant element in the universe. It is a colorless, odorless, and highly flammable diatomic gas at room temperature.\nHydrogen is the primary fuel for stars and the sun, playing a crucial role in the synthesis of heavier elements through nuclear fusion.\nIt forms compounds with most nonmetals and is essential in organic chemistry and industrial processes, including ammonia production and petroleum refining.",
             "appearance": {
-                "color": null,
+                "description": "colorless, odorless gas",
                 "phase": "gas"
             },
-            "period": 1,
-            "group": 1,
+            "coordinates": {
+                "period": 1,
+                "group": 1
+            },
             "block": "s",
             "type": "Reactive nonmetal",
             "radioactive": false,
@@ -25,7 +27,15 @@
         "physical": {
             "atomic_mass": 1.00797094202593,
             "melt": -259.16,
-            "boil": -252.879
+            "boil": -252.879,
+            "structure": {
+                "type": "Solid molecular",
+                "description": "low temp, hexagonal close-packed",
+                "constants": {
+                    "a": "3.78",
+                    "c": "6.06"
+                }
+            }
         },
         "electronic": {
             "electronegativity": 2.2,
@@ -74,11 +84,13 @@
             "atomic_number": 2,
             "description": "Helium is a colorless, odorless, tasteless, non-toxic, inert monatomic gas. It is the second lightest and second most abundant element in the observable universe. Helium is used in cryogenics, deep-sea breathing systems, and as a protective gas in industrial processes. It has the lowest boiling and melting points of all elements and does not solidify at standard pressure.",
             "appearance": {
-                "color": null,
+                "description": "colorless, odorless gas",
                 "phase": "gas"
             },
-            "period": 1,
-            "group": 18,
+            "coordinates": {
+                "period": 1,
+                "group": 18
+            },
             "block": "s",
             "type": "Noble gas",
             "radioactive": false,
@@ -93,7 +105,15 @@
         "physical": {
             "atomic_mass": 4.00260128098301,
             "melt": -272.2,
-            "boil": -268.93
+            "boil": -268.93,
+            "structure": {
+                "type": "Solid molecular",
+                "description": "low temp, hexagonal close-packed",
+                "constants": {
+                    "a": "3.57",
+                    "c": "5.82"
+                }
+            }
         },
         "electronic": {
             "electronegativity": null,
@@ -143,12 +163,13 @@
             "atomic_number": 3,
             "description": "Lithium is a soft, silvery-white alkali metal. Under standard conditions it is the lightest metal and the least dense solid element.\nIt has important industrial applications in batteries, ceramics, and pharmaceuticals, and it is highly reactive—especially in water.",
             "appearance": {
-                "color": [192, 192, 192],
-                "color_description": "Light Grey",
+                "description": "silvery-white metallic solid",
                 "phase": "solid"
             },
-            "period": 2,
-            "group": 1,
+            "coordinates": {
+                "period": 2,
+                "group": 1
+            },
             "block": "s",
             "type": "Alkali metal",
             "radioactive": false,
@@ -163,7 +184,14 @@
         "physical": {
             "atomic_mass": 6.941765353712,
             "melt": 180.54,
-            "boil": 1342
+            "boil": 1342,
+            "structure": {
+                "type": "Metallic",
+                "description": "body-centered cubic",
+                "constants": {
+                    "a": "3.49"
+                }
+            }
         },
         "electronic": {
             "electronegativity": 0.98,
@@ -212,12 +240,13 @@
             "atomic_number": 4,
             "description": "Beryllium is a chemical element; it has symbol Be and atomic number 4. It is a steel-gray, strong, lightweight, and brittle alkaline earth metal. It occurs naturally only in combination with other elements in minerals like beryl. Beryllium has important applications in aerospace, nuclear, and X-ray equipment due to its stiffness, low density, and transparency to X-rays.",
             "appearance": {
-                "color": [150, 150, 150],
-                "color_description": "Light Grey",
+                "description": "gray-white metallic solid",
                 "phase": "solid"
             },
-            "period": 2,
-            "group": 2,
+            "coordinates": {
+                "period": 2,
+                "group": 2
+            },
             "block": "s",
             "type": "Alkali earth metal",
             "radioactive": false,
@@ -232,7 +261,15 @@
         "physical": {
             "atomic_mass": 9.01218306156802,
             "melt": 1287,
-            "boil": 2470
+            "boil": 2470,
+            "structure": {
+                "type": "Metallic",
+                "description": "hexagonal close-packed",
+                "constants": {
+                    "a": "2.29",
+                    "c": "3.58"
+                }
+            }
         },
         "electronic": {
             "electronegativity": 1.57,
@@ -281,12 +318,13 @@
             "atomic_number": 5,
             "description": "Boron is a chemical element with symbol B and atomic number 5. It is a brittle, dark, lustrous metalloid (solid) that occurs naturally only in compounds (e.g. borate minerals). Boron’s compounds are used in high-strength, lightweight materials (boron fibers, ceramics), in borosilicate glass, and as additives in fiberglass and detergents. The isotope boron-10 is an important neutron-absorbing agent in nuclear reactors.",
             "appearance": {
-                "color": [60, 30, 30],
-                "color_description": "Dark Brown",
+                "description": "black-brown solid",
                 "phase": "solid"
             },
-            "period": 2,
-            "group": 13,
+            "coordinates": {
+                "period": 2,
+                "group": 13
+            },
             "block": "p",
             "type": "Metalloid",
             "radioactive": false,
@@ -301,7 +339,15 @@
         "physical": {
             "atomic_mass": 10.8135187949825,
             "melt": 2349,
-            "boil": 4200
+            "boil": 4200,
+            "structure": {
+                "type": "Covalent network",
+                "description": "rhombohedral complex",
+                "constants": {
+                    "a": "5.06",
+                    "c": "12.0"
+                }
+            }
         },
         "electronic": {
             "electronegativity": 2.04,
@@ -351,11 +397,13 @@
             "atomic_number": 6,
             "description": "Carbon is a nonmetallic chemical element with the symbol C and atomic number 6. It's the backbone of all known life, forming the basis of organic molecules like proteins, DNA, and carbohydrates. In its pure forms, carbon appears as graphite (soft and black), diamond (hard and transparent), and amorphous carbon (like charcoal or soot).",
             "appearance": {
-                "color": null,
+                "description": "black solid (graphite/charcoal), transparent crystal (diamond), etc.",
                 "phase": "solid"
             },
-            "period": 2,
-            "group": 14,
+            "coordinates": {
+                "period": 2,
+                "group": 14
+            },
             "block": "p",
             "type": "Reactive nonmetal",
             "radioactive": false,
@@ -370,7 +418,14 @@
         "physical": {
             "atomic_mass": 12.011,
             "melt": 3823,
-            "boil": 4300
+            "boil": 4300,
+            "structure": {
+                "type": "Covalent network",
+                "description": "diamond cubic",
+                "constants": {
+                    "a": "3.57"
+                }
+            }
         },
         "electronic": {
             "electronegativity": 2.55,
@@ -419,11 +474,13 @@
             "atomic_number": 7,
             "description": "Nitrogen is a colorless, odorless gas that constitutes 78% of the Earth's atmosphere. It is a nonmetal and the lightest member of group 15 of the periodic table.\nNitrogen is essential for life, forming the building blocks of proteins and nucleic acids, and is widely used in fertilizers, explosives, and industrial processes.",
             "appearance": {
-                "color": null,
+                "description": "colorless, odorless gas",
                 "phase": "gas"
             },
-            "period": 2,
-            "group": 15,
+            "coordinates": {
+                "period": 2,
+                "group": 15
+            },
             "block": "p",
             "type": "Reactive nonmetal",
             "radioactive": false,
@@ -438,7 +495,14 @@
         "physical": {
             "atomic_mass": 14.0067,
             "melt": -210.0,
-            "boil": -195.8
+            "boil": -195.8,
+            "structure": {
+                "type": "Solid molecular",
+                "description": "low temp, cubic",
+                "constants": {
+                    "a": "5.66"
+                }
+            }
         },
         "electronic": {
             "electronegativity": 3.04,
