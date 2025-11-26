@@ -3,7 +3,7 @@ from lib.terminal import bold, fore, RED, BLUE
 from lib.loader import Logger, get_response, import_failsafe
 from lib.directories import PERIODICA_DIR, PYPROJECT_FILE, BUILD_SCRIPT
 
-log = Logger(enable_debugging=False)
+logger = Logger(enable_debugging=False)
 
 if __name__ == "__main__":
     print("Please refrain from running this script manually. Instead, please run the periodica.sh file with the --update flag.")
@@ -39,7 +39,7 @@ def fetch_toml():
     return local_version
 
 def update_main():
-    log.info("Update program initialized.")
+    logger.info("Update program initialized.")
 
     local_version = fetch_toml()
     url = "https://raw.githubusercontent.com/Lanzoor/periodictable/main/pyproject.toml"
@@ -51,11 +51,11 @@ def update_main():
 
     if not lts_version:
         print("Failed to get latest version info.")
-        log.abort("Failed to get latest version info.")
+        logger.abort("Failed to get latest version info.")
 
     print(f"Local version: {local_version}")
     print(f"Latest version: {lts_version}")
-    log.info(f"Local: {local_version}, latest: {lts_version}")
+    logger.info(f"Local: {local_version}, latest: {lts_version}")
 
     try:
         from packaging import version
@@ -67,15 +67,15 @@ def update_main():
 
     if parsed_local == parsed_lts:
         print(bold("You are using the latest version."))
-        log.info("Scripts are up-to-date.")
+        logger.info("Scripts are up-to-date.")
         sys.exit(0)
     elif parsed_local > parsed_lts:
         print(bold("You are using a newer or development version.") + " Just please make sure that you didn't modify the pyproject.toml file.")
-        log.warn("Scripts are in the development version. Please make sure to not tweak the pyproject.toml file if possible.")
+        logger.warn("Scripts are in the development version. Please make sure to not tweak the pyproject.toml file if possible.")
         sys.exit(0)
 
     print(bold(f"Update available: {lts_version}!"))
-    log.info(f"An update is avaliable; {lts_version}")
+    logger.info(f"An update is avaliable; {lts_version}")
 
     print(
         f"This will forcefully update the repo from GitHub.\n"
@@ -86,7 +86,7 @@ def update_main():
     confirmation = input("> ").strip().lower()
     if confirmation not in ["y", "yes", ""]:
         print("Update canceled.")
-        log.abort("User canceled update confirmation.")
+        logger.abort("User canceled update confirmation.")
 
     try:
         subprocess.run(["git", "fetch"], cwd=PERIODICA_DIR, check=True)
@@ -106,4 +106,4 @@ def update_main():
 
     except subprocess.CalledProcessError:
         print(fore("Git fetch/reset or build failed. Please ensure this is a valid Git repository.", RED))
-        log.abort("Failed to fetch and/or reset. Ensure this is a valid Git repository.")
+        logger.abort("Failed to fetch and/or reset. Ensure this is a valid Git repository.")

@@ -1,4 +1,4 @@
-import logging, time, sys, subprocess
+import logging, sys, subprocess
 from lib.directories import LOGGING_FILE, VENV_DIR, BUILD_SCRIPT
 
 with open(LOGGING_FILE, 'w', encoding="utf-8"):
@@ -13,40 +13,40 @@ logging.basicConfig(
 )
 
 class Logger():
-    def __init__(self, *, enable_debugging=False):
+    def __init__(self, *, enable_debugging: bool = False):
         self.enable_debugging = enable_debugging
 
-    def debug(self, message):
+    def debug(self, message: str) -> None:
         from .terminal import bold
         logging.debug(message)
         if self.enable_debugging:
             print(bold(f"DEBUG: {message}"))
 
-    def info(self, message):
+    def info(self, message: str) -> None:
         from .terminal import fore, GREEN
         logging.info(message)
         if self.enable_debugging:
             print(fore(f"INFO: {message}", GREEN))
 
-    def warn(self, message):
+    def warn(self, message: str) -> None:
         from .terminal import fore, YELLOW
         logging.warning(message)
         if self.enable_debugging:
             print(fore(f"WARNING: {message}", YELLOW))
 
-    def error(self, message):
+    def error(self, message: str) -> None:
         from .terminal import fore, RED
         logging.error(message)
         if self.enable_debugging:
             print(fore(f"ERROR: {message}", RED))
 
-    def fatal(self, message):
+    def fatal(self, message: str) -> None:
         from .terminal import fore, BLUE
         logging.fatal(message)
         if self.enable_debugging:
             print(fore(f"FATAL: {message}", BLUE))
 
-    def abort(self, message):
+    def abort(self, message: str) -> None:
         self.error(message)
         self.fatal("Program terminated.")
         sys.exit(0)
@@ -75,7 +75,7 @@ def get_response(url: str):
 def import_failsafe():
     troublesome = False
     try:
-        import requests, packaging, matplotlib
+        import requests, packaging, matplotlib # type: ignore
     except ImportError:
         troublesome = True
 

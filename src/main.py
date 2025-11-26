@@ -6,12 +6,12 @@ except ImportError as e:
     print("It seems like some of the standard libraries are missing. Please make sure you have the right version of the Python interpreter installed.")
     sys.exit(0)
 
-import platform, sys, json, os, re, difflib, random, typing, textwrap, copy, functools
+import platform, sys, json, os, re, difflib, random, textwrap, copy, functools
 from pprint import pprint
-from typing import Any
+from typing import Any, Tuple, Callable
 
 try:
-    import lib, lib.loader, lib.terminal, lib.directories
+    import lib, lib.loader, lib.terminal, lib.directories # type: ignore
 except ImportError:
     print("The utils helper library or its scripts was not found. Please ensure all required files are present.")
     sys.exit(0)
@@ -21,17 +21,20 @@ from lib.terminal import RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, DEFAULT_COLOR,
 from lib.terminal import fore, back, inverse, bold, dim, italic, gradient
 from lib.directories import ELEMENT_DATA_FILE, ISOTOPE_DATA_FILE, OUTPUT_FILE, UPDATE_SCRIPT
 
+import builtins
+print = builtins.print # if this gets fixed remove this
+
 try:
-    import matplotlib
+    import matplotlib # TODO: in fact, do use this # type: ignore
 except ImportError:
     import_failsafe()
 
 # Flags for logic altering
-EXPORT_ENABLED = False
-DEBUG_MODE = False
-ISOTOPE_LOGIC = False
-VERBOSE = True
-HIDE_ISOTOPES = False
+export_enabled = False
+debug_mode = False
+isotope_logic = False
+verbose_output = True
+hide_isotopes = False
 
 recognized_flag = False
 data_malformed = False
@@ -44,11 +47,11 @@ current_element_data = None
 current_element_suggestion = ""
 current_isotope_data = None
 
-logger = Logger(enable_debugging=DEBUG_MODE)
+logger = Logger(enable_debugging=debug_mode)
 
 # Defining unicode symbols
-def update_symbols(allow: bool = VERBOSE):
-    global cm3, m3, mm2, superscript_pos, superscript_neg, superscript_zero, pm, emoji_chains, emoji_energy, rho, chi, full_block, up_arrow, down_arrow, sigma, double_line, single_line, PHASE_TYPE_SYMBOLS, CONDUCTIVITY_TYPE_SYMBOLS, emoji_exchange, emoji_speaker, emoji_radioactive, emoji_triangular
+def update_symbols(allow: bool = verbose_output):
+    global cm3, m3, mm2, superscript_pos, superscript_neg, superscript_zero, pm, emoji_chains, emoji_energy, rho, chi, full_block, up_arrow, down_arrow, sigma, double_line, single_line, phase_symbols, conductivity_symbols, emoji_exchange, emoji_speaker, emoji_radioactive, emoji_triangular
 
     cm3 = "cm³" if allow else "cm3"
     m3 = "m³" if allow else "m3"
@@ -75,13 +78,13 @@ def update_symbols(allow: bool = VERBOSE):
     pm = "±" if allow else "+-"
 
     if allow:
-        PHASE_TYPE_SYMBOLS = {
+        phase_symbols = {
             "Solid": "🧊",
             "Gas": "💨",
             "Liquid": "💦"
         }
 
-        CONDUCTIVITY_TYPE_SYMBOLS = {
+        conductivity_symbols = {
             "Superconductor": "💨",
             "Semiconductor": "🔗",
             "Insulator": "🫧",
@@ -89,14 +92,14 @@ def update_symbols(allow: bool = VERBOSE):
             "Unsure": "❓"
         }
     else:
-        PHASE_TYPE_SYMBOLS = None
-        CONDUCTIVITY_TYPE_SYMBOLS = None
+        phase_symbols = None
+        conductivity_symbols = None
 
 update_symbols()
 
 # Defining custom colors (if terminal_effects is enabled)
-def update_color_configs(allow: bool = VERBOSE):
-    global VALENCE_ELECTRONS_COL, ELECTRONEG_COL, TURQUOISE, PINK, MELT_COL, BOIL_COL, ORANGE, INDIGO, NULL, EXCITED, PERIWINKLE, GOLD, ELEMENT_TYPE_COLORS, PHASE_TYPE_COLORS, CONDUCTIVITY_TYPE_COLORS, SUBSHELL_COLORS
+def update_color_configs(allow: bool = verbose_output):
+    global VALENCE_ELECTRONS_COL, ELECTRONEG_COL, TURQUOISE, PINK, MELT_COL, BOIL_COL, ORANGE, INDIGO, NULL, EXCITED, PERIWINKLE, GOLD, element_type_colors, phase_colors, conductivity_colors, subshell_colors
 
     VALENCE_ELECTRONS_COL = (248, 255, 166) if allow else YELLOW
     ELECTRONEG_COL = (131, 122, 255) if allow else BLUE
@@ -111,7 +114,7 @@ def update_color_configs(allow: bool = VERBOSE):
     PERIWINKLE = (159, 115, 255) if allow else CYAN
     GOLD = (255, 209, 102) if allow else YELLOW
 
-    ELEMENT_TYPE_COLORS = {
+    element_type_colors: dict[str, Any] = { # annotate this later
         "Reactive nonmetal": (130, 255, 151) if allow else BRIGHT_GREEN,
         "Noble gas": YELLOW,
         "Alkali metal": (215, 215, 215) if allow else BRIGHT_BLACK,
@@ -119,13 +122,13 @@ def update_color_configs(allow: bool = VERBOSE):
         "Metalloid": CYAN
     }
 
-    PHASE_TYPE_COLORS = {
+    phase_colors: dict[str, Any] = { # this too
         "Solid": (156, 156, 156) if allow else BRIGHT_BLACK,
         "Gas": YELLOW,
         "Liquid": CYAN
     }
 
-    CONDUCTIVITY_TYPE_COLORS = {
+    conductivity_colors: dict[str, Any] = { # ehroweirh
         "Superconductor": NULL,
         "Semiconductor": CYAN,
         "Insulator": RED,
@@ -133,7 +136,7 @@ def update_color_configs(allow: bool = VERBOSE):
         "Unsure": EXCITED
     }
 
-    SUBSHELL_COLORS = {
+    subshell_colors = {
         's': RED,
         'p': GREEN,
         'd': CYAN,
@@ -216,47 +219,49 @@ for flag in flag_arguments:
         separated_flags.append(flag)
 
 # Unit conversion functions
-def celcius_to_kelvin(celsius):
+def celsius_to_kelvin(celsius: int | float) -> int | float:
 	return round((celsius + 273.15), 5)
 
-def celcius_to_fahrenheit(celsius):
+def celsius_to_fahrenheit(celsius: int | float) -> int | float:
 	return round((celsius * 9 / 5) + 32, 5)
 
-def format_temperature(variable):
-    return f"{bold(variable)}°C ≈ {bold(celcius_to_fahrenheit(variable))}°F = {bold(celcius_to_kelvin(variable))}K"
+def format_temperature(celsius: int | float) -> str:
+    formatted_celsius = bold(str(celsius))
+    formatted_fahrenheit = bold(str(celsius_to_fahrenheit(celsius)))
+    formatted_kelvin = bold(str(celsius_to_kelvin(celsius)))
+    return f"{formatted_celsius}°C ≈ {formatted_fahrenheit}°F = {formatted_kelvin}K"
 
-def eV_to_kJpermol(eV):
+def eV_to_kJpermol(eV: int | float) -> int | float:
     return round(eV * 96.485, 5)
 
-def format_energy(variable):
-    return f"{bold(variable)}eV ≈ {bold(eV_to_kJpermol(variable))}kJ/mol"
+def format_energy(eV: int | float) -> str:
+    formatted_eV = bold(str(eV))
+    formatted_kJpermol = bold(str(eV_to_kJpermol(eV)))
+    return f"{formatted_eV}eV ≈ {formatted_kJpermol}kJ/mol"
 
-def print_header(title, double=False):
+def print_header(title: str, double: bool = False) -> None:
     dash = double_line if double else single_line
-    dashes = dash * (TERMINAL_WIDTH - len(title) - 4)
+    dashes = dash * (terminal_width - len(title) - 4)
     print(f"{dash * 2} {bold(title)} {dashes}")
 
-def print_separator():
+def print_separator() -> None:
     print()
-    print(single_line * TERMINAL_WIDTH)
+    print(single_line * terminal_width)
     print()
 
-def check_for_termination(user_input):
+def check_for_termination(user_input: str) -> None:
     if user_input in ["quit", "q", "abort", "exit", "terminate", "stop"]:
         print("Okay. Exiting...")
         logger.abort("User exited interactive input.")
 
-def ordinal(number):
+def ordinal(number: int):
     if 10 <= number % 100 <= 20:
         suffix = "th"
     else:
         suffix = {1: "st", 2: "nd", 3: "rd"}.get(number % 10, "th")
     return f"{number}{suffix}"
 
-def parse_electron_configuration(subshells: list[str]) -> list[tuple[int, str, int]]:
-    if not isinstance(subshells, list) or not all(isinstance(s, str) for s in subshells):
-        logger.error(f"Expected list[str], got {type(subshells)}: {subshells}")
-        return []
+def extract_subshell_factors(subshells: list[str]) -> list[tuple[int, str, int]]:
     config = []
     pattern = re.compile(r"(\d+)([spdf])(\d+)")
     for subshell in subshells:
@@ -269,10 +274,7 @@ def parse_electron_configuration(subshells: list[str]) -> list[tuple[int, str, i
     return config
 
 def calculate_shielding_constant(subshell_list: list[str], target_subshell: str) -> float:
-    if not isinstance(subshell_list, list) or not all(isinstance(s, str) for s in subshell_list):
-        logger.error(f"Expected list[str], got {type(subshell_list)}: {subshell_list}")
-        return 0.0
-    if not isinstance(target_subshell, str) or len(target_subshell) < 2:
+    if len(target_subshell) < 2:
         logger.error(f"Invalid target subshell: {target_subshell}")
         return 0.0
 
@@ -283,7 +285,7 @@ def calculate_shielding_constant(subshell_list: list[str], target_subshell: str)
         logger.warn(f"Invalid target subshell format: {target_subshell}")
         return 0.0
 
-    configuration = parse_electron_configuration(subshell_list)
+    configuration = extract_subshell_factors(subshell_list)
     if not configuration:
         logger.warn(f"No valid configuration for subshell list: {subshell_list}")
         return 0.0
@@ -305,7 +307,7 @@ def calculate_shielding_constant(subshell_list: list[str], target_subshell: str)
 
 def calculate_ionization_series(subshells: list[str], atomic_number: int, ionization_energy: float | None) -> str:
     lines = []
-    config = parse_electron_configuration(subshells)
+    config = extract_subshell_factors(subshells)
     if not config:
         return fore("No valid subshell data for ionization series.", YELLOW)
 
@@ -351,16 +353,17 @@ def calculate_ionization_series(subshells: list[str], atomic_number: int, ioniza
             uncertainty = f"{pm}25eV"
 
         formatted_subshell = f"{subshell_str}1"
-        formatted_subshell = formatted_subshell[:-1] + convert_superscripts(formatted_subshell[-1]) if VERBOSE else formatted_subshell
+        formatted_subshell = formatted_subshell[:-1] + convert_superscripts(formatted_subshell[-1]) if verbose_output else formatted_subshell
 
         # Appending to the output
+        formatted_IE = bold(str(round(current_IE, 3)))
         lines.append(
             f"""
   - {bold(ordinal(index + 1))} Ionization:
     {fore('Removed Subshell', RED)}: {formatted_subshell}
     {sigma} - {fore('Shielding Constant', PERIWINKLE)}: {shielding_constant:.2f}
     Z_eff - {fore('Effective Nuclear Charge', GOLD)}: {Z_eff:.2f}
-    {fore('Ionization Energy', PINK)}: {bold(round(current_IE, 3))}{uncertainty}
+    {fore('Ionization Energy', PINK)}: {formatted_IE}{uncertainty}
             """
         )
 
@@ -378,7 +381,7 @@ def convert_superscripts(text: str) -> str:
     }
     return "".join(superscript_map.get(char, char) for char in text)
 
-def conjunction_join(entries: list) -> str:
+def conjunction_join(entries: list[Any]) -> str:
     if not entries:
         return ""
     if len(entries) == 1:
@@ -387,10 +390,10 @@ def conjunction_join(entries: list) -> str:
         return f"{entries[0]} and {entries[1]}"
     return f"{', '.join(entries[:-1])}, and {entries[-1]}"
 
-def create_flag_event(*flags: str, callable):
+def create_flag_event(*flags: str, callback: Callable[..., Any]):
     for flag in separated_flags:
         if flag in flags:
-            callable()
+            callback()
             return True
     return False
 
@@ -413,17 +416,17 @@ def check_for_updates():
         logger.abort("Failed to find the update script.")
 
 def export_element():
-    global EXPORT_ENABLED, positional_arguments
+    global export_enabled, positional_arguments
 
     logger.info("User gave --export flag; redirecting to export logic.")
-    EXPORT_ENABLED = True
+    export_enabled = True
 
     user_input = positional_arguments[0] if positional_arguments else None
 
     element = None
 
     if user_input is not None:
-        element, suggestion = process_isotope_input(user_input)
+        element, suggestion = find_isotope(user_input)
         if element is None and not suggestion:
             print(fore("Could not find that element or isotope. Please enter one manually.", RED))
         elif element is None:
@@ -436,7 +439,7 @@ def export_element():
 
             check_for_termination(user_input)
 
-            element, suggestion = process_isotope_input(user_input)
+            element, suggestion = find_isotope(user_input)
             if element is None and not suggestion:
                 print(fore("Could not find that element or isotope. Please enter one manually.", RED))
             elif element is None:
@@ -518,6 +521,7 @@ def compare_by_factor():
         "descending",
         "name"
     ]
+
     determiner = ""
     sorting_method = "ascending"
 
@@ -542,7 +546,11 @@ def compare_by_factor():
             logger.warn(f"No direct match found for '{factor_candidate}'.")
             factor_candidate = None
 
-    def get_key_by_input(element_data: dict[str, dict], isotope_data: dict[str, dict], factor: str):
+    def get_key_by_input(
+        element_data: dict[str, Any],
+        isotope_data: dict[str, Any],
+        factor: str
+    ) -> Any | None:
         nonlocal determiner
         result = None
         try:
@@ -612,7 +620,7 @@ def compare_by_factor():
 
     formatted_factors = ', '.join(map(lambda element: bold(element), factors))
     formatted_factors = "\n" + "\n\n".join(
-        textwrap.fill(paragraph.strip(), width=round(TERMINAL_WIDTH * 1.25), initial_indent="    ", subsequent_indent="")
+        textwrap.fill(paragraph.strip(), width=round(terminal_width * 1.25), initial_indent="    ", subsequent_indent="")
         for paragraph in formatted_factors.strip().split("\n\n")
     ) + "\n"
 
@@ -670,7 +678,7 @@ def compare_by_factor():
     for name, value in sorted_results:
         if value is not None:
             padding = 30 + len(determiner)
-            bar_space = max(TERMINAL_WIDTH - padding, 10)
+            bar_space = max(terminal_width - padding, 10)
             bar_length = int((value / max_value) * bar_space)
             bar = fore(full_block * bar_length, CYAN)
             print(f"{name:<12} {str(round(value, 4)) + determiner:<12} [{bar}]")
@@ -682,14 +690,15 @@ def compare_by_factor():
     # Calculate stats
     valid_values = [value for _, value in valid_results]
     average = sum(valid_values) / len(valid_values) if valid_values else 0
+    formatted_average = bold(str(round(average, 4)))
     highest_pair = max(valid_results, key=lambda item: item[1])
     lowest_pair = min(valid_results, key=lambda item: item[1])
     formatted_nones = ', '.join(map(lambda element: bold(element), none_list))
 
     print()
-    print(f"Average - {bold(round(average, 4))}{determiner}")
-    print(f"Element with the highest {factor} is {bold(highest_pair[0])}, with {bold(highest_pair[1])}{determiner}.")
-    print(f"Element with the lowest {factor} is {bold(lowest_pair[0])}, with {bold(lowest_pair[1])}{determiner}.")
+    print(f"Average - {formatted_average}{determiner}")
+    print(f"Element with the highest {factor} is {bold(highest_pair[0])}, with {bold(str(highest_pair[1]))}{determiner}.")
+    print(f"Element with the lowest {factor} is {bold(lowest_pair[0])}, with {bold(str(lowest_pair[1]))}{determiner}.")
 
     if none_counter > 0:
         print(fore(f"{none_counter} element(s) do not have a value in {bold(factor)}, and they are;\n  {formatted_nones}", NULL))
@@ -757,13 +766,13 @@ def compare_bond_type():
     if diff < 0.4:
         bond_type_str = fore("Nonpolar Covalent", BLUE) + " -"
     elif diff < 1.7:
-        bond_type_str = fore("Polar Covalent", YELLOW) + (" δ" if VERBOSE else " d")
+        bond_type_str = fore("Polar Covalent", YELLOW) + (" δ" if verbose_output else " d")
     else:
-        bond_type_str = fore("Ionic", RED) + (" →" if VERBOSE else " >")
+        bond_type_str = fore("Ionic", RED) + (" →" if verbose_output else " >")
 
     print()
-    print(f"Primary element ({primary_element_name})'s electronegativity: {bold(primary_en)}")
-    print(f"Secondary element ({secondary_element_name})'s electronegativity: {bold(secondary_en)}")
+    print(f"Primary element ({primary_element_name})'s electronegativity: {bold(str(primary_en))}")
+    print(f"Secondary element ({secondary_element_name})'s electronegativity: {bold(str(secondary_en))}")
     print(f"Difference: {primary_en} - {secondary_en} = {bold(f'{diff:.3f}')}")
     print(f"Bond type: {bond_type_str} (According to Pauling's Electronegativity Method)")
     print()
@@ -779,10 +788,10 @@ def select_random_element():
     logger.info(f"Picked {current_element_data["general"]["fullname"]} as a random element.")
 
 def enable_debugging():
-    global DEBUG_MODE, logger
-    DEBUG_MODE = True
-    print(gradient("Debug mode enabled. Have fun...", ELECTRONEG_COL, NULL) if VERBOSE else fore("Debug mode enabled. Have fun...", BLUE)) # type: ignore
-    logger = Logger(enable_debugging=DEBUG_MODE)
+    global debug_mode, logger
+    debug_mode = True
+    print(gradient("Debug mode enabled. Have fun...", ELECTRONEG_COL, NULL) if verbose_output else fore("Debug mode enabled. Have fun...", BLUE))
+    logger = Logger(enable_debugging=debug_mode)
     logger.info("Enabled debug mode.")
     if flag_arguments:
         logger.info(f"Given flags: {", ".join(flag_arguments)}")
@@ -791,8 +800,8 @@ def enable_debugging():
         logger.info(f"Other positional arguments given: {", ".join(positional_arguments)}")
 
 def enable_raw_output():
-    global VERBOSE, print, fore, back, bold, dim, italic, inverse, gradient
-    VERBOSE = False
+    global verbose_output, print, fore, back, bold, dim, italic, inverse, gradient
+    verbose_output = False
     logger.info("Enabled raw output mode.")
 
     funclist = ['fore', 'back', 'bold', 'dim', 'italic', 'inverse', 'gradient']
@@ -803,8 +812,8 @@ def enable_raw_output():
     update_color_configs(False)
 
 def hide_isotopes():
-    global HIDE_ISOTOPES
-    HIDE_ISOTOPES = True
+    global hide_isotopes
+    hide_isotopes = True
 
     logger.info("Disabled isotope display.")
 
@@ -822,45 +831,57 @@ def fetch_version():
     sys.exit(0)
 
 # Extract symbol and number from an isotope
-def extract_isotope_factors(user_input: str) -> typing.Tuple[str | None, str | None]:
-    match = re.match(r"^(\d+)([A-Za-z]+)$", user_input)
+def extract_isotope_factors(isotope: str) -> dict[str, Any | None]:
+    text = isotope.strip().lower()
+
+    match = re.match(r"^(\d+)\s*([A-Za-z][a-z]?)$", text)
     if match:
-        return match.group(2), match.group(1)
+        mass, identifier = match.groups()
+        return {
+            "mass_number": mass,
+            "raw_identifier": identifier,
+            "meta": None,
+        }
 
-    match = re.match(r"^([A-Za-z]+)[\s\-]*(\d+)$", user_input)
+    match = re.match(r"^([A-Za-z]+)[\s\-]*(\d+)(m\d*)?$", text)
     if match:
-        return match.group(1), match.group(2)
+        identifier, mass, meta = match.groups()
+        return {
+            "mass_number": mass,
+            "raw_identifier": identifier,
+            "meta": meta,
+        }
 
-    return None, None
+    return {
+        "mass_number": None,
+        "raw_identifier": None,
+        "meta": None,
+    }
 
-def print_isotope(norm_iso, info, fullname):
+def print_isotope(isotope: str, isotope_data: dict[str, Any], fullname: str):
     global animation_delay
 
-    match = re.match(r"^(\d+)\s*([A-Za-z]+)$", norm_iso)
-    display_name = format_isotope(norm_iso, fullname) if match else norm_iso
+    match = re.match(r"^(\d+)\s*([A-Z][a-z]?)$", isotope)
+    display_name = format_isotope(isotope, fullname) if match else isotope
 
-    symbol, number = extract_isotope_factors(norm_iso)
-    superscript_name = convert_superscripts(number) + symbol
+    alt_name_display = f" ({isotope_data['name']})" if 'name' in isotope_data else ""
+    print(f"  - {bold(display_name)}{alt_name_display}:")
 
-    alt_name_display = ", " + info['name'] if 'name' in info else ""
-    name_display = f"({superscript_name}{italic(alt_name_display)})"
-    print(f"  - {bold(display_name)} {name_display}:")
-
-    protons = info['protons']
-    neutrons = info['neutrons']
+    protons = isotope_data['protons']
+    neutrons = isotope_data['neutrons']
     print(f"      p{superscript_pos}, e{superscript_neg} - {fore('Protons', RED)} and {fore('Electrons', YELLOW)}: {bold(protons)}")
-    print(f"      n{superscript_zero} - {fore('Neutrons', BLUE)}: {bold(neutrons)}")
+    print(f"      n{superscript_zero} - {fore('Neutrons', BLUE)}: {bold(str(neutrons))}")
 
     up_quarks = protons * 2 + neutrons
     down_quarks = protons + neutrons * 2
-    print(f"      u - {fore('Up Quarks', GREEN)}: ({fore(protons, RED)} * 2) + {fore(neutrons, BLUE)} = {bold(up_quarks)}")
-    print(f"      d - {fore('Down Quarks', CYAN)}: {fore(protons, RED)} + ({fore(neutrons, BLUE)} * 2) = {bold(down_quarks)}")
+    print(f"      u - {fore('Up Quarks', GREEN)}: ({fore(str(protons), RED)} * 2) + {fore(str(neutrons), BLUE)} = {bold(str(up_quarks))}")
+    print(f"      d - {fore('Down Quarks', CYAN)}: {fore(str(protons), RED)} + ({fore(str(neutrons), BLUE)} * 2) = {bold(str(down_quarks))}")
 
-    half_life = info.get('half_life')
+    half_life = isotope_data.get('half_life')
     print(f"      t1/2 - {fore("Half Life", PERIWINKLE)}: {bold(half_life) if half_life else fore('Stable', NULL)}")
-    print(f"      u - {fore("Isotope Weight", BRIGHT_RED)}: {bold(info['isotope_weight'])}g/mol")
+    print(f"      u - {fore("Isotope Weight", BRIGHT_RED)}: {bold(isotope_data['isotope_weight'])}g/mol")
 
-    def show_decay(decays, indent=12):
+    def show_decay(decays: dict[str, Any], indent: int = 12, metastable: str = ""):
         padding = " " * indent
 
         verified = [decay for decay in decays if "chance" in decay]
@@ -876,109 +897,129 @@ def print_isotope(norm_iso, info, fullname):
                 chance = f"({branch['chance']}%)" if branch["chance"] != 100 else ""
             else:
                 chance = ""
+
             products = branch.get("product", [])
             if not isinstance(products, list):
                 products = [str(products)]
-            out = ", ".join(bold(format_isotope(product, fullname)) for product in products)
+
+            products_result = []
+            for product in products:
+                unsure = False
+
+                if isinstance(product, str) and product.endswith("?"):
+                    unsure = True
+                    product = product[:-1]
+
+                parsed = extract_isotope_factors(product)
+                product_number = parsed["mass_number"]
+                product_symbol = parsed["raw_identifier"]
+
+                if not product_symbol or not product_number:
+                    label = str(product) + ("?" if unsure else "")
+                    products_result.append(label + " (Unlisted)")
+                    continue
+
+                element_data, _ = find_element(product_symbol)
+                if not element_data:
+                    label = str(product) + ("?" if unsure else "")
+                    products_result.append(label + " (Unlisted)")
+                    continue
+
+                product_name = element_data["general"]["fullname"]
+                product_isotope = f"{product_number}{product_symbol.upper()}"
+                label = format_isotope(product_isotope, product_name)
+                label = bold(label)
+
+                if unsure:
+                    label = fore(label + "?", RED)
+
+                products_result.append(label)
+
+            out = ", ".join(products_result)
             arrow = "->" if products else ""
 
-            print(f"{padding}{bold(display_name)} -> {bold(mode)} {arrow} {out} {chance}")
+            print(f"{padding}{bold(display_name + metastable)} {arrow} {bold(mode)} {arrow} {out} {chance}")
 
-    if isinstance(info.get("decay"), list):
+    if isinstance(isotope_data.get("decay"), list):
         print(f"      {emoji_chains} - {fore("Possible Decays", GOLD)}:")
-        show_decay(info["decay"])
+        show_decay(isotope_data["decay"])
 
-    if isinstance(info.get("metastable"), dict):
-        print(f"      m - {fore("Metastable Isotopes", EXCITED)}:")
-        for state, data in info["metastable"].items():
-            display_meta = format_isotope(norm_iso, fullname, metastable=state)
+    if isinstance(isotope_data.get("metastable"), dict):
+        print(f"\n      m - {fore("Metastable Isotopes", EXCITED)}:")
+        for meta, data in isotope_data["metastable"].items():
+            display_meta = format_isotope(isotope, fullname, metastable=meta)
             print(f"        {bold(display_meta)}:")
             if "half_life" in data:
                 print(f"          t1/2 - {fore("Half Life", PERIWINKLE)}: {bold(data['half_life'])}")
             print(f"          {emoji_energy} - {fore("Excitation Energy", EXCITED)}: {bold(data['energy'])}keV")
             if "decay" in data:
                 print(f"          {emoji_chains} - {fore("Possible Decays", GOLD)}:")
-                show_decay(data["decay"], indent=14)
+                show_decay(data["decay"], indent=14, metastable=meta)
 
 # Formats an isotope respecting the isotope format
-def format_isotope(norm_iso, fullname, *, metastable = ""):
-    global isotope_format
+def format_isotope(isotope: str, fullname: str, *, metastable: str = "") -> str:
+    factors = extract_isotope_factors(isotope)
+    mass = factors["mass_number"]
+    meta = factors["meta"]
 
-    match = re.match(r"^(\d+)\s*([A-Za-z]+)$", norm_iso)
-    if not match:
-        return norm_iso
-    else:
-        number, symbol = match.groups()
-        symbol = symbol.capitalize()
-        return f"{fullname.capitalize()}-{number}{metastable}"
+    if not mass:
+        return isotope
 
-def recognize_isotope(element_identifier, mass_number, search_query):
-    def use_isotope(isotopes, element_symbol, element_name, mass_number, search_query) -> dict | bool:
-        global ISOTOPE_LOGIC
+    meta_suffix = metastable or (meta or "")
 
-        normalized_mass_symbol = f"{mass_number}{element_symbol}"
-        normalized_symbol_mass = f"{element_symbol}{mass_number}"
+    return f"{fullname.capitalize()}-{mass}{meta_suffix}"
 
-        for isotope, isotope_info in isotopes.items():
-            normalized_isotope = normalize_isotope(isotope).lower()
-
-            if (normalized_isotope in [normalized_mass_symbol, normalized_symbol_mass, search_query]):
-                logger.info(f"Found isotope match: {isotope} ({mass_number}{element_symbol}) in {element_name}")
-                if EXPORT_ENABLED:
-                    return {
-                        "isotope": isotope,
-                        "symbol": element_symbol,
-                        "fullname": element_name,
-                        "info": isotope_info
-                    }
-                ISOTOPE_LOGIC = True
-                print_separator()
-                print_isotope(isotope, isotope_info, element_name)
-                print_separator()
-                return True
-
-        print(fore(f"No isotope match found for mass number {mass_number} in element {element_name}. Please provide one manually.", YELLOW))
-        logger.warn(f"No isotope match found for mass number {mass_number} in element {element_name}")
-        return False
-
+def recognize_isotope(element_identifier: str, mass_number: str, search_query: str, meta: str = "") -> dict[str, Any] | bool:
+    global isotope_logic
     element_identifier = element_identifier.lower()
     search_query = search_query.lower()
-    logger.info(f"Searching for isotope: {element_identifier}, mass number: {mass_number}, query: {search_query}")
 
-    for element_data in full_element_data.values():
-        element_symbol = element_data["general"]["symbol"].lower()
-        element_name = element_data["general"]["fullname"].lower()
+    element_data, _ = find_element(element_identifier)
+    if not element_data:
+        logger.warn(f"No element found for symbol or name: {element_identifier}")
+        print(fore(f"No element found for symbol or name: {element_identifier}", YELLOW))
+        return False
 
-        if element_identifier not in (element_symbol, element_name):
-            continue
+    element_name = element_data["general"]["fullname"]
+    element_symbol = element_data["general"]["symbol"]
 
-        logger.info(f"Element match found for '{element_identifier}': {element_name} ({element_symbol})")
+    logger.info(f"Element match found for '{element_identifier}': {element_name} ({element_symbol})")
 
-        isotope_data = full_isotope_data.get(element_name.capitalize(), {})
+    isotope_data = full_isotope_data.get(element_name, {})
+    if meta:
+        isotope_data = isotope_data.get("metastable", {}).get(meta, {})
 
-        if not isotope_data:
-            continue
+    normalized_mass_symbol = f"{mass_number}{element_symbol}"
+    normalized_symbol_mass = f"{element_symbol}{mass_number}"
 
-        return use_isotope(
-            isotope_data,
-            element_symbol,
-            element_name,
-            mass_number,
-            search_query
-        )
+    for isotope, info in isotope_data.items():
+        normalized = isotope.strip()
+        if normalized in [normalized_mass_symbol, normalized_symbol_mass, search_query]:
+            isotope_logic = True
 
-    logger.warn(f"No element found for symbol or name: {element_identifier}")
+            logger.info(f"Found isotope match: {isotope} ({mass_number}{element_symbol}) in {element_name}")
+
+            if export_enabled:
+                return {
+                    "isotope": isotope,
+                    "symbol": element_symbol,
+                    "fullname": element_name,
+                    "info": info
+                }
+
+            print_separator()
+            print_isotope(isotope, info, element_name)
+            print_separator()
+            return True
+
+    print(fore(f"No isotope match found for mass number {mass_number} in element {element_name}. Please provide one manually.", YELLOW))
+    logger.warn(f"No isotope match found for mass number {mass_number} in element {element_name}")
     return False
 
-def normalize_isotope(isotope):
-    match = re.match(r"^(.*?)(?:\s*-\s*.*)?$", isotope)
-    normalized = match.group(1) if match else isotope
-    return normalized
-
-def find_element(candidate) -> typing.Tuple[dict | None, str | None]:
+def find_element(candidate: str) -> Tuple[dict[str, Any] | None, str | None]:
     logger.info(f"Searching for element match: {candidate}")
     candidate = candidate.lower()
-    possible_names = []
+    possible_names: list[str] = []
 
     for _, element_candidate_data in enumerate(full_element_data.values()):
         name = element_candidate_data["general"]["fullname"].lower()
@@ -999,28 +1040,33 @@ def find_element(candidate) -> typing.Tuple[dict | None, str | None]:
     logger.warn(f"No match or suggestion found for input: '{candidate}'")
     return None, None
 
-def process_isotope_input(user_input):
+def find_isotope(user_input: str) -> Tuple[Any | None, Any | None]:
     try:
         index = int(user_input) - 1
         search_result = full_element_data[list(full_element_data.keys())[index]]
         return search_result, None
     except (ValueError, IndexError):
-        symbol_or_name, mass_number = extract_isotope_factors(user_input)
-        if symbol_or_name and mass_number:
-            result = recognize_isotope(symbol_or_name, mass_number, user_input)
+        parsed = extract_isotope_factors(user_input)
+        mass_number = parsed["mass_number"]
+        identifier  = parsed["raw_identifier"]
+        meta        = parsed["meta"]
+
+        if identifier and mass_number:
+            result = recognize_isotope(identifier, mass_number, user_input, meta)
             if isinstance(result, dict):
                 return result, None
             return None, None
+
         return find_element(user_input)
 
-def safe_format(value, measurement = "", *, placeholder = "None"):
+def safe_format(value: Any, measurement: str = "", *, placeholder: str = "None"):
     if value is not None:
         return bold(str(value)) + measurement
 
     return fore(placeholder, NULL)
 
 # Information
-periodica_logo = bold(gradient("Periodica", (156, 140, 255), (140, 255, 245)) if VERBOSE else fore("periodica", BLUE))
+periodica_logo = bold(gradient("Periodica", (156, 140, 255), (140, 255, 245)) if verbose_output else fore("periodica", BLUE))
 
 program_information = f"""Welcome to {periodica_logo}!
 This CLI provides useful information about the periodic elements, and pretty much everything here was made by the Discord user {bold(fore("Lanzoor", INDIGO))}.
@@ -1127,17 +1173,17 @@ if data_malformed:
 
 # Getting element / isotope
 try:
-    TERMINAL_WIDTH = os.get_terminal_size().columns
-    TERMINAL_HEIGHT = os.get_terminal_size().lines
-    logger.info(f"Terminal size: {TERMINAL_WIDTH}x{TERMINAL_HEIGHT} (width x height)")
+    terminal_width = os.get_terminal_size().columns
+    terminal_height = os.get_terminal_size().lines
+    logger.info(f"Terminal size: {terminal_width}x{terminal_height} (width x height)")
 except OSError:
     print(bold("You aren't running this on a terminal, which is very weird. We will try to ignore this issue, and will determine your terminal width as 80. Please move on like nothing ever happened."))
     logger.warn("The script ran without a terminal, so failback to reasonable terminal width variable.")
-    TERMINAL_WIDTH = 80
-    TERMINAL_HEIGHT = 40
+    terminal_width = 80
+    terminal_height = 40
 
-if TERMINAL_WIDTH < 80:
-    print(fore(f"You are running this program in a terminal that has a width of {bold(TERMINAL_WIDTH)},\nwhich may be too compact to display and provide the information.\nPlease try resizing your terminal.\nThis will still display content, but it may look broken or unintended.", RED))
+if terminal_width < 80:
+    print(fore(f"You are running this program in a terminal that has a width of {bold(str(terminal_width))},\nwhich may be too compact to display and provide the information.\nPlease try resizing your terminal.\nThis will still display content, but it may look broken or unintended.", RED))
     logger.warn("Not enough width for terminal.")
 
 if len(sys.argv) > 1:
@@ -1153,9 +1199,9 @@ if len(sys.argv) > 1:
     logger.info(f"Primary flags: {primary_flags}")
     logger.info(f"Positional args: {positional_arguments}")
 
-    create_flag_event("--debug", "-d", callable=enable_debugging)
-    create_flag_event("--raw", "-r", callable=enable_raw_output)
-    create_flag_event("--hide-isotopes", "-H", callable=hide_isotopes)
+    create_flag_event("--debug", "-d", callback=enable_debugging)
+    create_flag_event("--raw", "-r", callback=enable_raw_output)
+    create_flag_event("--hide-isotopes", "-H", callback=hide_isotopes)
 
     primary_flag = None
     user_input = None
@@ -1181,13 +1227,13 @@ if len(sys.argv) > 1:
                 logger.abort("Unexpected additional arguments.")
 
         recognized_flag = (
-            create_flag_event("--info", "-i", callable=get_information) or
-            create_flag_event("--update", "-u", callable=check_for_updates) or
-            create_flag_event("--export", "-X", callable=export_element) or
-            create_flag_event("--compare", "-C", callable=compare_by_factor) or
-            create_flag_event("--bond-type", "-B", callable=compare_bond_type) or
-            create_flag_event("--random", "-R", callable=select_random_element) or
-            create_flag_event("--version", "-v", callable=fetch_version)
+            create_flag_event("--info", "-i", callback=get_information) or
+            create_flag_event("--update", "-u", callback=check_for_updates) or
+            create_flag_event("--export", "-X", callback=export_element) or
+            create_flag_event("--compare", "-C", callback=compare_by_factor) or
+            create_flag_event("--bond-type", "-B", callback=compare_bond_type) or
+            create_flag_event("--random", "-R", callback=select_random_element) or
+            create_flag_event("--version", "-v", callback=fetch_version)
         )
 
     else:
@@ -1198,8 +1244,8 @@ if len(sys.argv) > 1:
 
     if user_input:
         logger.info(f"Element positional argument entry given: \"{user_input}\"")
-        current_element_data, current_element_suggestion = process_isotope_input(user_input)
-        if ISOTOPE_LOGIC:
+        current_element_data, current_element_suggestion = find_isotope(user_input)
+        if isotope_logic:
             sys.exit(0)
         if current_element_data is None:
             message = (
@@ -1221,9 +1267,9 @@ if current_element_data is None:
 
         check_for_termination(user_input)
 
-        current_element_data, current_element_suggestion = process_isotope_input(user_input)
+        current_element_data, current_element_suggestion = find_isotope(user_input)
 
-        if ISOTOPE_LOGIC:
+        if isotope_logic:
             sys.exit(0)
 
         if current_element_data is not None:
@@ -1234,17 +1280,17 @@ if current_element_data is None:
             message += f" Did you mean \"{bold(current_element_suggestion)}\"?"
         print(fore(message, YELLOW if current_element_suggestion else RED))
 
-if DEBUG_MODE:
+if debug_mode:
     print("Printing data...")
-    pprint(current_element_data, indent = 2, width=TERMINAL_WIDTH, sort_dicts=False, underscore_numbers=True)
+    pprint(current_element_data, indent = 2, width=terminal_width, sort_dicts=False, underscore_numbers=True)
 
 # Dividing categories
-general: dict = current_element_data["general"]
-historical: dict = current_element_data["historical"]
-nuclear: dict = current_element_data["nuclear"]
-electronic: dict = current_element_data["electronic"]
-physical: dict = current_element_data["physical"]
-measurements: dict = current_element_data["measurements"]
+general: dict[str, Any] = current_element_data["general"]
+historical: dict[str, Any] = current_element_data["historical"]
+nuclear: dict[str, Any] = current_element_data["nuclear"]
+electronic: dict[str, Any] = current_element_data["electronic"]
+physical: dict[str, Any] = current_element_data["physical"]
+measurements: dict[str, Any] = current_element_data["measurements"]
 
 # General properties
 fullname: str = general["fullname"]
@@ -1253,7 +1299,7 @@ atomic_number: int = general["atomic_number"]
 description: str = general["description"]
 
 description = "\n\n" + "\n\n".join(
-    textwrap.fill(paragraph.strip(), width=TERMINAL_WIDTH, initial_indent="    ", subsequent_indent="")
+    textwrap.fill(paragraph.strip(), width=terminal_width, initial_indent="    ", subsequent_indent="")
     for paragraph in description.strip().split("\n\n")
 )
 
@@ -1263,13 +1309,13 @@ phase: str = general["appearance"]["phase"].capitalize()
 formatted_phase: str = phase[:]
 
 try:
-    formatted_phase = fore(phase, PHASE_TYPE_COLORS[phase])
+    formatted_phase = fore(phase, phase_colors[phase])
 except KeyError:
     logger.warn(f"Invalid STP phase for {fullname.capitalize()}; Please pay attention.")
     phase = "solid"
 
 try:
-    formatted_phase += f" {PHASE_TYPE_SYMBOLS[phase]}" # type: ignore
+    formatted_phase += f" {phase_symbols[phase]}" # type: ignore
 except (KeyError, TypeError):
     pass
 
@@ -1310,11 +1356,11 @@ lanthanides_range = range(LANTHANUM, LUTHENIUM + 1)
 actinides_range = range(ACTINIUM, LAWRENCIUM + 1)
 
 if atomic_number in lanthanides_range:
-    lanthanides[atomic_number - LANTHANUM + 3] = bold(fore("▪", ELEMENT_TYPE_COLORS[element_type]))
+    lanthanides[atomic_number - LANTHANUM + 3] = bold(fore("▪", element_type_colors[element_type]))
 elif atomic_number in actinides_range:
-    actinides[atomic_number - ACTINIUM + 3] = bold(fore("▪", ELEMENT_TYPE_COLORS[element_type]))
+    actinides[atomic_number - ACTINIUM + 3] = bold(fore("▪", element_type_colors[element_type]))
 else:
-    periodic_table[period - 1][group - 1] = bold(fore("▪", ELEMENT_TYPE_COLORS[element_type]))
+    periodic_table[period - 1][group - 1] = bold(fore("▪", element_type_colors[element_type]))
 
 entries = [
     fore(name, TURQUOISE if gender == "TURQUOISE" else PINK)
@@ -1333,7 +1379,7 @@ mass_number = protons + neutrons
 shells = electronic["shells"]
 valence_electrons = shells[-1]
 subshells = electronic["subshells"]
-isotopes = full_isotope_data[fullname.capitalize()]
+isotopes: dict[str, Any] = full_isotope_data[fullname.capitalize()]
 
 possible_shells = "klmnopqrstuvwxyz"
 shell_result = ""
@@ -1355,18 +1401,18 @@ for index, subshell in enumerate(subshells):
         logger.warn(f"To the developers, a malformed subshell was detected in {fullname.capitalize()}. Issue: {subshell}")
         continue
 
-    formatted_subshell = subshell[:-1] + (convert_superscripts(subshell[-1]) if VERBOSE else subshell[-1])
+    formatted_subshell = subshell[:-1] + (convert_superscripts(subshell[-1]) if verbose_output else subshell[-1])
     match = pattern.match(subshell)
     if match:
         energy_level, subshell_type, electron_count = match.groups()
         electron_count = int(electron_count)
         max_capacity = subshell_capacities[subshell_type]
-        colored_subshell = fore(formatted_subshell, SUBSHELL_COLORS.get(subshell_type, DEFAULT_COLOR))
+        colored_subshell = fore(formatted_subshell, subshell_colors.get(subshell_type, DEFAULT_COLOR))
         colored_subshell = inverse(colored_subshell) if index + 1 == len(subshells) else colored_subshell
         subshell_result += f"{colored_subshell} ({electron_count}/{max_capacity}), "
     else:
         subshell_type = subshell[1] if len(subshell) > 1 else 's'
-        colored_subshell = fore(formatted_subshell, SUBSHELL_COLORS.get(subshell_type, DEFAULT_COLOR))
+        colored_subshell = fore(formatted_subshell, subshell_colors.get(subshell_type, DEFAULT_COLOR))
         colored_subshell = inverse(colored_subshell) if index + 1 == len(subshells) else colored_subshell
         subshell_result += f"{colored_subshell}, "
 
@@ -1408,34 +1454,37 @@ for subshell_string in subshells:
     unpaired_electrons += current_unpaired_electrons
 
 subshell_visualisation = "\n".join(formatted_lines)
-subshell_examples = "".join([fore(orbital, SUBSHELL_COLORS[orbital]) for orbital in list("spdf")])
+subshell_examples = "".join([fore(orbital, subshell_colors[orbital]) for orbital in list("spdf")])
 pair_determiner = fore("Diamagnetic", VALENCE_ELECTRONS_COL) if unpaired_electrons == 0 else fore("Paramagnetic", ELECTRONEG_COL)
 
 if subshells:
     last_subshell = subshells[-1]
     match = pattern.match(last_subshell)
     if match:
-        principal_quantum_number, subshell_type, electron_count = match.groups()
-        principal_quantum_number = int(principal_quantum_number)
+        principal, subshell_type, electron_count = match.groups()
+        principal = int(principal)
         electron_count = int(electron_count)
-        azimuthal_quantum_number = {"s": 0, "p": 1, "d": 2, "f": 3}[subshell_type]
-        magnetic_quantum_number = 0
+        azimuthal = {"s": 0, "p": 1, "d": 2, "f": 3}[subshell_type]
+        magnetic = 0
         spin_quantum_number = "+1/2" if unpaired_electrons % 2 == 1 else "-1/2"
         shielding_constant = calculate_shielding_constant(subshells, last_subshell[:-1])
 
-        effective_nuclear_charge = atomic_number - shielding_constant
+        z_eff = atomic_number - shielding_constant
 
-        last_subshell = last_subshell[:-1] + convert_superscripts(last_subshell[-1]) if VERBOSE else last_subshell
-        last_subshell = fore(last_subshell, SUBSHELL_COLORS.get(subshell_type, (255, 255, 255)))
+        last_subshell = last_subshell[:-1] + convert_superscripts(last_subshell[-1]) if verbose_output else last_subshell
+        last_subshell = fore(last_subshell, subshell_colors.get(subshell_type, (255, 255, 255)))
 
+        principal = str(principal)
+        azimuthal = str(azimuthal)
+        magnetic = str(magnetic)
         subshell_visualisation += f"""
 
       {fore("Valence Subshell", VALENCE_ELECTRONS_COL)} ({inverse(last_subshell)}):
-        n - {fore('Principal', CYAN)}: {bold(principal_quantum_number)}
-        l - {fore('Azimuthal', GREEN)}: {bold(azimuthal_quantum_number)} ({subshell_type} subshell)
-        m_l - {fore('Magnetic', YELLOW)}: {bold(magnetic_quantum_number)} (approximated)
+        n - {fore('Principal', CYAN)}: {bold(principal)}
+        l - {fore('Azimuthal', GREEN)}: {bold(azimuthal)} ({subshell_type} subshell)
+        m_l - {fore('Magnetic', YELLOW)}: {bold(magnetic)} (approximated)
         {sigma} - {fore('Shielding Constant', PERIWINKLE)}: {bold(f'{shielding_constant:.2f}')}
-        Z_eff - {fore('Effective Nuclear Charge', GOLD)}: {bold(f'{effective_nuclear_charge:.2f}')}"""
+        Z_eff - {fore('Effective Nuclear Charge', GOLD)}: {bold(f'{z_eff:.2f}')}"""
 
 # Physical properties
 melting_point = physical["melt"]
@@ -1467,13 +1516,13 @@ oxidation_states = electronic["oxidation_states"]
 conductivity_type = electronic["conductivity_type"]
 
 try:
-    formatted_conductivity = fore(conductivity_type, CONDUCTIVITY_TYPE_COLORS[conductivity_type])
+    formatted_conductivity = fore(conductivity_type, conductivity_colors[conductivity_type])
 except KeyError:
     logger.warn(f"Invalid conductivity type found; {conductivity_type}. Please pay attention.")
     formatted_conductivity = bold(conductivity_type)
 
 try:
-    formatted_conductivity += f" {CONDUCTIVITY_TYPE_SYMBOLS[conductivity_type]}" # type: ignore
+    formatted_conductivity += f" {conductivity_symbols[conductivity_type]}" # type: ignore
 except (KeyError, TypeError):
     pass
 
@@ -1491,24 +1540,24 @@ print_header("General")
 print()
 
 print(f" 🔡 - Element Name: {bold(fullname)} ({bold(symbol)})")
-print(f" Z - Atomic Number: {bold(atomic_number)}")
+print(f" Z - Atomic Number: {bold(str(atomic_number))}")
 print(f" 📃 - Description: {description}\n")
 print(f" 🔡 - STP Phase: {formatted_phase}")
-print(f" 🎨 - Appearance(s): {bold(appearance_desc)}")
+print(f" 🎨 - Appearance(s) on STP: {bold(appearance_desc)}")
 print(f" 🔍 - Discoverer(s): {discoverers}")
 print(f" 🔍 - Discovery Date: {bold(discovery_date)}")
-print(f" ↔️ - Period (Row): {bold(period)}")
-print(f" ↕️ - Group (Column): {bold(group)}")
+print(f" ↔️ - Period (Row): {bold(str(period))}")
+print(f" ↕️ - Group (Column): {bold(str(group))}")
 
 try:
-    print(f" 🎨 - Element Type: {bold(fore(element_type, ELEMENT_TYPE_COLORS[element_type]))}")
+    print(f" 🎨 - Element Type: {bold(fore(element_type, element_type_colors[element_type]))}")
 except KeyError:
     logger.warn(f"Invalid element type for {fullname.capitalize()}. Please pay attention.")
 
 print(f" 🧱 - Block: {bold(block)}")
 print(f" 📇 - CAS Number: {bold(cas_number)}")
 
-if VERBOSE:
+if verbose_output:
     print()
 
     print("  ", end="")
@@ -1551,14 +1600,14 @@ subshell_tip = dim(f'(Colored by type: {subshell_examples}, the valence subshell
 print(f" 🌀 - {fore('Subshells', PERIWINKLE)} {subshell_tip}:\n    {subshell_result}")
 print(f"      {bold('Breakdown')}:\n\n{subshell_visualisation}\n")
 
-if not HIDE_ISOTOPES:
+if not hide_isotopes:
     isotope_tip = dim(f"(Decay processes in {fore("red", RED)} need verification. Do not trust them!)")
 else:
     isotope_tip = dim(fore(f"(HIDDEN due to -H / --hide-isotopes flag usage)", RED))
 
 print(f" 🪞 - Isotopes ({len(isotopes.keys())}): {isotope_tip}")
 
-if not HIDE_ISOTOPES:
+if not hide_isotopes:
     for isotope, information in isotopes.items():
         print()
         print_isotope(isotope, information, fullname)
@@ -1576,6 +1625,13 @@ radioactive_determiner = fore("Yes", GREEN) if radioactive else fore("No", RED)
 print(f" {emoji_radioactive} - {fore("Radioactive", ORANGE)}: {radioactive_determiner}")
 print(f" t1/2 - {fore("Half Life", PERIWINKLE)}: {safe_format(half_life, placeholder="Stable")}")
 
+if structure is not None:
+    print(f" {fore("Structure", PERIWINKLE)}: ")
+    print(f"    Structure Type: {formatted_structure_description}") # type: ignore
+    print(f"    Structure Constants:\n{formatted_structure_constants}\n") # type: ignore
+else:
+    print(f" {fore("Structure", PERIWINKLE)}: {fore('N/A', RED)}\n")
+
 print()
 print_header("Electronic Properties")
 print()
@@ -1587,7 +1643,7 @@ print(f" IE - {fore("Ionization Energy", PINK)}: {format_energy(ionization_energ
 print(f"      {bold("ESTIMATED")} Calculated Ionization Energy Series:")
 print(f"\n{calculate_ionization_series(subshells, atomic_number, ionization_energy)}\n")
 
-if VERBOSE:
+if verbose_output:
     negatives_template = [0, -1, -2, -3, -4, -5]
     positives_template = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 
@@ -1642,13 +1698,6 @@ print(f"    K - Bulk Modulus: {safe_format(moduli['bulk'], 'GPa')}")
 print(f"    E - Young's Modulus: {safe_format(moduli['young'], 'GPa')}")
 print(f"    G - Shear Modulus: {safe_format(moduli['shear'], 'GPa')}")
 print(f"    ν - Poisson's Ratio: {safe_format(moduli['poissons_ratio'], '')}\n")
-
-if structure is not None:
-    print(f" {fore("Structure", PERIWINKLE)}: ")
-    print(f"    Structure Type: {formatted_structure_description}") # type: ignore
-    print(f"    Structure Constants:\n{formatted_structure_constants}\n") # type: ignore
-else:
-    print(f" {fore("Structure", PERIWINKLE)}: {fore('N/A', RED)}\n")
 
 print(f" {rho} - {fore("Density", CYAN)}: ")
 print(f"    STP Density: {safe_format(density['STP'], f'kg/{m3}')}")

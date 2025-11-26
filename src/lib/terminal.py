@@ -22,59 +22,55 @@ BRIGHT_MAGENTA = BRIGHT + MAGENTA
 BRIGHT_CYAN = BRIGHT + CYAN
 BRIGHT_WHITE = BRIGHT + WHITE
 
-def fore(string, color: int | list[int] | tuple[int, int, int], *, disable: bool = False) -> str:
-    if disable: return string
+def fore(message: str, color: int | list[int] | tuple[int, int, int], *, disable: bool = False) -> str:
+    if disable: return message
 
     if isinstance(color, int):
-        processed = str(string)
         if (color > 7 and color != 9 and color < 60) or (color > 67): raise Exception("Unsupported default terminal color.")
         try:
-            return f"\033[{(30 + color)}m{processed}\033[39m"
+            return f"\033[{(30 + color)}m{message}\033[39m"
         except ValueError:
             logging.warning(f"{color} was an invalid default terminal color. To the developers, please diagnose this issue.")
-            return processed
+            return message
     else:
-        processed = str(string)
         red, green, blue = color
-        return f"\033[38;2;{red};{green};{blue}m{processed}\033[39m"
+        return f"\033[38;2;{red};{green};{blue}m{message}\033[39m"
 
-def back(string, color: int | list[int] | tuple[int, int, int], *, disable: bool = False) -> str:
-    if disable: return string
+def back(message: str, color: int | list[int] | tuple[int, int, int], *, disable: bool = False) -> str:
+    if disable: return message
 
     if isinstance(color, int):
-        processed = str(string)
         if (color > 7 and color != 9 and color < 60) or (color > 67): raise Exception("Unsupported default terminal color.")
         try:
-            return f"\033[{(40 + color)}m{processed}\033[49m"
+            return f"\033[{(40 + color)}m{message}\033[49m"
         except ValueError:
             logging.warning(f"{color} was an invalid default terminal color. To the developers, please diagnose this issue.")
-        return processed
+        return message
     else:
-        processed = str(string)
         red, green, blue = color
-        return f"\033[48;2;{red};{green};{blue}m{processed}\033[49m"
+        return f"\033[48;2;{red};{green};{blue}m{message}\033[49m"
 
-def bold(string, *, disable: bool = False) -> str:
+def bold(string: str, *, disable: bool = False) -> str:
     if disable: return string
     return f"\033[1m{string}\033[22m"
 
-def dim(string, *, disable: bool = False) -> str:
+def dim(string: str, *, disable: bool = False) -> str:
     if disable: return string
     return f"\033[2m{string}\033[22m"
 
-def italic(string, *, disable: bool = False) -> str:
+def italic(string: str, *, disable: bool = False) -> str:
     if disable: return string
     return f"\033[3m{string}\033[23m"
 
-def underline(string, *, disable: bool = False) -> str:
+def underline(string: str, *, disable: bool = False) -> str:
     if disable: return string
     return f"\033[4m{string}\033[24m"
 
-def inverse(string, *, disable: bool = False) -> str:
+def inverse(string: str, *, disable: bool = False) -> str:
     if disable: return string
     return f"\033[7m{string}\033[27m"
 
-def gradient(string, start_rgb: list[int] | tuple[int, int, int], end_rgb: list[int] | tuple[int, int, int], *, disable: bool = False):
+def gradient(string: str, start_rgb: list[int] | tuple[int, int, int], end_rgb: list[int] | tuple[int, int, int], *, disable: bool = False) -> str:
     if disable: return string
 
     start_hue, start_lightness, start_saturation = colorsys.rgb_to_hls(
