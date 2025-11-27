@@ -901,7 +901,7 @@ def show_decay(
         for product in products:
             unsure = False
 
-            if  product.endswith("?"):
+            if product.endswith("?"):
                 unsure = True
                 product = product[:-1]
 
@@ -934,6 +934,9 @@ def show_decay(
         arrow = "->" if products else ""
 
         print(f"{padding}{bold(display_name + metastable)} {arrow} {bold(mode)} {arrow} {out} {chance}")
+
+def normalize_isotope_key(string: str) -> str:
+    return string.replace("-", "").replace(" ", "").lower()
 
 def print_isotope(isotope: str, isotope_data: dict[str, Any], fullname: str) -> None:
     global animation_delay
@@ -1014,12 +1017,7 @@ def format_isotope(isotope: str, fullname: str, *, metastable: str = "") -> str:
     return f"{fullname.capitalize()}-{mass}{meta_suffix}"
 
 def recognize_isotope(element_identifier: str, mass_number: str, search_query: str, meta: str = "") -> dict[str, Any] | bool:
-    def normalize_isotope_key(string: str) -> str:
-        return string.replace("-", "").replace(" ", "").lower()
-
     global isotope_logic
-    element_identifier = element_identifier.lower()
-    search_query = search_query.lower()
 
     element_data, _ = find_element(element_identifier)
     if not element_data:
@@ -1033,39 +1031,43 @@ def recognize_isotope(element_identifier: str, mass_number: str, search_query: s
     logger.info(f"Element match found for '{element_identifier}': {element_name} ({element_symbol})")
 
     isotope_data = full_isotope_data.get(element_name, {})
+    if not isotope_data:
+        return False
+
+    base_key = f"{mass_number}{element_symbol.upper()}"
+    if base_key not in isotope_data:
+        base_key = f"{element_symbol.upper()}{mass_number}"
+
+    if base_key not in isotope_data:
+        print(fore(f"No isotope match found for mass number {mass_number} in element {element_name}.", YELLOW))
+        logger.warn(f"No isotope match found for mass number {mass_number} in element {element_name}")
+        return False
+
+    info = isotope_data[base_key]
+
     if meta:
-        isotope_data = isotope_data.get("metastable", {}).get(meta, {})
+        meta_key = meta.lower()
+        if "metastable" not in info or meta_key not in info["metastable"]:
+            print(fore(f"No metastable isomer {meta.upper()} found for {base_key}.", RED))
+            return False
+        info = info["metastable"][meta_key]
 
-    normalized_mass_symbol = f"{mass_number}{element_symbol.capitalize()}"
-    normalized_symbol_mass = f"{element_symbol.capitalize()}{mass_number}"
+    isotope_logic = True
+    logger.info(f"Found isotope match: {base_key}{meta.upper() if meta else ''} ({mass_number}{element_symbol}) in {element_name}")
 
-    for isotope, info in isotope_data.items():
-        normalized = normalize_isotope_key(isotope)
-        if normalized in [
-            normalize_isotope_key(normalized_mass_symbol),
-            normalize_isotope_key(normalized_symbol_mass),
-            normalize_isotope_key(search_query)
-        ]:
-            isotope_logic = True
+    if export_enabled:
+        return {
+            "isotope": base_key + meta,
+            "symbol": element_symbol,
+            "fullname": element_name,
+            "info": info
+        }
 
-            logger.info(f"Found isotope match: {isotope} ({mass_number}{element_symbol}) in {element_name}")
+    print_separator()
+    print_isotope(search_query, info, element_name)
+    print_separator()
 
-            if export_enabled:
-                return {
-                    "isotope": isotope,
-                    "symbol": element_symbol,
-                    "fullname": element_name,
-                    "info": info
-                }
-
-            print_separator()
-            print_isotope(isotope, info, element_name)
-            print_separator()
-            return True
-
-    print(fore(f"No isotope match found for mass number {mass_number} in element {element_name}. Please provide one manually.", YELLOW))
-    logger.warn(f"No isotope match found for mass number {mass_number} in element {element_name}")
-    return False
+    return True
 
 def find_element(candidate: str) -> Tuple[dict[str, Any] | None, str | None]:
     logger.info(f"Searching for element match: {candidate}")
@@ -1103,7 +1105,7 @@ def find_isotope(user_input: str) -> Tuple[Any | None, Any | None]:
         meta        = parsed["meta"]
 
         if identifier and mass_number:
-            result = recognize_isotope(identifier, mass_number, user_input, str(meta))
+            result = recognize_isotope(identifier, mass_number, user_input, meta or "")
             if isinstance(result, dict):
                 return result, None
             return None, None
