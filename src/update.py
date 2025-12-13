@@ -16,7 +16,7 @@ if OS not in ["Linux", "Darwin"]:
     sys.exit(0)
 
 try:
-    from packaging import version
+    from packaging import version # type: ignore
 except ImportError:
     import_failsafe()
 
@@ -46,7 +46,7 @@ def update_main():
     print(f"Getting content from {url}...")
 
     response = get_response(url)
-    lts_toml = tomllib.loads(response.text)
+    lts_toml = tomllib.loads(response.text) # type: ignore
     lts_version = lts_toml.get("project", {}).get("version")
 
     if not lts_version:

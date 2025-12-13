@@ -316,7 +316,7 @@ def calculate_ionization_series(subshells: list[str], atomic_number: int, ioniza
     if not config:
         return fore("No valid subshell data for ionization series.", YELLOW)
 
-    RYDBERG_CONSTANT = 13.6
+    RYDBERG_CONSTANT = 13.605693009
     uncertainty = ""
 
     current_config = copy.deepcopy(config)
