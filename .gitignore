@@ -5,3 +5,4 @@ src/output.json
 **/.ropeproject/
 **/*.out
 **/template.json
+**/TODO.md

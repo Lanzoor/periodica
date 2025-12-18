@@ -6,7 +6,7 @@ except ImportError as e:
     print("It seems like some of the standard libraries are missing. Please make sure you have the right version of the Python interpreter installed.")
     sys.exit(0)
 
-import platform, sys, json, os, re, difflib, random, textwrap, copy, functools
+import platform, sys, json, os, re, difflib, random, textwrap, copy, functools, math
 from pprint import pprint
 from typing import Any, Tuple, Callable
 from pathlib import Path
@@ -52,7 +52,7 @@ logger = Logger(enable_debugging=debug_mode)
 
 # Defining unicode symbols
 def update_symbols(allow: bool = verbose_output):
-    global cm3, m3, mm2, superscript_pos, superscript_neg, superscript_zero, pm, emoji_chains, emoji_energy, rho, chi, full_block, up_arrow, down_arrow, sigma, double_line, single_line, phase_symbols, conductivity_symbols, emoji_exchange, emoji_speaker, emoji_radioactive, emoji_triangular
+    global cm3, m3, mm2, superscript_pos, superscript_neg, superscript_zero, pm, emoji_chains, emoji_energy, rho, chi, full_block, up_arrow, down_arrow, sigma, double_line, single_line, phase_symbols, conductivity_symbols, emoji_exchange, emoji_speaker, emoji_radioactive, emoji_triangular, decay_symbol, reciprocal
 
     cm3 = "cm³" if allow else "cm3"
     m3 = "m³" if allow else "m3"
@@ -77,6 +77,8 @@ def update_symbols(allow: bool = verbose_output):
     superscript_neg = "⁻" if allow else "-"
     superscript_zero = "⁰" if allow else "0"
     pm = "±" if allow else "+-"
+    decay_symbol = "λ" if allow else "l"
+    reciprocal = "⁻¹" if allow else "-1"
 
     if allow:
         phase_symbols = {
@@ -377,6 +379,37 @@ def calculate_ionization_series(subshells: list[str], atomic_number: int, ioniza
             current_config[last_idx] = (quantum_no, azimuthal_no, count - 1)
 
     return "".join(lines)
+
+def format_half_life(half_life: None | str | list[float | str | int]) -> Tuple[str, str | None, str | None]:
+    formatted_half_life: str = ""
+
+    if half_life is None:
+        formatted_half_life = fore("Stable", NULL)
+    elif half_life == "unknown":
+        formatted_half_life = fore("Unknown", RED)
+    elif isinstance(half_life, list):
+        hl_amount: float = half_life[0] # type: ignore
+        if hl_amount <= 0:
+            return fore("Unknown", RED), None, None
+
+        hl_determiner: str = str(half_life[1])
+
+        if len(half_life) == 3:
+            hl_sign = str(half_life[2]) + " "
+        else:
+            hl_sign = ""
+
+        formatted_half_life = hl_sign + bold(str(hl_amount)) + " " + hl_determiner
+
+        decay_constant: float = (math.log(2)) / hl_amount # type: ignore
+        formatted_decay_constant = bold(str(decay_constant)) + " " + hl_determiner + reciprocal
+
+        lifetime: float = 1 / decay_constant
+        formatted_lifetime = bold(str(lifetime)) + " " + hl_determiner
+
+        return formatted_half_life, formatted_decay_constant, formatted_lifetime
+
+    return formatted_half_life, None, None
 
 def convert_superscripts(text: str) -> str:
     superscript_map = {
@@ -885,7 +918,7 @@ def show_decay(
     verified.sort(key=lambda branch: branch["chance"], reverse=True)
 
     for branch in verified + unverified:
-        mode = branch.get("mode", "???")
+        mode = branch.get("mode", "unknown")
         if isinstance(mode, str) and mode.endswith("?"):
             mode = fore(mode, RED)
 
@@ -967,10 +1000,17 @@ def print_isotope(isotope: str, isotope_data: dict[str, Any], fullname: str) -> 
     )
 
     half_life = isotope_data.get("half_life")
+    formatted_half_life, decay_constant, lifetime = format_half_life(half_life)
     print(
-        f"      t1/2 - {fore('Half Life', PERIWINKLE)}: "
-        f"{bold(half_life) if half_life else fore('Stable', NULL)}"
+        f"      t1/2 - {fore('Half Life', PERIWINKLE)}: {formatted_half_life}"
     )
+
+    if decay_constant is not None and lifetime is not None:
+        print(
+            f"      t - {fore('Lifetime', PERIWINKLE)}: {lifetime}\n"
+            f"      λ - {fore('Decay Constant', EXCITED)}: {decay_constant}"
+        )
+
     print(
         f"      u - {fore('Isotope Weight', BRIGHT_RED)}: "
         f"{bold(isotope_data['isotope_weight'])}g/mol"
@@ -986,10 +1026,17 @@ def print_isotope(isotope: str, isotope_data: dict[str, Any], fullname: str) -> 
             display_meta = format_isotope(isotope, fullname, metastable=meta)
             print(f"        {bold(display_meta)}:")
             if "half_life" in data:
+                formatted_half_life, decay_constant, lifetime = format_half_life(data['half_life'])
                 print(
-                    f"          t1/2 - {fore('Half Life', PERIWINKLE)}: "
-                    f"{bold(data['half_life'])}"
+                    f"          t1/2 - {fore('Half Life', PERIWINKLE)}: {formatted_half_life}"
                 )
+
+                if decay_constant is not None and lifetime is not None:
+                    print(
+                        f"          t - {fore('Lifetime', PERIWINKLE)}: {lifetime}\n"
+                        f"          λ - {fore('Decay Constant', EXCITED)}: {decay_constant}"
+                    )
+
             print(
                 f"          {emoji_energy} - {fore('Excitation Energy', EXCITED)}: "
                 f"{bold(data['energy'])}keV"
@@ -1450,7 +1497,7 @@ unpaired_electrons = 0
 subshell_capacities = {"s": 2, "p": 6, "d": 10, "f": 14}
 orbital_capacity_map = {"s": 1, "p": 3, "d": 5, "f": 7}
 subshell_result = ""
-pattern = re.compile(r"(\d)([spdf])(\d+)")
+subshell_pattern = re.compile(r"(\d)([spdf])(\d+)")
 
 for index, subshell in enumerate(subshells):
     if len(subshell) < 3 or not subshell[-1].isdigit():
@@ -1458,7 +1505,7 @@ for index, subshell in enumerate(subshells):
         continue
 
     formatted_subshell = subshell[:-1] + (convert_superscripts(subshell[-1]) if verbose_output else subshell[-1])
-    match = pattern.match(subshell)
+    match = subshell_pattern.match(subshell)
     if match:
         energy_level, subshell_type, electron_count = match.groups()
         electron_count = int(electron_count)
@@ -1476,7 +1523,7 @@ subshell_result = subshell_result.rstrip(", ")
 
 formatted_subshell_lines: list[str] = []
 for subshell_string in subshells:
-    match = pattern.fullmatch(subshell_string)
+    match = subshell_pattern.fullmatch(subshell_string)
     if not match:
         continue
     energy_level, orbital_type, electron_count = match.groups()
@@ -1515,7 +1562,7 @@ pair_determiner = fore("Diamagnetic", VALENCE_ELECTRONS_COL) if unpaired_electro
 
 if subshells:
     last_subshell = subshells[-1]
-    match = pattern.match(last_subshell)
+    match = subshell_pattern.match(last_subshell)
     if match:
         principal, subshell_type, electron_count = match.groups()
         principal = int(principal)
@@ -1548,6 +1595,8 @@ boiling_point = physical["boil"]
 atomic_mass = physical["atomic_mass"]
 radioactive = general["radioactive"]
 half_life = general["half_life"]
+formatted_half_life, decay_constant, lifetime = format_half_life(half_life)
+
 structure = physical.get("structure", None)
 
 structure_type = None
@@ -1679,7 +1728,12 @@ print(f" u - {fore("Atomic Mass", BRIGHT_RED)}: {bold(atomic_mass)}g/mol")
 
 radioactive_determiner = fore("Yes", GREEN) if radioactive else fore("No", RED)
 print(f" {emoji_radioactive} - {fore("Radioactive", ORANGE)}: {radioactive_determiner}")
-print(f" t1/2 - {fore("Half Life", PERIWINKLE)}: {safe_format(half_life, placeholder="Stable")}")
+
+print(f" t1/2 - {fore("Half Life", PERIWINKLE)}: {formatted_half_life}")
+
+if decay_constant is not None and lifetime is not None:
+    print(f" t - {fore("Lifetime", PERIWINKLE)}: {lifetime}")
+    print(f" λ - {fore("Decay Consonant", EXCITED)}: {decay_constant}")
 
 if structure is not None:
     print(f" {fore("Structure", PERIWINKLE)}: ")
