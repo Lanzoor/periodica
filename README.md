@@ -41,7 +41,7 @@ py -m pip --version
 
 ### 2. Get the Source Code
 
-Click the **"<> Code ▼"** button on the GitHub repo, then choose **"🗂️ Download ZIP"**. You can also download the ZIP file in the [latest releases](https://github.com/Lanzoor/periodica/releases/tag/latest) and follow the steps below. Extract the contents somewhere convenient, then open a terminal in that folder.
+Click the **"<> Code ▼"** button on the GitHub repo, then choose **"🗂️ Download ZIP"**. You can also download the ZIP file in the [latest releases](https://github.com/Lanzoor/periodica/releases/latest) and follow the steps below. Extract the contents somewhere convenient, then open a terminal in that folder.
 
 ### 3. Install the required dependencies
 
