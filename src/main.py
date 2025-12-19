@@ -30,6 +30,8 @@ try:
 except ImportError:
     import_failsafe()
 
+import matplotlib.pyplot as plt # type: ignore
+
 # Flags for logic altering
 export_enabled = False
 debug_mode = False
@@ -325,11 +327,11 @@ def calculate_ionization_series(subshells: list[str], atomic_number: int, ioniza
     for index in range(atomic_number):
         last_filled = None
         last_idx = None
-        for idx in range(len(current_config) - 1, -1, -1):
-            quantum_no, azimuthal_no, count = current_config[idx]
+        for j in range(len(current_config) - 1, -1, -1):
+            quantum_no, azimuthal_no, count = current_config[j]
             if count > 0:
                 last_filled = (quantum_no, azimuthal_no)
-                last_idx = idx
+                last_idx = j
                 break
 
         if last_filled is None:
@@ -428,23 +430,29 @@ def conjunction_join(entries: list[Any]) -> str:
         return f"{entries[0]} and {entries[1]}"
     return f"{', '.join(entries[:-1])}, and {entries[-1]}"
 
-def create_flag_event(*flags: str, callback: Callable[..., Any]):
+def create_flag_event(*flags: str, f_callable: Callable[..., Any]):
     for flag in separated_flags:
         if flag in flags:
-            callback()
+            f_callable()
             return True
     return False
 
 # Below are functions that get triggered by create_flag_event when flags are given
-def get_information():
-    logger.info("User gave --info flag; redirecting to information logic.")
+
+def f_redirect(flag: str, logic: str):
+    logger.info(f"User gave the {flag} flag; redirecting to {logic} logic.")
+
+def f_info():
+    f_redirect("--info", "information")
+
     print_separator()
     print(program_information)
     print_separator()
     sys.exit(0)
 
-def check_for_updates():
-    logger.info("User gave --update flag; redirecting to update logic.")
+def f_update():
+    f_redirect("--update", "update")
+
     if UPDATE_SCRIPT.is_file():
         from update import update_main
         update_main()
@@ -453,10 +461,10 @@ def check_for_updates():
         print(fore("Looks like the update script is missing. Please check for any missing files.", RED))
         logger.abort("Failed to find the update script.")
 
-def export_element():
+def f_export():
     global export_enabled, positional_arguments
+    f_redirect("--export", "export")
 
-    logger.info("User gave --export flag; redirecting to export logic.")
     export_enabled = True
 
     user_input = positional_arguments[0] if positional_arguments else None
@@ -520,9 +528,9 @@ def export_element():
     print(f"Successfully saved to {OUTPUT_FILE}.")
     sys.exit(0)
 
-def compare_by_factor():
+def f_compare():
     global full_element_data, positional_arguments, compare_tip, valid_sorting_methods
-    logger.info("User gave --compare flag; redirecting to another logic.")
+    f_redirect("--compare", "compare")
 
     factors = [
         "protons",
@@ -744,9 +752,9 @@ def compare_by_factor():
         print(fore(f"{none_counter} element(s) do not have a value in {bold(factor)}, and they are;\n  {formatted_nones}", NULL))
     sys.exit(0)
 
-def compare_bond_type():
+def f_bond_type():
     global full_element_data, positional_arguments
-    logger.info("User gave --bond-type flag; redirecting to bond type logic.")
+    f_redirect("--bond-type", "bond type")
 
     primary_element = None
     secondary_element = None
@@ -818,7 +826,7 @@ def compare_bond_type():
     print()
     sys.exit(0)
 
-def select_random_element():
+def f_random():
     global current_element_data
     print("Picking a random element for you...")
     logger.info("Picking a random element...")
@@ -827,7 +835,7 @@ def select_random_element():
     print(f"I pick {bold(current_element_data["general"]["fullname"])} for you!")
     logger.info(f"Picked {current_element_data["general"]["fullname"]} as a random element.")
 
-def enable_debugging():
+def f_debug():
     global debug_mode, logger
     debug_mode = True
 
@@ -840,7 +848,7 @@ def enable_debugging():
     if positional_arguments:
         logger.info(f"Other positional arguments given: {", ".join(positional_arguments)}")
 
-def enable_raw_output():
+def f_raw():
     global verbose_output, print, fore, back, bold, dim, italic, inverse, gradient
     verbose_output = False
     logger.info("Enabled raw output mode.")
@@ -852,13 +860,13 @@ def enable_raw_output():
     update_symbols(False)
     update_color_configs(False)
 
-def trigger_hide_isotopes():
+def f_hide_isotopes():
     global hide_isotopes
     hide_isotopes = True
 
     logger.info("Disabled isotope display.")
 
-def fetch_version():
+def f_version():
     global PYPROJECT_FILE
     from update import fetch_toml
 
@@ -974,47 +982,43 @@ def normalize_isotope_key(string: str) -> str:
 def print_isotope(isotope: str, isotope_data: dict[str, Any], fullname: str) -> None:
     global animation_delay
 
+    def print_quarks(protons: int, neutrons: int) -> None:
+        up = protons * 2 + neutrons
+        down = protons + neutrons * 2
+        print(f"      u - {fore('Up Quarks', GREEN)}: ({fore(str(protons), RED)} * 2) + {fore(str(neutrons), BLUE)} = {bold(str(up))}")
+        print(f"      d - {fore('Down Quarks', CYAN)}: {fore(str(protons), RED)} + ({fore(str(neutrons), BLUE)} * 2) = {bold(str(down))}")
+
+    def print_half_life_block(half_life: Any) -> None:
+        formatted, decay_const, lifetime = format_half_life(half_life)
+        print(f"      t1/2 - {fore('Half Life', PERIWINKLE)}: {formatted}")
+        if decay_const and lifetime:
+            print(f"      t - {fore('Lifetime', PERIWINKLE)}: {lifetime}")
+            print(f"      λ - {fore('Decay Constant', EXCITED)}: {decay_const}")
+
+    def print_metastable(meta_data: dict[str, Any], meta_label: str) -> None:
+        display_meta = format_isotope(isotope, fullname, metastable=meta_label)
+        print(f"        {bold(display_meta)}:")
+        if "half_life" in meta_data:
+            print_half_life_block(meta_data["half_life"])
+        print(f"          {emoji_energy} - {fore('Excitation Energy', EXCITED)}: {bold(meta_data['energy'])}keV")
+        if "decay" in meta_data:
+            print(f"          {emoji_chains} - {fore('Possible Decays', GOLD)}:")
+            show_decay(meta_data["decay"], display_name=display_name, indent=14, metastable=meta_label)
+
     match = re.match(r"^(\d+)\s*([A-Z][a-z]?)$", isotope)
     display_name = format_isotope(isotope, fullname) if match else isotope
-
     alt_name_display = f" ({isotope_data['name']})" if "name" in isotope_data else ""
     print(f"  - {bold(display_name)}{alt_name_display}:")
 
     protons = isotope_data["protons"]
     neutrons = isotope_data["neutrons"]
-    print(
-        f"      p{superscript_pos}, e{superscript_neg} - "
-        f"{fore('Protons', RED)} and {fore('Electrons', YELLOW)}: {bold(protons)}"
-    )
-    print(f"      n{superscript_zero} - {fore('Neutrons', BLUE)}: {bold(str(neutrons))}")
 
-    up_quarks = protons * 2 + neutrons
-    down_quarks = protons + neutrons * 2
-    print(
-        f"      u - {fore('Up Quarks', GREEN)}: "
-        f"({fore(str(protons), RED)} * 2) + {fore(str(neutrons), BLUE)} = {bold(str(up_quarks))}"
-    )
-    print(
-        f"      d - {fore('Down Quarks', CYAN)}: "
-        f"{fore(str(protons), RED)} + ({fore(str(neutrons), BLUE)} * 2) = {bold(str(down_quarks))}"
-    )
+    print(f"      p{superscript_pos}, e{superscript_neg} - {fore('Protons', RED)} and {fore('Electrons', YELLOW)}: {bold(protons)}")
+    print(f"      n{superscript_zero} - {fore('Neutrons', BLUE)}: {bold(neutrons)}")
+    print_quarks(protons, neutrons)
 
-    half_life = isotope_data.get("half_life")
-    formatted_half_life, decay_constant, lifetime = format_half_life(half_life)
-    print(
-        f"      t1/2 - {fore('Half Life', PERIWINKLE)}: {formatted_half_life}"
-    )
-
-    if decay_constant is not None and lifetime is not None:
-        print(
-            f"      t - {fore('Lifetime', PERIWINKLE)}: {lifetime}\n"
-            f"      λ - {fore('Decay Constant', EXCITED)}: {decay_constant}"
-        )
-
-    print(
-        f"      u - {fore('Isotope Weight', BRIGHT_RED)}: "
-        f"{bold(isotope_data['isotope_weight'])}g/mol"
-    )
+    print_half_life_block(isotope_data.get("half_life"))
+    print(f"      u - {fore('Isotope Weight', BRIGHT_RED)}: {bold(isotope_data['isotope_weight'])}g/mol")
 
     if isinstance(isotope_data.get("decay"), list):
         print(f"      {emoji_chains} - {fore('Possible Decays', GOLD)}:")
@@ -1023,32 +1027,7 @@ def print_isotope(isotope: str, isotope_data: dict[str, Any], fullname: str) -> 
     if isinstance(isotope_data.get("metastable"), dict):
         print(f"\n      m - {fore('Metastable Isotopes', EXCITED)}:")
         for meta, data in isotope_data["metastable"].items():
-            display_meta = format_isotope(isotope, fullname, metastable=meta)
-            print(f"        {bold(display_meta)}:")
-            if "half_life" in data:
-                formatted_half_life, decay_constant, lifetime = format_half_life(data['half_life'])
-                print(
-                    f"          t1/2 - {fore('Half Life', PERIWINKLE)}: {formatted_half_life}"
-                )
-
-                if decay_constant is not None and lifetime is not None:
-                    print(
-                        f"          t - {fore('Lifetime', PERIWINKLE)}: {lifetime}\n"
-                        f"          λ - {fore('Decay Constant', EXCITED)}: {decay_constant}"
-                    )
-
-            print(
-                f"          {emoji_energy} - {fore('Excitation Energy', EXCITED)}: "
-                f"{bold(data['energy'])}keV"
-            )
-            if "decay" in data:
-                print(f"          {emoji_chains} - {fore('Possible Decays', GOLD)}:")
-                show_decay(
-                    data["decay"],
-                    display_name=display_name,
-                    indent=14,
-                    metastable=meta,
-                )
+            print_metastable(data, meta)
 
 # Formats an isotope respecting the isotope format
 def format_isotope(isotope: str, fullname: str, *, metastable: str = "") -> str:
@@ -1167,64 +1146,55 @@ def safe_format(value: Any, measurement: str = "", *, placeholder: str = "None")
 
 # Information
 periodica_logo = bold(gradient("Periodica", (156, 140, 255), (140, 255, 245)) if verbose_output else fore("periodica", BLUE))
-
 program_information = f"""Welcome to {periodica_logo}!
-This CLI provides useful information about the periodic elements, and pretty much everything here was made by the Discord user {bold(fore("Lanzoor", INDIGO))}.
-This project started as a fun hobby at around {bold("March 2025")}, but ended up getting taken seriously.
-This CLI was built with {fore("Python", CYAN)}, and uses {fore("JSON", YELLOW)} for configuration files / element database.
-The vibrant colors and visuals were done with the help of {italic(bold("ANSI escape codes"))}, although you should note that {bold("some terminals may lack support.")}
-{dim("(You can disable all styles by using the --raw or -r flag.)")}
-There are also other flags you can provide to this CLI. (The ones marked after the slash are shortcut flags. {italic("They behave the same as the original flags, but can be stacked.")}) {italic("All flags are case-sensitive.")}
-Modifier flags can be stacked with main flags, and main flags cannot be stacked.
 
-- {bold("--debug")} / -d
-- Enable debug mode for testing
-- Is a modifier flag
-{bold("NOTE: The debug messages intentionally use colors to catch to the eye, even when raw mode is enabled.")}
+This CLI brings you detailed information about elements in the periodic table, and it all started as a fun side project by Discord user {bold(fore("Lanzoor", INDIGO))} in {bold("March 2025")}. What began as a hobby quickly turned into a serious project.
 
-- {bold("--raw")} / -r
-- Disable almost all terminal effects, including truecolor, terminal colors, styles and unicode characters
-- Useful for scripting but may need maintenance (output style may and will vary)
-- Is a modifier flag
+Built entirely in {fore("Python", CYAN)} and powered by clean {fore("JSON", YELLOW)} databases, this tool features vibrant colors and smooth visuals using {italic(bold("ANSI escape codes"))}.
+{dim("Note: Some terminals may not fully support advanced styling. Use --raw or -r to disable all effects.")}
 
-- {bold("--hide-isotopes")} / -H
-- Hide isotope display for elements
-- {italic("Does NOT hide isotope display when an isotope is searched")}
-- Is a modifier flag
+There are some flags you can provide to this CLI. The flags after the slash are shortcut flags. {italic("They behave the same as the original flags, but can be stacked.")} {italic("All flags are case-sensitive.")}
+Modifier flags can be stacked with main flags, and main flags change major logic, thus cannot be stacked.
 
-- {bold("--random")} / -R
-- Pick a random element
-- {italic("Does not work with other main flags, such as -C or -B")}
-- Is a main and modifier flag
+{bold("Modifier flags:")}
+- {bold("--debug")} / {bold("-d")}
+  Enable debug mode for development and testing.
+  {dim("Debug messages use colors even in raw mode to stand out.")}
 
-- {bold("--info")} / -i
-- Give this information message
-- Is a main flag that requires no positional arguments
+- {bold("--raw")} / {bold("-r")}
+  Disable (almost) all terminal styling, colors, and Unicode characters.
+  Ideal for scripting or terminals with limited support.
 
-- {bold("--version")} / -v
-- Check the version
-- Is a main flag that requires no positional arguments
+- {bold("--hide-isotopes")} / {bold("-H")}
+  Hide isotope information in element displays.
+  {italic("Does not affect results when searching a specific isotope.")}
 
-- {bold("--update")} / -u
-- Check for updates
-- Is a main flag that requires no positional arguments
+- {bold("--random")} / {bold("-R")}
+  Display information for a random element.
+  {italic("Cannot be combined with other main flags like -C or -B.")}
 
-- {bold("--export")} [{fore("element", BLUE)}],
-  {bold("--export")} [{fore("isotope", GREEN)}] / -X
-- Export {fore("element", BLUE)} or {fore("isotope", GREEN)} to a .json file
-- Is a main flag with optional positional arguments
+{bold("Main flags:")}
+- {bold("--info")} / {bold("-i")}
+  Show this information message.
 
-- {bold("--compare")} [{fore("factor", RED)}] / -C
-- Compare all elements with a factor of {fore("factor", RED)}
-- Is a main flag with optional positional arguments
+- {bold("--version")} / {bold("-v")}
+  Check the current version.
 
-- {bold("--bond-type")} / -B
-- Compare two elements and get their bond type
-- Is a main flag with optional positional arguments
+- {bold("--update")} / {bold("-u")}
+  Check for available updates.
 
-Also, for flags that import other scripts, debug mode does not apply. Sorry!
+- {bold("--export")} [{fore("element", BLUE)} | {fore("isotope", GREEN)}] / {bold("-X")}
+  Export element or isotope data to a JSON file.
 
-Anyways, I hope you enjoy this small CLI. {bold("Please read the README.md file for information related with installation!")}"""
+- {bold("--compare")} [{fore("factor", RED)}] / {bold("-C")}
+  Compare all elements by a chosen property (e.g., melting_point, atomic_mass).
+
+- {bold("--bond-type")} {fore("element1", BLUE)} {fore("element2", GREEN)} / {bold("-B")}
+  Determine the bond type between two elements.
+
+For more details, please check the {bold("README.md")} file for installation instructions.
+
+Enjoy exploring the periodic table!"""
 
 # Reading json file, and trying to get from GitHub if fails
 logger.info("Program initialized.")
@@ -1302,9 +1272,9 @@ if len(sys.argv) > 1:
     logger.info(f"Primary flags: {primary_flags}")
     logger.info(f"Positional args: {positional_arguments}")
 
-    create_flag_event("--debug", "-d", callback=enable_debugging)
-    create_flag_event("--raw", "-r", callback=enable_raw_output)
-    create_flag_event("--hide-isotopes", "-H", callback=trigger_hide_isotopes)
+    create_flag_event("--debug", "-d", f_callable=f_debug)
+    create_flag_event("--raw", "-r", f_callable=f_raw)
+    create_flag_event("--hide-isotopes", "-H", f_callable=f_hide_isotopes)
 
     primary_flag = None
     user_input = None
@@ -1330,13 +1300,13 @@ if len(sys.argv) > 1:
                 logger.abort("Unexpected additional arguments.")
 
         recognized_flag = (
-            create_flag_event("--info", "-i", callback=get_information) or
-            create_flag_event("--update", "-u", callback=check_for_updates) or
-            create_flag_event("--export", "-X", callback=export_element) or
-            create_flag_event("--compare", "-C", callback=compare_by_factor) or
-            create_flag_event("--bond-type", "-B", callback=compare_bond_type) or
-            create_flag_event("--random", "-R", callback=select_random_element) or
-            create_flag_event("--version", "-v", callback=fetch_version)
+            create_flag_event("--info", "-i", f_callable=f_info) or
+            create_flag_event("--update", "-u", f_callable=f_update) or
+            create_flag_event("--export", "-X", f_callable=f_export) or
+            create_flag_event("--compare", "-C", f_callable=f_compare) or
+            create_flag_event("--bond-type", "-B", f_callable=f_bond_type) or
+            create_flag_event("--random", "-R", f_callable=f_random) or
+            create_flag_event("--version", "-v", f_callable=f_version)
         )
 
     else:
