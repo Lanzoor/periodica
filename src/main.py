@@ -402,10 +402,10 @@ def format_half_life(half_life: None | str | list[float | str | int]) -> Tuple[s
         formatted_half_life = hl_sign + bold(str(hl_amount)) + " " + hl_determiner
 
         decay_constant: float = (math.log(2)) / hl_amount # type: ignore
-        formatted_decay_constant = bold(str(decay_constant)) + " " + hl_determiner + reciprocal
+        formatted_decay_constant = bold(f"{decay_constant:.5f}") + " " + hl_determiner + reciprocal
 
         lifetime: float = 1 / decay_constant
-        formatted_lifetime = bold(str(lifetime)) + " " + hl_determiner
+        formatted_lifetime = bold(f"{lifetime:.4f}") + " " + hl_determiner
 
         return formatted_half_life, formatted_decay_constant, formatted_lifetime
 

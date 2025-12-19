@@ -382,7 +382,7 @@
             ]
         },
         "13Li": {
-            "half_life": [3.3, "zs"],
+            "half_life": [3.3, "zeptoseconds"],
             "protons": 3,
             "neutrons": 10,
             "isotope_weight": 13.06117,
@@ -397,7 +397,7 @@
     },
     "Beryllium": {
         "6Be": {
-            "half_life": [5.0, "zs"],
+            "half_life": [5.0, "zeptoseconds"],
             "protons": 4,
             "neutrons": 2,
             "isotope_weight": 6.019726,
@@ -410,7 +410,7 @@
             ]
         },
         "7Be": {
-            "half_life": [53.22, "d"],
+            "half_life": [53.22, "days"],
             "protons": 4,
             "neutrons": 3,
             "isotope_weight": 7.01692871,
@@ -423,7 +423,7 @@
             ]
         },
         "8Be": {
-            "half_life": [81.9, "as"],
+            "half_life": [81.9, "attoseconds"],
             "protons": 4,
             "neutrons": 4,
             "isotope_weight": 8.0053051,
@@ -436,7 +436,7 @@
             ],
             "metastable": {
                 "m": {
-                    "half_life": [81.9, "as"],
+                    "half_life": [81.9, "attoseconds"],
                     "energy": 16626,
                     "decay": [
                         {
@@ -455,7 +455,7 @@
             "isotope_weight": 9.01218306,
             "metastable": {
                 "m": {
-                    "half_life": [1.25, "as"],
+                    "half_life": [1.25, "attoseconds"],
                     "energy": 14390.3,
                     "decay": [
                         {
@@ -468,7 +468,7 @@
             }
         },
         "10Be": {
-            "half_life": [1387000.0, "y"],
+            "half_life": [1387000.0, "years"],
             "protons": 4,
             "neutrons": 6,
             "isotope_weight": 10.01353469,
@@ -481,7 +481,7 @@
             ]
         },
         "11Be": {
-            "half_life": [13.76, "s"],
+            "half_life": [13.76, "seconds"],
             "protons": 4,
             "neutrons": 7,
             "isotope_weight": 11.02166108,
@@ -504,7 +504,7 @@
             ],
             "metastable": {
                 "m": {
-                    "half_life": [0.93, "zs"],
+                    "half_life": [0.93, "zeptoseconds"],
                     "energy": 21158,
                     "decay": [
                         {
@@ -517,7 +517,7 @@
             }
         },
         "12Be": {
-            "half_life": [21.46, "ms"],
+            "half_life": [21.46, "milliseconds"],
             "protons": 4,
             "neutrons": 8,
             "isotope_weight": 12.0269221,
@@ -535,7 +535,7 @@
             ],
             "metastable": {
                 "m": {
-                    "half_life": [233.0, "ns"],
+                    "half_life": [233.0, "nanoseconds"],
                     "energy": 2251,
                     "decay": [
                         {
@@ -548,7 +548,7 @@
             }
         },
         "13Be": {
-            "half_life": [1.0, "zs"],
+            "half_life": [1.0, "zeptoseconds"],
             "protons": 4,
             "neutrons": 9,
             "isotope_weight": 13.036135,
@@ -561,13 +561,13 @@
             ],
             "metastable": {
                 "m": {
-                    "half_life": [233.0, "ns"],
+                    "half_life": [233.0, "nanoseconds"],
                     "energy": 1500
                 }
             }
         },
         "14Be": {
-            "half_life": [4.53, "ms"],
+            "half_life": [4.53, "milliseconds"],
             "protons": 4,
             "neutrons": 10,
             "isotope_weight": 14.04289,
@@ -605,7 +605,7 @@
             }
         },
         "15Be": {
-            "half_life": [790.0, "ys"],
+            "half_life": [790.0, "yoctoseconds"],
             "protons": 4,
             "neutrons": 11,
             "isotope_weight": 15.05349,
@@ -618,7 +618,7 @@
             ]
         },
         "16Be": {
-            "half_life": [650.0, "ys"],
+            "half_life": [650.0, "yoctoseconds"],
             "protons": 4,
             "neutrons": 12,
             "isotope_weight": 16.06167,
@@ -633,7 +633,7 @@
     },
     "Boron": {
         "7B": {
-            "half_life": [570.0, "ys"],
+            "half_life": [570.0, "yoctoseconds"],
             "protons": 5,
             "neutrons": 2,
             "isotope_weight": 7.029712,
@@ -646,7 +646,7 @@
             ]
         },
         "8B": {
-            "half_life": [771.9, "ms"],
+            "half_life": [771.9, "milliseconds"],
             "protons": 5,
             "neutrons": 3,
             "isotope_weight": 8.0246073,
@@ -664,7 +664,7 @@
             }
         },
         "9B": {
-            "half_life": [800.0, "zs"],
+            "half_life": [800.0, "zeptoseconds"],
             "protons": 5,
             "neutrons": 4,
             "isotope_weight": 9.0133296,
@@ -694,7 +694,7 @@
             }
         },
         "12B": {
-            "half_life": [20.2, "ms"],
+            "half_life": [20.2, "milliseconds"],
             "protons": 5,
             "neutrons": 7,
             "isotope_weight": 12.0143526,
@@ -712,7 +712,7 @@
             ]
         },
         "13B": {
-            "half_life": [17.16, "ms"],
+            "half_life": [17.16, "milliseconds"],
             "protons": 5,
             "neutrons": 8,
             "isotope_weight": 13.01778,
@@ -730,7 +730,7 @@
             ]
         },
         "14B": {
-            "half_life": [12.36, "ms"],
+            "half_life": [12.36, "milliseconds"],
             "protons": 5,
             "neutrons": 9,
             "isotope_weight": 14.025404,
@@ -752,7 +752,7 @@
             ],
             "metastable": {
                 "m": {
-                    "half_life": [4.15, "zs"],
+                    "half_life": [4.15, "zeptoseconds"],
                     "energy": 17065,
                     "decay": [
                         {
@@ -764,7 +764,7 @@
             }
         },
         "15B": {
-            "half_life": [10.18, "ms"],
+            "half_life": [10.18, "milliseconds"],
             "protons": 5,
             "neutrons": 10,
             "isotope_weight": 15.031087,
@@ -787,7 +787,7 @@
             ]
         },
         "16B": {
-            "half_life": [4.6, "zs", "greater than"],
+            "half_life": [4.6, "zeptoseconds", "greater than"],
             "protons": 5,
             "neutrons": 11,
             "isotope_weight": 16.039841,
@@ -800,7 +800,7 @@
             ]
         },
         "17B": {
-            "half_life": [5.08, "ms"],
+            "half_life": [5.08, "milliseconds"],
             "protons": 5,
             "neutrons": 12,
             "isotope_weight": 17.04693,
@@ -833,7 +833,7 @@
             ]
         },
         "18B": {
-            "half_life": [26.0, "ns", "less than"],
+            "half_life": [26.0, "nanoseconds", "less than"],
             "protons": 5,
             "neutrons": 13,
             "isotope_weight": 18.0556,
@@ -846,7 +846,7 @@
             ]
         },
         "19B": {
-            "half_life": [2.92, "ms"],
+            "half_life": [2.92, "milliseconds"],
             "protons": 5,
             "neutrons": 14,
             "isotope_weight": 19.06417,
@@ -874,7 +874,7 @@
             ]
         },
         "20B": {
-            "half_life": [912.4, "ys", "greater than"],
+            "half_life": [912.4, "yoctoseconds", "greater than"],
             "protons": 5,
             "neutrons": 15,
             "isotope_weight": 20.07451,
@@ -887,7 +887,7 @@
             ]
         },
         "21B": {
-            "half_life": [760.0, "ys", "greater than"],
+            "half_life": [760.0, "yoctoseconds", "greater than"],
             "protons": 5,
             "neutrons": 16,
             "isotope_weight": 21.08415,
@@ -902,7 +902,7 @@
     },
     "Carbon": {
         "8C": {
-            "half_life": [3.5, "zs"],
+            "half_life": [3.5, "zeptoseconds"],
             "protons": 6,
             "neutrons": 2,
             "isotope_weight": 8.037643,
@@ -915,7 +915,7 @@
             ]
         },
         "9C": {
-            "half_life": [126.5, "ms"],
+            "half_life": [126.5, "milliseconds"],
             "protons": 6,
             "neutrons": 3,
             "isotope_weight": 9.0310372,
@@ -938,7 +938,7 @@
             ]
         },
         "10C": {
-            "half_life": [19.3011, "s"],
+            "half_life": [19.3011, "seconds"],
             "protons": 6,
             "neutrons": 4,
             "isotope_weight": 10.01685322,
@@ -951,7 +951,7 @@
             ]
         },
         "11C": {
-            "half_life": [20.3402, "min"],
+            "half_life": [20.3402, "minutes"],
             "protons": 6,
             "neutrons": 5,
             "isotope_weight": 11.0114326,
@@ -988,7 +988,7 @@
             "isotope_weight": 13.003354835336
         },
         "14C": {
-            "half_life": [5700.0, "y"],
+            "half_life": [5700.0, "years"],
             "protons": 6,
             "neutrons": 8,
             "isotope_weight": 14.003241989,
@@ -1012,7 +1012,7 @@
             }
         },
         "15C": {
-            "half_life": [2.449, "s"],
+            "half_life": [2.449, "seconds"],
             "protons": 6,
             "neutrons": 9,
             "isotope_weight": 15.0105993,
@@ -1025,7 +1025,7 @@
             ]
         },
         "16C": {
-            "half_life": [750.0, "ms"],
+            "half_life": [750.0, "milliseconds"],
             "protons": 6,
             "neutrons": 10,
             "isotope_weight": 16.014701,
@@ -1043,7 +1043,7 @@
             ]
         },
         "17C": {
-            "half_life": [193.0, "ms"],
+            "half_life": [193.0, "milliseconds"],
             "protons": 6,
             "neutrons": 11,
             "isotope_weight": 17.022579,
@@ -1061,7 +1061,7 @@
             ]
         },
         "18C": {
-            "half_life": [92.0, "ms"],
+            "half_life": [92.0, "milliseconds"],
             "protons": 6,
             "neutrons": 12,
             "isotope_weight": 18.02675,
@@ -1079,7 +1079,7 @@
             ]
         },
         "19C": {
-            "half_life": [46.2, "ms"],
+            "half_life": [46.2, "milliseconds"],
             "protons": 6,
             "neutrons": 13,
             "isotope_weight": 19.0348,
@@ -1102,7 +1102,7 @@
             ]
         },
         "20C": {
-            "half_life": [16.0, "ms"],
+            "half_life": [16.0, "milliseconds"],
             "protons": 6,
             "neutrons": 14,
             "isotope_weight": 20.04026,
@@ -1125,7 +1125,7 @@
             ]
         },
         "22C": {
-            "half_life": [6.2, "ms"],
+            "half_life": [6.2, "milliseconds"],
             "protons": 6,
             "neutrons": 16,
             "isotope_weight": 22.05755,
@@ -1150,7 +1150,7 @@
     },
     "Nitrogen": {
         "10N": {
-            "half_life": [7e-22, "s"],
+            "half_life": [7e-22, "seconds"],
             "protons": 7,
             "neutrons": 3,
             "isotope_weight": 10.01685,
@@ -1163,7 +1163,7 @@
             ]
         },
         "11N": {
-            "half_life": [4.2e-22, "s"],
+            "half_life": [4.2e-22, "seconds"],
             "protons": 7,
             "neutrons": 4,
             "isotope_weight": 11.00628,
@@ -1176,7 +1176,7 @@
             ]
         },
         "12N": {
-            "half_life": [11.0, "ms"],
+            "half_life": [11.0, "milliseconds"],
             "protons": 7,
             "neutrons": 5,
             "isotope_weight": 12.000108,
@@ -1189,7 +1189,7 @@
             ]
         },
         "13N": {
-            "half_life": [9.965, "m"],
+            "half_life": [9.965, "minutes"],
             "protons": 7,
             "neutrons": 6,
             "isotope_weight": 13.00573861,
@@ -1202,7 +1202,7 @@
             ],
             "metastable": {
                 "m": {
-                    "half_life": [0.6, "ns"],
+                    "half_life": [0.6, "nanoseconds"],
                     "energy": 2350,
                     "decay": [
                         {
@@ -1229,7 +1229,7 @@
             "decay": null
         },
         "16N": {
-            "half_life": [7.13, "s"],
+            "half_life": [7.13, "seconds"],
             "protons": 7,
             "neutrons": 9,
             "isotope_weight": 16.006099,
@@ -1242,7 +1242,7 @@
             ],
             "metastable": {
                 "m": {
-                    "half_life": [5.25, "μs"],
+                    "half_life": [5.25, "microseconds"],
                     "energy": 120,
                     "decay": [
                         {
@@ -1255,7 +1255,7 @@
             }
         },
         "17N": {
-            "half_life": [4.173, "s"],
+            "half_life": [4.173, "seconds"],
             "protons": 7,
             "neutrons": 10,
             "isotope_weight": 17.008449,
@@ -1273,7 +1273,7 @@
             ]
         },
         "18N": {
-            "half_life": [619.0, "ms"],
+            "half_life": [619.0, "milliseconds"],
             "protons": 7,
             "neutrons": 11,
             "isotope_weight": 18.013998,
@@ -1286,7 +1286,7 @@
             ]
         },
         "19N": {
-            "half_life": [329.0, "ms"],
+            "half_life": [329.0, "milliseconds"],
             "protons": 7,
             "neutrons": 12,
             "isotope_weight": 19.017022,
@@ -1299,7 +1299,7 @@
             ]
         },
         "20N": {
-            "half_life": [130.0, "ms"],
+            "half_life": [130.0, "milliseconds"],
             "protons": 7,
             "neutrons": 13,
             "isotope_weight": 20.02337,
@@ -1312,7 +1312,7 @@
             ]
         },
         "21N": {
-            "half_life": [87.0, "ms"],
+            "half_life": [87.0, "milliseconds"],
             "protons": 7,
             "neutrons": 14,
             "isotope_weight": 21.02711,
@@ -1325,7 +1325,7 @@
             ]
         },
         "22N": {
-            "half_life": [24.0, "ms"],
+            "half_life": [24.0, "milliseconds"],
             "protons": 7,
             "neutrons": 15,
             "isotope_weight": 22.0341,
@@ -1338,7 +1338,7 @@
             ]
         },
         "23N": {
-            "half_life": [14.5, "ms"],
+            "half_life": [14.5, "milliseconds"],
             "protons": 7,
             "neutrons": 16,
             "isotope_weight": 23.04122,
@@ -1351,7 +1351,7 @@
             ]
         },
         "24N": {
-            "half_life": [55.0, "ns", "less than"],
+            "half_life": [55.0, "nanoseconds", "less than"],
             "protons": 7,
             "neutrons": 17,
             "isotope_weight": 24.05039,
@@ -1364,7 +1364,7 @@
             ]
         },
         "25N": {
-            "half_life": [260.0, "ps", "less than"],
+            "half_life": [260.0, "picoseconds", "less than"],
             "protons": 7,
             "neutrons": 18,
             "isotope_weight": 25.06066,
@@ -1377,7 +1377,7 @@
             ]
         },
         "26N": {
-            "half_life": [260.0, "ps", "less than"],
+            "half_life": [260.0, "picoseconds", "less than"],
             "protons": 7,
             "neutrons": 19,
             "isotope_weight": 26.07217,
@@ -1390,7 +1390,7 @@
             ]
         },
         "27N": {
-            "half_life": [260.0, "ps", "less than"],
+            "half_life": [260.0, "picoseconds", "less than"],
             "protons": 7,
             "neutrons": 20,
             "isotope_weight": 27.08391,
