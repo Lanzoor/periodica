@@ -437,6 +437,93 @@ def create_flag_event(*flags: str, f_callable: Callable[..., Any]):
             return True
     return False
 
+def resolve_element(
+    label: str,
+    initial_input: str | None = None,
+) -> dict[Any, Any]:
+    element = None
+
+    if initial_input:
+        element, suggestion = find_element(initial_input)
+        if element:
+            logger.info(f"Resolved {label} element from args: {initial_input}")
+            return element
+
+        print(fore(
+            f"Could not resolve {label} element from arguments.",
+            YELLOW
+        ))
+
+    print(
+        f"Search for the {label} element "
+        f"{italic('to compare the bond type')} by name, symbol, or atomic number."
+    )
+
+    while True:
+        user_input = input("> ").strip().lower()
+        logger.info(f"{label.capitalize()} input: \"{user_input}\"")
+        check_for_termination(user_input)
+
+        element, suggestion = find_element(user_input)
+        if element:
+            return element
+
+        if suggestion:
+            print(fore(
+                f'Not a valid element. Did you mean "{bold(suggestion)}"?',
+                YELLOW
+            ))
+        else:
+            print(fore("Not a valid element.", RED))
+
+def resolve_element_or_isotope(
+    label: str,
+    initial_input: str | None = None,
+) -> dict[Any, Any]:
+    element = None
+
+    if initial_input:
+        element, suggestion = find_isotope(initial_input)
+        if element:
+            logger.info(f"Resolved {label} from args: {initial_input}")
+            return element
+
+        if suggestion:
+            print(fore(
+                f"Could not find that element or isotope. Did you mean {suggestion}?",
+                YELLOW
+            ))
+        else:
+            print(fore(
+                "Could not find that element or isotope. Please enter one manually.",
+                RED
+            ))
+
+    print(
+        f"Search for an element {italic(f'to {label}')} "
+        f"by name, symbol, or atomic number."
+    )
+
+    while True:
+        user_input = input("> ").strip()
+        check_for_termination(user_input)
+
+        element, suggestion = find_isotope(user_input)
+        if element:
+            logger.info(f"Resolved {label} interactively: {user_input}")
+            return element
+
+        if suggestion:
+            print(fore(
+                f"Could not find that element or isotope. Did you mean {suggestion}?",
+                YELLOW
+            ))
+        else:
+            print(fore(
+                "Could not find that element or isotope. Please enter one manually.",
+                RED
+            ))
+
 # Below are functions that get triggered by create_flag_event when flags are given
 
 def f_redirect(flag: str, logic: str):
@@ -463,41 +550,20 @@ def f_update():
 
 def f_export():
     global export_enabled, positional_arguments
-    f_redirect("--export", "export")
 
+    f_redirect("--export", "export")
     export_enabled = True
 
-    user_input = positional_arguments[0] if positional_arguments else None
-
-    element = None
-
-    if user_input is not None:
-        element, suggestion = find_isotope(user_input)
-        if element is None and not suggestion:
-            print(fore("Could not find that element or isotope. Please enter one manually.", RED))
-        elif element is None:
-            print(fore(f"Could not find that element or isotope. Did you mean {suggestion}?", YELLOW))
-
-    if element is None:
-        print(f"Search for an element {italic('to export')} by name, symbol, or atomic number.")
-        while element is None:
-            user_input = input("> ").strip()
-
-            check_for_termination(user_input)
-
-            element, suggestion = find_isotope(user_input)
-            if element is None and not suggestion:
-                print(fore("Could not find that element or isotope. Please enter one manually.", RED))
-            elif element is None:
-                print(fore(f"Could not find that element or isotope. Did you mean {suggestion}?", YELLOW))
-
+    arg = positional_arguments[0] if positional_arguments else None
+    element = resolve_element_or_isotope("export", arg)
 
     is_isotope = "info" in element and "symbol" in element
 
-    if is_isotope:
-        name = element["isotope"]
-    else:
-        name = element["general"]["fullname"].capitalize()
+    name = (
+        element["isotope"]
+        if is_isotope
+        else element["general"]["fullname"].capitalize()
+    )
 
     print(f"Saving data of {bold(name)} to {OUTPUT_FILE}...")
 
@@ -512,21 +578,35 @@ def f_export():
                 },
                 file,
                 indent=4,
-                ensure_ascii=False
+                ensure_ascii=False,
             )
         else:
             json.dump(
                 {
                     **element,
-                    "isotopes": full_isotope_data.get(element["general"]["fullname"], {}),
+                    "isotopes": full_isotope_data.get(
+                        element["general"]["fullname"], {}
+                    ),
                 },
                 file,
                 indent=4,
-                ensure_ascii=False
+                ensure_ascii=False,
             )
 
     print(f"Successfully saved to {OUTPUT_FILE}.")
     sys.exit(0)
+
+def sort_results(results: Any, method: str) -> Any:
+    match method:
+        case "ascending":
+            return sorted(results.items(), key=lambda x: (x[1] is None, x[1]))
+        case "descending":
+            return sorted(results.items(), key=lambda x: (x[1] is None, x[1]), reverse=True)
+        case "name":
+            return results.items()
+        case _:
+            logger.warn(f"Invalid sorting method {method}")
+            return results.items()
 
 def f_compare():
     global full_element_data, positional_arguments, compare_tip, valid_sorting_methods
@@ -708,16 +788,7 @@ def f_compare():
         logger.error(f"No elements have valid {factor} data")
         sys.exit(0)
 
-    match sorting_method:
-        case "ascending" | "descending":
-            sorted_results = sorted(result.items(), key=lambda item: (item[1] is None, item[1]))
-            if sorting_method == "descending":
-                sorted_results.reverse()
-        case "name":
-            sorted_results = result.items()
-        case _:
-            logger.warn(f"Invalid sorting method {sorting_method}. Please pay attention.")
-            sorted_results = sorted(result.items(), key=lambda item: (item[1] is None, item[1]))
+    sorted_results = sort_results(result, sorting_method)
 
     max_value = max(value for _, value in valid_results) or 1
     none_counter = 0
@@ -754,76 +825,45 @@ def f_compare():
 
 def f_bond_type():
     global full_element_data, positional_arguments
+
     f_redirect("--bond-type", "bond type")
 
-    primary_element = None
-    secondary_element = None
+    arg1 = positional_arguments[0] if len(positional_arguments) > 0 else None
+    arg2 = positional_arguments[1] if len(positional_arguments) > 1 else None
 
-    if len(positional_arguments) >= 2:
-        primary_element, _ = find_element(positional_arguments[0])
-        secondary_element, _ = find_element(positional_arguments[1])
+    primary_element = resolve_element("primary", arg1)
+    secondary_element = resolve_element("secondary", arg2)
 
-        if primary_element is None or secondary_element is None:
-            print(fore("One or both elements could not be resolved from the arguments. Please provide them manually.", YELLOW))
-            primary_element = None
-            secondary_element = None
-        else:
-            logger.info(f"Resolved both elements from CLI args: {positional_arguments[0]}, {positional_arguments[1]}")
+    p_name = primary_element["general"]["fullname"]
+    s_name = secondary_element["general"]["fullname"]
 
-    if primary_element is None:
-        print(f"Search for the primary element {italic('to compare the bond type')} with by name, symbol, or atomic number.")
-        while True:
-            user_input = input("> ").strip().lower()
-            logger.info(f"Primary input: \"{user_input}\"")
-            check_for_termination(user_input)
+    p_en = primary_element["electronic"]["electronegativity"]
+    s_en = secondary_element["electronic"]["electronegativity"]
 
-            primary_element, suggestion = find_element(user_input)
-            if primary_element:
-                break
-            if suggestion:
-                print(fore(f"Not a valid element. Did you mean \"{bold(suggestion)}\"?", YELLOW))
-            else:
-                print(fore(f"Not a valid element.", RED))
-
-    primary_element_name = primary_element["general"]["fullname"]
-
-    if secondary_element is None:
-        print(f"Now, please enter the secondary element {italic('to compare the bond type')} with {bold(primary_element_name)}.")
-        while True:
-            user_input = input("> ").strip().lower()
-            logger.info(f"Secondary input: \"{user_input}\"")
-            check_for_termination(user_input)
-
-            secondary_element, suggestion = find_element(user_input)
-            if secondary_element:
-                break
-            if suggestion:
-                print(fore(f"Not a valid element. Did you mean \"{bold(suggestion)}\"?", YELLOW))
-            else:
-                print(fore(f"Not a valid element.", RED))
-
-    secondary_element_name = secondary_element["general"]["fullname"]
-    primary_en = primary_element["electronic"]["electronegativity"]
-    secondary_en = secondary_element["electronic"]["electronegativity"]
-
-    if primary_en is None or secondary_en is None:
-        print(fore("Failed to fetch bond type; one or both elements lack electronegativity values (likely inert).", YELLOW))
+    if p_en is None or s_en is None:
+        print(fore(
+            "Failed to fetch bond type; one or both elements lack "
+            "electronegativity values (likely inert).",
+            YELLOW
+        ))
         sys.exit(0)
 
-    diff = abs(primary_en - secondary_en)
+    diff = abs(p_en - s_en)
+
     if diff < 0.4:
-        bond_type_str = fore("Nonpolar Covalent", BLUE) + " -"
+        bond_type = fore("Nonpolar Covalent", BLUE) + " -"
     elif diff < 1.7:
-        bond_type_str = fore("Polar Covalent", YELLOW) + (" δ" if verbose_output else " d")
+        bond_type = fore("Polar Covalent", YELLOW) + (" δ" if verbose_output else " d")
     else:
-        bond_type_str = fore("Ionic", RED) + (" →" if verbose_output else " >")
+        bond_type = fore("Ionic", RED) + (" →" if verbose_output else " >")
 
     print()
-    print(f"Primary element ({primary_element_name})'s electronegativity: {bold(str(primary_en))}")
-    print(f"Secondary element ({secondary_element_name})'s electronegativity: {bold(str(secondary_en))}")
-    print(f"Difference: {primary_en} - {secondary_en} = {bold(f'{diff:.3f}')}")
-    print(f"Bond type: {bond_type_str} (According to Pauling's Electronegativity Method)")
+    print(f"Primary element ({p_name}) electronegativity: {bold(p_en)}")
+    print(f"Secondary element ({s_name}) electronegativity: {bold(s_en)}")
+    print(f"Difference: {bold(f'{diff:.3f}')}")
+    print(f"Bond type: {bond_type} (Pauling scale)")
     print()
+
     sys.exit(0)
 
 def f_random():
@@ -1013,7 +1053,7 @@ def print_isotope(isotope: str, isotope_data: dict[str, Any], fullname: str) -> 
     protons = isotope_data["protons"]
     neutrons = isotope_data["neutrons"]
 
-    print(f"      p{superscript_pos}, e{superscript_neg} - {fore('Protons', RED)} and {fore('Electrons', YELLOW)}: {bold(protons)}")
+    print(f"      p+, e- - {fore('Protons', RED)} and {fore('Electrons', YELLOW)}: {bold(protons)}")
     print(f"      n{superscript_zero} - {fore('Neutrons', BLUE)}: {bold(neutrons)}")
     print_quarks(protons, neutrons)
 
@@ -1025,7 +1065,7 @@ def print_isotope(isotope: str, isotope_data: dict[str, Any], fullname: str) -> 
         show_decay(isotope_data["decay"], display_name=display_name)
 
     if isinstance(isotope_data.get("metastable"), dict):
-        print(f"\n      m - {fore('Metastable Isotopes', EXCITED)}:")
+        print(f"\n      m - {fore('Metastable Isotopes', EXCITED)}:\n")
         for meta, data in isotope_data["metastable"].items():
             print_metastable(data, meta)
 
@@ -1196,8 +1236,36 @@ For more details, please check the {bold("README.md")} file for installation ins
 
 Enjoy exploring the periodic table!"""
 
-# Reading json file, and trying to get from GitHub if fails
 logger.info("Program initialized.")
+
+# Terminal size logic
+
+try:
+    terminal_width = os.get_terminal_size().columns
+    terminal_height = os.get_terminal_size().lines
+    logger.info(f"Terminal size: {terminal_width}x{terminal_height} (width x height)")
+except OSError:
+    print(bold("You aren't running this on a terminal, which is very weird. We will try to ignore this issue, and will determine your terminal width as 80. Please move on like nothing ever happened."))
+    logger.warn("The script ran without a terminal, so failback to reasonable terminal width variable.")
+    terminal_width = 80
+    terminal_height = 40
+
+if terminal_width < 80:
+    print(fore(f"You are running this program in a terminal that has a width of {bold(str(terminal_width))},\nwhich may be too compact to display and provide the information.\nPlease try resizing your terminal.\nThis will still display content, but it may look broken or poorly word-wrapped.", RED))
+    logger.warn("Not enough width for terminal.")
+
+# JSON file logic
+
+def fetch_and_replace(url: str, file_path: Path, description: str):
+    print(f"Getting content from {url} ({description})...")
+    response = get_response(url)
+    data = json.loads(response.text)  # type: ignore
+    with open(file_path, "w", encoding="utf-8") as f:
+        f.write(response.text)  # type: ignore
+
+    logger.info(f"Successfully got {description} from {url}.")
+    print(f"Successfully replaced {description}.\n")
+    return data
 
 try:
     with open(ELEMENT_DATA_FILE, 'r', encoding="utf-8") as file:
@@ -1215,16 +1283,6 @@ except FileNotFoundError:
     logger.warn("The data JSON files were not found.")
     print("The data JSON files were not found. Is it okay for me to get the file for you on GitHub? (y/N)")
     data_malformed = True
-
-def fetch_and_replace(url: str, file_path: Path, description: str):
-    print(f"Getting content from {url} ({description})...")
-    response = get_response(url)
-    data = json.loads(response.text)  # type: ignore
-    with open(file_path, "w", encoding="utf-8") as f:
-        f.write(response.text)  # type: ignore
-    logger.info(f"Successfully got {description} from {url}.")
-    print(f"Successfully replaced {description}.\n")
-    return data
 
 if data_malformed:
     confirmation = input("> ").strip().lower()
@@ -1244,20 +1302,9 @@ if data_malformed:
         "isotopes.json"
     )
 
-# Getting element / isotope
-try:
-    terminal_width = os.get_terminal_size().columns
-    terminal_height = os.get_terminal_size().lines
-    logger.info(f"Terminal size: {terminal_width}x{terminal_height} (width x height)")
-except OSError:
-    print(bold("You aren't running this on a terminal, which is very weird. We will try to ignore this issue, and will determine your terminal width as 80. Please move on like nothing ever happened."))
-    logger.warn("The script ran without a terminal, so failback to reasonable terminal width variable.")
-    terminal_width = 80
-    terminal_height = 40
+# Handling Flags
 
-if terminal_width < 80:
-    print(fore(f"You are running this program in a terminal that has a width of {bold(str(terminal_width))},\nwhich may be too compact to display and provide the information.\nPlease try resizing your terminal.\nThis will still display content, but it may look broken or unintended.", RED))
-    logger.warn("Not enough width for terminal.")
+user_input = None
 
 if len(sys.argv) > 1:
     unrecognized_flags = [f for f in separated_flags if f not in valid_flags]
@@ -1272,6 +1319,7 @@ if len(sys.argv) > 1:
     logger.info(f"Primary flags: {primary_flags}")
     logger.info(f"Positional args: {positional_arguments}")
 
+    # Modifier flags
     create_flag_event("--debug", "-d", f_callable=f_debug)
     create_flag_event("--raw", "-r", f_callable=f_raw)
     create_flag_event("--hide-isotopes", "-H", f_callable=f_hide_isotopes)
@@ -1282,80 +1330,64 @@ if len(sys.argv) > 1:
     if len(primary_flags) > 1:
         print("Multiple main flags detected. Run the script with the --info flag for more information.")
         logger.abort(f"Multiple main flags detected: {primary_flags}")
+
     elif len(primary_flags) == 1:
         primary_flag = primary_flags[0]
 
-        # Case 1: primary flag requires a positional argument
+        # Case 1: primary flag requires positional argument
         if primary_flag in positionarg_req_flags:
-            if len(positional_arguments) > 1 and primary_flag not in ['-C', '-B', '--compare', '--bond-type']:
+            if (
+                len(positional_arguments) > 1
+                and primary_flag not in ["-C", "-B", "--compare", "--bond-type"]
+            ):
                 print(fore("Too many positional arguments. Refer to --info.", RED))
                 logger.abort("Too many positional arguments.")
 
             user_input = positional_arguments[0] if positional_arguments else None
 
-        # Case 2: primary flag must not have positional arguments
+        # Case 2: primary flag forbids positional arguments
         elif primary_flag in positionarg_nreq_flags:
             if len(positional_arguments) > 0:
                 print(fore("Unexpected positional argument. Refer to --info.", RED))
                 logger.abort("Unexpected additional arguments.")
 
-        recognized_flag = (
-            create_flag_event("--info", "-i", f_callable=f_info) or
-            create_flag_event("--update", "-u", f_callable=f_update) or
-            create_flag_event("--export", "-X", f_callable=f_export) or
-            create_flag_event("--compare", "-C", f_callable=f_compare) or
-            create_flag_event("--bond-type", "-B", f_callable=f_bond_type) or
-            create_flag_event("--random", "-R", f_callable=f_random) or
-            create_flag_event("--version", "-v", f_callable=f_version)
-        )
+        create_flag_event("--info", "-i", f_callable=f_info)
+        create_flag_event("--update", "-u", f_callable=f_update)
+        create_flag_event("--export", "-X", f_callable=f_export)
+        create_flag_event("--compare", "-C", f_callable=f_compare)
+        create_flag_event("--bond-type", "-B", f_callable=f_bond_type)
+        create_flag_event("--random", "-R", f_callable=f_random)
+        create_flag_event("--version", "-v", f_callable=f_version)
 
     else:
         if len(positional_arguments) > 1:
             print(fore("Too many positional arguments. Refer to --info.", RED))
             logger.abort("Too many positional arguments.")
-        user_input = positional_arguments[0] if positional_arguments else None
 
-    if user_input:
-        logger.info(f"Element positional argument entry given: \"{user_input}\"")
-        current_element_data, current_element_suggestion = find_isotope(user_input)
-        if isotope_logic:
-            sys.exit(0)
-        if current_element_data is None:
-            message = (
-                f"Invalid element or isotope."
-                f"{' Did you mean \"' + bold(current_element_suggestion) + '\"?' if current_element_suggestion else ' Falling back to interactive input.'}"
-            )
-            print(fore(message, YELLOW if current_element_suggestion else RED))
-            logger.warn("No valid element or isotope provided from argv, fallback to interactive.")
-    else:
-        logger.warn("Element argument entry not given, falling back to interactive input.")
+        user_input = positional_arguments[0] if positional_arguments else None
 else:
     logger.warn("No arguments provided, falling back to interactive input.")
 
-if current_element_data is None:
-    print(f"Search for an element by name, symbol, or atomic number. {dim(tip)}")
-    while True:
-        user_input = input("> ").strip().lower()
-        logger.info(f"User gave input: \"{user_input}\"")
+if user_input:
+    logger.info(f'Element positional argument entry given: "{user_input}"')
 
-        check_for_termination(user_input)
+current_element_data = resolve_element_or_isotope(
+    label="search",
+    initial_input=user_input
+)
 
-        current_element_data, current_element_suggestion = find_isotope(user_input)
-
-        if isotope_logic:
-            sys.exit(0)
-
-        if current_element_data is not None:
-            break
-
-        message = "Not a valid element or isotope."
-        if current_element_suggestion:
-            message += f" Did you mean \"{bold(current_element_suggestion)}\"?"
-        print(fore(message, YELLOW if current_element_suggestion else RED))
+if isotope_logic:
+    sys.exit(0)
 
 if debug_mode:
     print("Printing data...")
-    pprint(current_element_data, indent = 2, width=terminal_width, sort_dicts=False, underscore_numbers=True)
+    pprint(
+        current_element_data,
+        indent=2,
+        width=terminal_width,
+        sort_dicts=False,
+        underscore_numbers=True
+    )
 
 # Dividing categories
 general: dict[str, Any] = current_element_data["general"]
@@ -1547,9 +1579,8 @@ if subshells:
         last_subshell = last_subshell[:-1] + convert_superscripts(last_subshell[-1]) if verbose_output else last_subshell
         last_subshell = fore(last_subshell, subshell_colors.get(subshell_type, (255, 255, 255)))
 
-        principal = str(principal)
-        azimuthal = str(azimuthal)
-        magnetic = str(magnetic)
+        principal, azimuthal, magnetic = str(principal), str(azimuthal), str(magnetic)
+
         subshell_visualisation += f"""
 
       {fore("Valence Subshell", VALENCE_ELECTRONS_COL)} ({inverse(last_subshell)}):
@@ -1657,9 +1688,9 @@ print()
 print_header("Nuclear Properties")
 print()
 
-print(f" p{superscript_pos} - {fore('Protons', RED)}: {bold(protons)}")
+print(f" p+ - {fore('Protons', RED)}: {bold(protons)}")
 print(f" n{superscript_zero} - {fore('Neutrons', BLUE)}: {bold(neutrons)}")
-print(f" e{superscript_neg} - {fore('Electrons', YELLOW)}: {bold(electrons)}")
+print(f" e- - {fore('Electrons', YELLOW)}: {bold(electrons)}")
 print(f" nv - {fore('Valence Electrons', VALENCE_ELECTRONS_COL)}: {bold(valence_electrons)}")
 
 up_quarks_calculation = f"({fore(protons, RED)} * 2) + {fore(neutrons, BLUE)} = {bold(up_quarks)}"
@@ -1716,7 +1747,7 @@ print()
 print_header("Electronic Properties")
 print()
 
-print(f" {chi} - {fore("Electronegativity", ELECTRONEG_COL)}: {bold(electronegativity)}")
+print(f" x - {fore("Electronegativity", ELECTRONEG_COL)}: {bold(electronegativity)}")
 print(f" EA - {fore("Electron Affinity", EXCITED)}: {format_energy(electron_affinity)}")
 print(f" IE - {fore("Ionization Energy", PINK)}: {format_energy(ionization_energy)}")
 
@@ -1779,7 +1810,7 @@ print(f"    E - Young's Modulus: {safe_format(moduli['young'], 'GPa')}")
 print(f"    G - Shear Modulus: {safe_format(moduli['shear'], 'GPa')}")
 print(f"    ν - Poisson's Ratio: {safe_format(moduli['poissons_ratio'], '')}\n")
 
-print(f" {rho} - {fore("Density", CYAN)}: ")
+print(f" p - {fore("Density", CYAN)}: ")
 print(f"    STP Density: {safe_format(density['STP'], f'kg/{m3}')}")
 print(f"    Liquid Density: {safe_format(density['liquid'], f'kg/{m3}')}\n")
 
