@@ -1,3 +1,7 @@
+# IMPORTANT NOTICE
+
+Periodica has been officially RETIRED. Check out [this announcement](https://lanzoor.github.io/documents/announcements/0002.html) for more details.
+
 # Installation
 
 Of course, this is a Python script, which means you will need to run it with a Python interpreter. However, for most cases, I recommend you run the following methods;

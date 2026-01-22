@@ -1,6 +1,6 @@
 [project]
 name = "periodica"
-version = "v7.10.6-alpha"
+version = "v118.99.99"
 description = "CLI tool for displaying element and isotope information"
 requires-python = ">=3.11"
 dependencies = ["requests", "packaging"]
